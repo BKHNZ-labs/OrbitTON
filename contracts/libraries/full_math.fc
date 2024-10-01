@@ -1,4 +1,3 @@
-
 #include "../imports/stdlib.fc";
 
 int full_math::mul_div(int a, int b, int denominator) {
