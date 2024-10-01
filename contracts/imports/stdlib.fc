@@ -623,3 +623,8 @@ int equal_slices(slice a, slice b) asm "SDEQ";
 
 ;;; Concatenates two builders
 builder store_builder(builder to, builder from) asm "STBR";
+
+;;; Declare math lib
+;;; Docs: https://docs.ton.org/learn/tvm-instructions/instructions#52-division
+(int, int) muldivmodr(int x, int y, int z) asm "MULDIVMODR";
+(int, int) muldivmodc(int x, int y, int z) asm "MULDIVMODC";
