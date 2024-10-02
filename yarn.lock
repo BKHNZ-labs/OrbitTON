@@ -1238,6 +1238,7 @@ __metadata:
     "@ton/ton": ^15.0.0
     "@types/jest": ^29.5.13
     "@types/node": ^22.5.5
+    decimal.js: ^10.4.3
     jest: ^29.7.0
     prettier: ^3.3.3
     ts-jest: ^29.2.5
@@ -1961,6 +1962,13 @@ __metadata:
     supports-color:
       optional: true
   checksum: 822d74e209cd910ef0802d261b150314bbcf36c582ccdbb3e70f0894823c17e49a50d3e66d96b633524263975ca16b6a833f3e3b7e030c157169a5fabac63160
+  languageName: node
+  linkType: hard
+
+"decimal.js@npm:^10.4.3":
+  version: 10.4.3
+  resolution: "decimal.js@npm:10.4.3"
+  checksum: 796404dcfa9d1dbfdc48870229d57f788b48c21c603c3f6554a1c17c10195fc1024de338b0cf9e1efe0c7c167eeb18f04548979bcc5fdfabebb7cc0ae3287bae
   languageName: node
   linkType: hard
 
