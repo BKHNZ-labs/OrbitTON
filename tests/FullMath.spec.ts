@@ -4,7 +4,7 @@ import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import { TestClient } from '../wrappers/TestClient';
 
-describe('TestClient', () => {
+describe('FullMath', () => {
   let code: Cell;
 
   beforeAll(async () => {
