@@ -1,0 +1,16 @@
+const int error::liquidity_math::LS = 0x1002;
+const int error::liquidity_math::LA = 0x1003;
+
+;; return value: uint & x is uint??? when overflow?
+int liquidity_math::add_delta(int x, int y) {
+    int z = 0;
+    ;; check if x >= 2^128 
+    if (y < 0) {
+        throw_unless(error::liquidity_math::LS, x - abs(y) < x);
+        z = x - abs(y);
+    } else {
+        throw_unless(error::liquidity_math::LA,  x + y >= x);
+        z = x + y;
+    }
+    return z;
+}

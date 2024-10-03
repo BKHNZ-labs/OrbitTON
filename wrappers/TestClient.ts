@@ -58,4 +58,18 @@ export class TestClient implements Contract {
     ]);
     return result.stack.readBigNumber();
   }
+
+  async getAddDelta(provider: ContractProvider, x: bigint, y: bigint) {
+    const result = await provider.get('get_add_delta', [
+      {
+        type: 'int',
+        value: x,
+      },
+      {
+        type: 'int',
+        value: y,
+      },
+    ]);
+    return result.stack.readBigNumber();
+  }
 }
