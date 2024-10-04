@@ -1,16 +1,26 @@
 const int error::liquidity_math::LS = 0x1002;
 const int error::liquidity_math::LA = 0x1003;
 
-;; return value: uint & x is uint??? when overflow?
+const int max::uint128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+const int max::int128 = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+const int min::int128 = -0x80000000000000000000000000000000;
+
+;; FIXME: this function has specific type, x is uint128 and y is int128
 int liquidity_math::add_delta(int x, int y) {
     int z = 0;
-    ;; check if x >= 2^128 
+    throw_unless(error::liquidity_math::LA, y >= min::int128);
+    throw_unless(error::liquidity_math::LS, y <= max::int128);
+    throw_unless(error::liquidity_math::LS, x >= 0);
+    throw_unless(error::liquidity_math::LS, x <= max::uint128);
     if (y < 0) {
-        throw_unless(error::liquidity_math::LS, x - abs(y) < x);
-        z = x - abs(y);
+        int y_abs = abs(y);
+        throw_unless(error::liquidity_math::LS, x - y_abs < x);
+        z = x - y_abs;
     } else {
         throw_unless(error::liquidity_math::LA,  x + y >= x);
         z = x + y;
     }
+    throw_unless(error::liquidity_math::LS, z >= 0);
+    throw_unless(error::liquidity_math::LA, z <= max::uint128);
     return z;
 }
