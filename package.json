@@ -4,7 +4,7 @@
   "scripts": {
     "start": "blueprint run",
     "build": "blueprint build",
-    "test": "jest --verbose"
+    "test": "yarn blueprint build --all && jest --verbose"
   },
   "devDependencies": {
     "@ton/blueprint": "^0.24.0",

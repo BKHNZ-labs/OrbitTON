@@ -1,9 +1,9 @@
 import { compile } from '@ton/blueprint';
 import { beginCell, Cell, toNano } from '@ton/core';
 import { Blockchain, BlockchainTransaction, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { TestClient } from '../wrappers/TestClient';
 import '@ton/test-utils';
 import { ExitCode } from './ExitCode';
+import { LiquidityMathTest } from '../wrappers/tests/LiquidityMathTest';
 
 const Q128 = BigInt(2) ** BigInt(128);
 describe('LiquidityMath', () => {
@@ -11,7 +11,7 @@ describe('LiquidityMath', () => {
   let assertExitCode: (txs: BlockchainTransaction[], exit_code: number) => void;
 
   beforeAll(async () => {
-    code = await compile('TestClient');
+    code = await compile('LiquidityMathTest');
 
     assertExitCode = (txs, exit_code) => {
       expect(txs).toHaveTransaction({
@@ -24,12 +24,12 @@ describe('LiquidityMath', () => {
 
   let blockchain: Blockchain;
   let deployer: SandboxContract<TreasuryContract>;
-  let contract: SandboxContract<TestClient>;
+  let contract: SandboxContract<LiquidityMathTest>;
 
   beforeEach(async () => {
     blockchain = await Blockchain.create();
 
-    contract = blockchain.openContract(TestClient.createFromData(code, beginCell().endCell()));
+    contract = blockchain.openContract(LiquidityMathTest.createFromData(code, beginCell().endCell()));
 
     deployer = await blockchain.treasury('deployer');
 
