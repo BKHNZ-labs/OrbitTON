@@ -68,8 +68,7 @@ describe('SqrtPriceMathTest', () => {
       expect(await contract.getNextSqrtPriceFromInput(price, expandTo18Decimals(1) / 10n, 0n, false)).toBe(price);
     });
 
-    // TODO: FIX ME
-    xit('returns the minimum price for max inputs', async () => {
+    it('returns the minimum price for max inputs', async () => {
       const sqrtP = BigInt(BigNumber(2).pow(160).minus(1).toString());
       const liquidity = MaxUint128;
       const maxAmountNoOverflow = BigInt(
@@ -113,8 +112,7 @@ describe('SqrtPriceMathTest', () => {
       ).toBe(624999999995069620n);
     });
 
-    // TODO: FIX ME
-    xit('can return 1 with enough amountIn and zeroForOne = true', async () => {
+    it('can return 1 with enough amountIn and zeroForOne = true', async () => {
       expect(await contract.getNextSqrtPriceFromInput(encodePriceSqrt(1n, 1n), 1n, MaxUint256 / 2n, true)).toBe(1n);
     });
   });
