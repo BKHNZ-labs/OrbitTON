@@ -1,6 +1,5 @@
-#include "imports/stdlib.fc";
-#include "libraries/full_math.fc";
-#include "libraries/liquidity_math.fc";
+#include "../imports/stdlib.fc";
+#include "../libraries/full_math.fc";
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {
