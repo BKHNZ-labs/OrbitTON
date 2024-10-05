@@ -1,5 +1,6 @@
 #include "imports/stdlib.fc";
 #include "libraries/full_math.fc";
+#include "libraries/liquidity_math.fc";
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {
@@ -37,4 +38,8 @@ int get_mul_div(int a, int b, int denominator) method_id {
 
 int get_mul_div_rounding_up(int a, int b, int denominator) method_id {
   return full_math::mul_div_rounding_up(a, b, denominator);
+}
+
+int get_add_delta(int x, int y) method_id {
+  return liquidity_math::add_delta(x, y);
 }
