@@ -81,3 +81,77 @@ int tick_math::get_sqrt_ratio_at_tick(int tick) {
     int sqrtPriceX96 = (ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1);
     return sqrtPriceX96;
 }
+
+int tick_math::get_tick_at_sqrt_ratio(int sqrtPriceX96){
+    throw_unless(error::tick_math::R, (sqrtPriceX96 >= tick_math::MIN_SQRT_RATIO) & (sqrtPriceX96 < tick_math::MAX_SQRT_RATIO));
+    int ratio = sqrtPriceX96 << 32;
+    int r = ratio;
+    int msb = 0;
+
+    if (r > 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
+        msb += 128;
+        r >>= 128;
+    }
+    if (r > 0xFFFFFFFFFFFFFFFF) {
+        msb += 64;
+        r >>= 64;
+    }
+    if (r > 0xFFFFFFFF) {
+        msb += 32;
+        r >>= 32;
+    }
+    if (r > 0xFFFF) {
+        msb += 16;
+        r >>= 16;
+    }
+    if (r > 0xFF) {
+        msb += 8;
+        r >>= 8;
+    }
+    if (r > 0xF) {
+        msb += 4;
+        r >>= 4;
+    }
+    if (r > 0x3) {
+        msb += 2;
+        r >>= 2;
+    }
+    if (r > 0x1) {
+        msb += 1;
+    }
+
+    ;; Normalize r based on the msb value
+    if (msb >= 128) {
+        r = ratio >> (msb - 127);
+    } else {
+        r = ratio << (127 - msb);
+    }
+
+    ;; Calculate log_2 based on msb
+    int log_2 = (msb - 128) << 64;
+
+    ;; ;; Perform the binary search to calculate log_2
+    int i = 0;
+    while(i < 14){
+        r = (r * r) >> 127;
+        if (r >= 0x100000000000000000000000000000000) {
+            log_2 |= 1 << (63 - i);
+            r >>= 1;
+        }
+        i += 1;
+    }
+
+
+    ;; Calculate log_sqrt10001 using the precomputed constant
+    int log_sqrt10001 = log_2 * 255738958999603826347141; ;; 128.128 number
+
+    ;; Calculate tickLow and tickHi
+    int tickLow = (log_sqrt10001 - 3402992956809132418596140100660247210) >> 128;
+    int tickHi = (log_sqrt10001 + 291339464771989622907027621153398088495) >> 128;
+
+    ;; Determine the final tick value
+    int tick = (tickLow == tickHi) ? tickLow : (tick_math::get_sqrt_ratio_at_tick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow);
+    
+    return tick;
+}
+

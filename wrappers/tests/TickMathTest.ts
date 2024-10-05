@@ -33,4 +33,15 @@ export class TickMathTest implements Contract {
     console.log('gasUsed', result.gasUsed);
     return result.stack.readBigNumber();
   }
+
+  async getTickAtSqrtRatio(provider: ContractProvider, sqrtRatio: bigint) {
+    const result = await provider.get('get_tick_at_sqrt_ratio', [
+      {
+        type: 'int',
+        value: sqrtRatio,
+      },
+    ]);
+    console.log('gasUsed', result.gasUsed);
+    return result.stack.readBigNumber();
+  }
 }

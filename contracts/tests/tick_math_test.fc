@@ -36,3 +36,7 @@ int get_sqrt_ratio_at_tick(int tick) method_id {
     return tick_math::get_sqrt_ratio_at_tick(tick);
 }
 
+int get_tick_at_sqrt_ratio(int sqrtPriceX96) method_id {
+    return tick_math::get_tick_at_sqrt_ratio(sqrtPriceX96);
+}
+
