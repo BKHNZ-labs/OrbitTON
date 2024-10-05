@@ -4,9 +4,8 @@ import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import { FullMathTest } from '../wrappers/tests/FullMathTest';
 import Decimal from 'decimal.js';
+import { MaxUint256, Q128 } from './shared/utils';
 
-const Q128 = BigInt(2) ** BigInt(128);
-const MaxUint256: bigint = BigInt(2) ** BigInt(256) - BigInt(1);
 describe('FullMath', () => {
   let code: Cell;
 

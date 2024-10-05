@@ -1,0 +1,9 @@
+#include "./unsafe_cast.fc";
+#include "./common.fc";
+
+;;; safe_cast from uint256 to uint160
+int safe_cast::to_uint160(int x) {
+  int converted_x = unsafe_cast::uint160(x);
+  throw_unless(error::not_equal, converted_x == x);
+  return converted_x;
+}

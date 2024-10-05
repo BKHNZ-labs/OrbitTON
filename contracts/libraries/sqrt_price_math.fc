@@ -1,8 +1,8 @@
 #include "./common.fc";
 #include "./full_math.fc";
 #include "./unsafe_math.fc";
-
-const error::unexpected_error = 0x8827b1c1; ;; first 8 bytes of keccak256("unexpected_error_on_sqrt_math_price")
+#include "./unsafe_cast.fc";
+#include "./safe_cast.fc";
 
 ;;; @notice Gets the next sqrt price given a delta of token0
 ;;; @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least
@@ -15,7 +15,7 @@ const error::unexpected_error = 0x8827b1c1; ;; first 8 bytes of keccak256("unexp
 ;;; @param amount How much of token0 to add or remove from virtual reserves
 ;;; @param add Whether to add or remove the amount of token0
 ;;; @return The price after adding or removing amount, depending on add
-int sqrt_math_price::get_next_sqrt_price_from_amount0_rounding_up(int sqrt_px96, int liquidity, int amount, int add) {
+int sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(int sqrt_px96, int liquidity, int amount, int add) {
   if amount == 0 {
     return sqrt_px96;
   }
@@ -27,15 +27,16 @@ int sqrt_math_price::get_next_sqrt_price_from_amount0_rounding_up(int sqrt_px96,
     if (product / amount) == sqrt_px96 {
       int denominator = numerator1 + product;
       if denominator >= numerator1 {
-        return full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator);
+        return unsafe_cast::uint160(full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator));
       }
-      return unsafe_math::div_rounding_up(numerator1, (numerator1 / sqrt_px96) + amount);
+
+      return unsafe_cast::uint160(unsafe_math::div_rounding_up(numerator1, (numerator1 / sqrt_px96) + amount));
     }
   }
 
   throw_unless(error::unexpected_error, (product / amount == sqrt_px96) & (numerator1 > product) == -1);
   int denominator = numerator1 - product;
-  return full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator);
+  return safe_cast::to_uint160(full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator));
 }
 
 ;;; @notice Gets the next sqrt price given a delta of token1
@@ -48,18 +49,18 @@ int sqrt_math_price::get_next_sqrt_price_from_amount0_rounding_up(int sqrt_px96,
 ;;; @param amount How much of token1 to add, or remove, from virtual reserves
 ;;; @param add Whether to add, or remove, the amount of token1
 ;;; @return The price after adding or removing `amount`
-int sqrt_math_price::get_next_sqrt_price_from_amount1_rounding_down(int sqrt_px96, int liquidity, int amount, int add) {
+int sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(int sqrt_px96, int liquidity, int amount, int add) {
   if add == -1 {
     int quotient = amount < max::uint160 
                     ? (amount << fixed_point_96::resolution) / liquidity 
                     : full_math::mul_div(amount, fixed_point_96::q96,liquidity);
-    return sqrt_px96 + quotient;
+    return safe_cast::to_uint160(sqrt_px96 + quotient);
   }
-  quotient = amount <= max::uint160 
+  int quotient = amount <= max::uint160 
               ? unsafe_math::div_rounding_up(amount << fixed_point_96::resolution, liquidity)
               : full_math::mul_div_rounding_up(amount, fixed_point_96::q96, liquidity);
   throw_unless(error::unexpected_error, sqrt_px96 > quotient);
-  return sqrt_px96 - quotient;
+  return unsafe_cast::uint160(sqrt_px96 - quotient);
 }
 
 ;;; @notice Gets the next sqrt price given an input amount of token0 or token1
@@ -69,7 +70,7 @@ int sqrt_math_price::get_next_sqrt_price_from_amount1_rounding_down(int sqrt_px9
 ;;; @param amountIn How much of token0, or token1, is being swapped in
 ;;; @param zeroForOne Whether the amount in is token0 or token1
 ;;; @return sqrtQX96 The price after adding the input amount to token0 or token1
-int sqrt_math_price::get_next_sqrt_price_from_input(
+int sqrt_price_math::get_next_sqrt_price_from_input(
   int sqrt_px96, 
   int liquidity, 
   int amount_in, 
@@ -78,9 +79,9 @@ int sqrt_math_price::get_next_sqrt_price_from_input(
   throw_unless(error::unexpected_error, sqrt_px96 > 0);
   throw_unless(error::unexpected_error, liquidity > 0);
   if (zero_for_one == -1) {
-    return sqrt_math_price::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_in, -1);
+    return sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_in, -1);
   }
-  return sqrt_math_price::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_in, -1);
+  return sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_in, -1);
 }
 
 ;;; @notice Gets the next sqrt price given an output amount of token0 or token1
@@ -90,7 +91,7 @@ int sqrt_math_price::get_next_sqrt_price_from_input(
 ;;; @param amountOut How much of token0, or token1, is being swapped out
 ;;; @param zeroForOne Whether the amount out is token0 or token1
 ;;; @return sqrtQX96 The price after removing the output amount of token0 or token1
-int sqrt_math_price::get_next_sqrt_price_from_output(
+int sqrt_price_math::get_next_sqrt_price_from_output(
   int sqrt_px96, 
   int liquidity, 
   int amount_out, 
@@ -99,9 +100,9 @@ int sqrt_math_price::get_next_sqrt_price_from_output(
   throw_unless(error::unexpected_error, sqrt_px96 > 0);
   throw_unless(error::unexpected_error, liquidity > 0);
   if (zero_for_one == -1) {
-    return sqrt_math_price::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_out, 0);
+    return sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_out, 0);
   }
-  return sqrt_math_price::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_out, 0);
+  return sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_out, 0);
 }
 
 ;;; @notice Gets the amount0 delta between two prices
@@ -112,7 +113,7 @@ int sqrt_math_price::get_next_sqrt_price_from_output(
 ;;; @param liquidity The amount of usable liquidity
 ;;; @param roundUp Whether to round the amount up or down
 ;;; @return amount0 Amount of token0 required to cover a position of size liquidity between the two passed prices
-int sqrt_math_price::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) {
+int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) {
   if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
     (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
   }
@@ -135,7 +136,7 @@ int sqrt_math_price::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
 ;;; @param liquidity The amount of usable liquidity
 ;;; @param roundUp Whether to round the amount up, or down
 ;;; @return amount1 Amount of token1 required to cover a position of size liquidity between the two passed prices
-int sqrt_math_price::get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) {
+int sqrt_price_math::get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) {
   if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
     (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
   }
@@ -148,9 +149,9 @@ int sqrt_math_price::get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
 ;;; @param sqrtRatioBX96 Another sqrt price
 ;;; @param liquidity The change in liquidity for which to compute the amount0 delta
 ;;; @return amount0 Amount of token0 corresponding to the passed liquidityDelta between the two prices
-int sqrt_math_price::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) {
-  return liquidity < 0 ? -sqrt_math_price::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, -liquidity, 0)
-                       : sqrt_math_price::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
+int sqrt_price_math::get_amount0_delta_special(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) {
+  return liquidity < 0 ? - sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, - liquidity, 0) 
+                        : sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
 }
 
 ;;; @notice Helper that gets signed token1 delta
@@ -158,7 +159,7 @@ int sqrt_math_price::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
 ;;; @param sqrtRatioBX96 Another sqrt price
 ;;; @param liquidity The change in liquidity for which to compute the amount1 delta
 ;;; @return amount1 Amount of token1 corresponding to the passed liquidityDelta between the two prices
-int sqrt_math_price::get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) {
-  return liquidity < 0 ? -sqrt_math_price::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, -liquidity, 0)
-                       : sqrt_math_price::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
+int sqrt_price_math::get_amount1_delta_special(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) {
+  return liquidity < 0 ? - sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, - liquidity, 0)
+                       : sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
 }

@@ -1,0 +1,8 @@
+#include "./common.fc";
+
+;;; unsafe_cast from uint256 to uint160
+int unsafe_cast::uint160(int x) {
+  throw_unless(error::not_equal, x >= 0);
+  int bits = 0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+  return x & bits;
+}
