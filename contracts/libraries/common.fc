@@ -3,3 +3,8 @@ const int max::uint16 = 0xffff;
 const int max::uint32 = 0xffffffff;
 const int max::uint64 = 0xffffffffffffffff;
 const int max::uint128 = 0xffffffffffffffffffffffffffffffff;
+
+const int fixed_point_96::resolution = 96;
+const int fixed_point_96::q96 = 0x1000000000000000000000000;
+
+const int fixed_point_128::q128 = 0x100000000000000000000000000000000;
