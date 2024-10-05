@@ -23,7 +23,10 @@
   },
   "packageManager": "yarn@3.4.1",
   "dependencies": {
+<<<<<<< HEAD
     "bignumber.js": "^9.1.2",
+=======
+>>>>>>> main
     "decimal.js": "^10.4.3"
   }
 }
