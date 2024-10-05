@@ -2,7 +2,7 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { TestClient } from '../wrappers/TestClient';
+import { FullMathTest } from '../wrappers/tests/FullMathTest';
 import Decimal from 'decimal.js';
 
 const Q128 = BigInt(2) ** BigInt(128);
@@ -11,17 +11,17 @@ describe('FullMath', () => {
   let code: Cell;
 
   beforeAll(async () => {
-    code = await compile('TestClient');
+    code = await compile('FullMathTest');
   });
 
   let blockchain: Blockchain;
   let deployer: SandboxContract<TreasuryContract>;
-  let contract: SandboxContract<TestClient>;
+  let contract: SandboxContract<FullMathTest>;
 
   beforeEach(async () => {
     blockchain = await Blockchain.create();
 
-    contract = blockchain.openContract(TestClient.createFromData(code, beginCell().endCell()));
+    contract = blockchain.openContract(FullMathTest.createFromData(code, beginCell().endCell()));
 
     deployer = await blockchain.treasury('deployer');
 
