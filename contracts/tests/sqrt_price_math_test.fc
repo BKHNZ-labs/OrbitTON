@@ -1,0 +1,48 @@
+#include "../imports/stdlib.fc";
+#include "../libraries/sqrt_price_math.fc";
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+  set_data(
+    begin_cell()
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  int flags = cs~load_uint(4);
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_next_sqrt_price_from_input(int sqrt_px96, int liquidity, int amount_in, int zero_for_one) method_id {
+  return sqrt_price_math::get_next_sqrt_price_from_input(sqrt_px96, liquidity, amount_in, zero_for_one);
+}
+
+int get_next_sqrt_price_from_output(int sqrt_px96, int liquidity, int amount_in, int zero_for_one) method_id {
+  return sqrt_price_math::get_next_sqrt_price_from_output(sqrt_px96, liquidity, amount_in, zero_for_one);
+}
+
+int get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) method_id {
+  return sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
+}
+
+int get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) method_id {
+  return sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
+}
