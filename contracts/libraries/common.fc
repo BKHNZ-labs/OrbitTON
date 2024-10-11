@@ -14,3 +14,7 @@ const int error::unexpected_error = 0x100;
 const int error::not_greater_than_zero = 0x101;
 const int error::not_equal = 0x102;
 
+
+const int max::int128 = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+const int min::int128 = -0x80000000000000000000000000000000;
