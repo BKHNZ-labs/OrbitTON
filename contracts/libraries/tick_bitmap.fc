@@ -1,0 +1,17 @@
+;;; @notice Computes the position in the mapping where the initialized bit for a tick lives
+;;; @param tick The tick for which to compute the position
+;;; @return word_pos The key in the mapping containing the word in which the bit is stored
+;;; @return bit_pos The bit position in the word where the flag is stored
+(int, int) tick_bitmap::position(int tick) {
+  int word_pos = tick >> 8;
+  int bit_pos = tick % 256;
+  return (word_pos, bit_pos);
+}
+
+;;; @notice Flips the initialized state for a given tick from false to true, or vice versa
+;;; @param self The mapping in which to flip the tick
+;;; @param tick The tick to flip
+;;; @param tick_spacing The spacing between usable ticks
+;; tick_bitmap::flip_tick(cell self, int tick, int tick_spacing) {
+
+;; }
