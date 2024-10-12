@@ -50,12 +50,12 @@ global cell bitmap;
 }
 
 int get_is_initialized(int tick) method_id {
-  ;; (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
   load_data();
   (int next, int initialized) = bitmap.tick_bitmap::next_initialized_tick_within_one_word(tick, 1, -1);
   return next == tick ? initialized : 0;
 }
 
 (int, int) get_next_initialized_tick_within_one_word(int tick, int lte) method_id {
+  load_data();
   return bitmap.tick_bitmap::next_initialized_tick_within_one_word(tick, 1, lte);
 }

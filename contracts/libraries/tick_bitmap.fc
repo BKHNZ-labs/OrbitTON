@@ -55,7 +55,7 @@ int get_by_key(cell self, int key) {
     return (next, initialized);
   }
   (int word_pos, int bit_pos) = tick_bitmap::position(compressed + 1);
-  int mask = ~((1 << bit_pos) - 1);
+  int mask = ((1 << bit_pos) - 1) ^ max::uint256;
   int masked = self.get_by_key(word_pos) & mask;
   int initialized = masked != 0;
   int next = initialized ? (compressed + 1 + (bit_math::lsb(masked) - bit_pos)) * tick_spacing : (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
