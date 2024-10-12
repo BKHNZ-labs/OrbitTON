@@ -30,6 +30,7 @@ export class BitMathTest implements Contract {
         value: x,
       },
     ]);
+    console.log('gasUsed:' + result.gasUsed);
     return result.stack.readBigNumber();
   }
 
