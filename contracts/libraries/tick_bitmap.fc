@@ -1,0 +1,63 @@
+#include "./common.fc";
+#include "./bit_math.fc";
+
+int get_by_key(cell self, int key) {
+  (slice data, int existed) = self.idict_get?(16, key);
+  if (existed == -1) {
+    return data~load_uint(256);
+  }
+  return 0;
+}
+;;; @notice Computes the position in the mapping where the initialized bit for a tick lives
+;;; @param tick The tick for which to compute the position
+;;; @return word_pos The key in the mapping containing the word in which the bit is stored
+;;; @return bit_pos The bit position in the word where the flag is stored
+(int, int) tick_bitmap::position(int tick) {
+  throw_unless(error::overflow, (tick < max::int24) & (tick > min::int24));
+  int word_pos = tick >> 8;
+  int bit_pos = tick % 256;
+  return (word_pos, bit_pos);
+}
+
+;;; @notice Flips the initialized state for a given tick from false to true, or vice versa
+;;; @param self The mapping in which to flip the tick
+;;; @param tick The tick to flip
+;;; @param tick_spacing The spacing between usable ticks
+(cell, ()) tick_bitmap::flip_tick(cell self, int tick, int tick_spacing) {
+  throw_unless(error::not_equal, tick % tick_spacing == 0);
+  (int word_pos, int bit_pos) = tick_bitmap::position(tick / tick_spacing);
+  int mask = 1 << bit_pos;
+  int value = self.get_by_key(word_pos);
+  int word_pos_value = value ^ mask;
+  self~idict_set(16, word_pos, begin_cell().store_uint(word_pos_value, 256).end_cell().begin_parse());
+  return (self, ());
+}
+
+;;; @notice Returns the next initialized tick contained in the same word (or adjacent word) as the tick that is either
+;;; to the left (less than or equal to) or right (greater than) of the given tick
+;;; @param self The mapping in which to compute the next initialized tick
+;;; @param tick The starting tick
+;;; @param tick_spacing The spacing between usable ticks
+;;; @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
+;;; @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
+;;; @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
+(int, int) tick_bitmap::next_initialized_tick_within_one_word(cell self, int tick, int tick_spacing, int lte) {
+  int compressed = tick / tick_spacing;
+  if ((tick < 0) & (tick % tick_spacing != 0)) {
+    compressed -= 1;
+  }
+  if (lte) {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed);
+    int mask = (1 << bit_pos) - 1 + (1 << bit_pos);
+    int masked = self.get_by_key(word_pos) & mask;
+    int initialized = masked != 0;
+    int next = initialized ? (compressed - (bit_pos - bit_math::msb(masked))) * tick_spacing : (compressed - bit_pos) * tick_spacing;
+    return (next, initialized);
+  }
+  (int word_pos, int bit_pos) = tick_bitmap::position(compressed + 1);
+  int mask = ((1 << bit_pos) - 1) ^ max::uint256;
+  int masked = self.get_by_key(word_pos) & mask;
+  int initialized = masked != 0;
+  int next = initialized ? (compressed + 1 + (bit_math::lsb(masked) - bit_pos)) * tick_spacing : (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
+  return (next, initialized);
+}
