@@ -46,14 +46,11 @@ global cell positions;
         int fee_growth_inside_0_x128 = in_msg_body~load_int(256);
         int fee_growth_inside_1_x128 = in_msg_body~load_int(128);
 
-        positions~position::update(
-            owner,
-            tick_lower,
-            tick_upper,
-            liquidity_delta,
-            fee_growth_inside_0_x128,
-            fee_growth_inside_1_x128
-        );
+        int key = position::key(owner, tick_lower, tick_upper);
+        slice data = position::get_position_by_key(positions, key);
+        (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::info(data);
+        cell new_data = position::update(data, liquidity_delta,fee_growth_inside_0_x128,fee_growth_inside_1_x128);
+        position::set(positions, key, new_data.begin_parse());
     
         save_data();
         return ();
