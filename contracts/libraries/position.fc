@@ -6,25 +6,22 @@
 const int error::position::NP = 0x2000;
 
 int position::key(slice owner, int tick_lower, int tick_upper) {
-    ~dump(owner);
-    ~dump(tick_lower);
-    ~dump(tick_upper);
     int key = begin_cell()
         .store_slice(owner)
         .store_int(tick_lower, 24)
         .store_int(tick_upper, 24)
         .end_cell().cell_hash();
-    ~dump(key);
     return key;
 }
 
 slice position::get_position_by_key(cell self, int key) {
-    (slice data, int existed) = self.idict_get?(256, key);
-    return data;
+    (slice data, int existed) = self.udict_get?(256, key);
+    return data~load_ref().begin_parse();
 }
 
-() position::set(cell self, int key, slice data) {
-    self~idict_set(256, key, data);
+(cell, ()) position::set(cell self, int key, cell data) {
+    self~udict_set(256, key, begin_cell().store_ref(data).end_cell().begin_parse());
+    return (self, ());
 }
 
 (int, int, int, int, int) position::info(slice data) {
@@ -52,7 +49,6 @@ slice position::get_position_by_key(cell self, int key) {
     int key = position::key(owner, tick_lower, tick_upper);
     slice data = position::get_position_by_key(self, key);
     return position::info(data);
-    ;; return (0, 0, 0, 0, 0);
 }
 
 ;; @notice Credits accumulated fees to a user's position

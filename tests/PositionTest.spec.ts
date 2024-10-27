@@ -21,13 +21,9 @@ describe('PositionTest', () => {
 
   beforeEach(async () => {
     blockchain = await Blockchain.create();
-
     contract = blockchain.openContract(PositionTest.create(code));
-
     deployer = await blockchain.treasury('deployer');
-
     const deployResult = await contract.sendDeploy(deployer.getSender(), toNano('0.05'));
-
     expect(deployResult.transactions).toHaveTransaction({
       from: deployer.address,
       to: contract.address,
@@ -55,12 +51,7 @@ describe('PositionTest', () => {
         value: toNano('0.1'),
       },
     );
-    // expect(tx.transactions).toHaveTransaction({
-    //   from: deployer.address,
-    //   to: contract.address,
-    //   op: crc32('op::position_create'),
-    //   success: true,
-    // });
+    return tx;
   }
 
   async function updatePosition(
@@ -92,9 +83,17 @@ describe('PositionTest', () => {
 
   describe('#create', () => {
     it('create position', async () => {
-        await createPosition(-10, 10, 100n, 0n, 0n);
-
-        const position = await contract.getPosition(deployer.address, -10, 10);
+      let tx = await createPosition(-10, 10, 100n, 0n, 0n);
+      expect(tx.transactions).toHaveTransaction({
+        from: deployer.address,
+        to: contract.address,
+        op: crc32('op::position_create'),
+        success: true,
+      });
+      const position = await contract.getPosition(deployer.address, -10, 10);
+      console.log({
+        position,
+      });
     });
   });
 });

@@ -11,8 +11,6 @@ import {
   TupleItemInt,
 } from '@ton/core';
 import { crc32, ValueOps } from '..';
-import { hash } from 'crypto';
-import BigNumber from 'bignumber.js';
 
 export class PositionTest implements Contract {
   constructor(
@@ -26,7 +24,7 @@ export class PositionTest implements Contract {
 
   static create(code: Cell, workchain = 0) {
     const data = beginCell()
-      .storeDict(Dictionary.empty(Dictionary.Keys.Int(256), Dictionary.Values.Cell()))
+      .storeDict(Dictionary.empty(Dictionary.Keys.Uint(256), Dictionary.Values.Cell()))
       .endCell();
     const init = { code, data };
     return new PositionTest(contractAddress(workchain, init), init);
@@ -51,20 +49,20 @@ export class PositionTest implements Contract {
     feeGrowthInside1X128: bigint,
     ops: ValueOps,
   ) {
-    console.log({ owner, tickLower, tickUpper });
-    const key = beginCell()
-        .storeAddress(owner)
-        .storeInt(tickLower, 24)
-        .storeInt(tickUpper, 24)
-        .endCell().hash();
-
+    const keyHash = beginCell()
+      .storeSlice(beginCell().storeAddress(owner).endCell().beginParse())
+      .storeInt(tickLower, 24)
+      .storeInt(tickUpper, 24)
+      .endCell()
+      .hash();
+    const key = BigInt('0x' + Buffer.from(keyHash).toString('hex'));
     await provider.internal(via, {
       sendMode: SendMode.PAY_GAS_SEPARATELY,
       ...ops,
       body: beginCell()
         .storeUint(crc32('op::position_create'), 32)
         .storeUint(ops.queryId ?? 0, 64)
-        .storeBuffer(key, 32)
+        .storeUint(BigInt(key), 256)
         .storeUint(liquidity, 128)
         .storeUint(feeGrowthInside0X128, 256)
         .storeUint(feeGrowthInside1X128, 256)
@@ -83,11 +81,7 @@ export class PositionTest implements Contract {
     feeGrowthInside1X128: bigint,
     ops: ValueOps,
   ) {
-    const key = beginCell()
-    .storeAddress(owner)
-    .storeInt(tickLower, 24)
-    .storeInt(tickUpper, 24)
-    .endCell().hash();
+    const key = beginCell().storeAddress(owner).storeInt(tickLower, 24).storeInt(tickUpper, 24).endCell().hash();
     await provider.internal(via, {
       sendMode: SendMode.PAY_GAS_SEPARATELY,
       ...ops,
@@ -103,25 +97,28 @@ export class PositionTest implements Contract {
   }
 
   async getPosition(provider: ContractProvider, owner: Address, tickLower: number, tickUpper: number) {
-    try {
-      const result = await provider.get('get_position', [
-        {
-          type: 'slice',
-          cell: beginCell().storeAddress(owner).endCell(),
-        },
-        {
-          type: 'int',
-          value: BigInt(tickLower),
-        },
-        {
-          type: 'int',
-          value: BigInt(tickUpper),
-        },
-      ]);
-      return result;
-    } catch (e) {
-      console.log(e);
-      throw Error((e as any).exitCode);
+    const result = await provider.get('get_position', [
+      {
+        type: 'slice',
+        cell: beginCell().storeAddress(owner).endCell(),
+      },
+      {
+        type: 'int',
+        value: BigInt(tickLower),
+      },
+      {
+        type: 'int',
+        value: BigInt(tickUpper),
+      },
+    ]);
+    const tuple = result.stack;
+    let returns: any[] = [];
+    while (tuple.remaining > 0) {
+      const item = tuple.pop();
+      if (item.type === 'int') {
+        returns = [...returns, item.value];
+      }
     }
+    return returns;
   }
 }
