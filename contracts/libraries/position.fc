@@ -6,13 +6,16 @@
 const int error::position::NP = 0x2000;
 
 int position::key(slice owner, int tick_lower, int tick_upper) {
-    slice key = begin_cell()
+    ~dump(owner);
+    ~dump(tick_lower);
+    ~dump(tick_upper);
+    int key = begin_cell()
         .store_slice(owner)
         .store_int(tick_lower, 24)
         .store_int(tick_upper, 24)
-        .end_cell()
-        .begin_parse();
-    return string_hash(key);
+        .end_cell().cell_hash();
+    ~dump(key);
+    return key;
 }
 
 slice position::get_position_by_key(cell self, int key) {
@@ -27,7 +30,7 @@ slice position::get_position_by_key(cell self, int key) {
 (int, int, int, int, int) position::info(slice data) {
     int liquidity = data~load_uint(128);
     int fee_growth_inside_0_last_x128 = data~load_uint(256);
-    int fee_growth_inside_1_last_x128 = data~load_uint(128);
+    int fee_growth_inside_1_last_x128 = data~load_uint(256);
     int tokens_owed_0 = data~load_uint(128);
     int tokens_owed_1 = data~load_uint(128);
     return (
@@ -49,6 +52,7 @@ slice position::get_position_by_key(cell self, int key) {
     int key = position::key(owner, tick_lower, tick_upper);
     slice data = position::get_position_by_key(self, key);
     return position::info(data);
+    ;; return (0, 0, 0, 0, 0);
 }
 
 ;; @notice Credits accumulated fees to a user's position

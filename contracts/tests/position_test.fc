@@ -2,6 +2,7 @@
 #include "../libraries/position.fc";
 
 const op::position_update = "op::position_update"c;
+const op::position_create = "op::position_create"c;
 global cell positions;
 
 ;; load_data populates storage variables using stored data
@@ -39,19 +40,36 @@ global cell positions;
     int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
     if (op == op::position_update) {
-        slice owner = in_msg_body~load_bits(160);
-        int tick_lower = in_msg_body~load_int(24);
-        int tick_upper = in_msg_body~load_int(24);
+        int key = in_msg_body~load_int(256);
         int liquidity_delta = in_msg_body~load_int(128);
         int fee_growth_inside_0_x128 = in_msg_body~load_int(256);
-        int fee_growth_inside_1_x128 = in_msg_body~load_int(128);
+        int fee_growth_inside_1_x128 = in_msg_body~load_int(256);
 
-        int key = position::key(owner, tick_lower, tick_upper);
         slice data = position::get_position_by_key(positions, key);
         (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::info(data);
         cell new_data = position::update(data, liquidity_delta,fee_growth_inside_0_x128,fee_growth_inside_1_x128);
         position::set(positions, key, new_data.begin_parse());
-    
+        save_data();
+        return ();
+    }
+
+    if (op == op::position_create) {
+        int key = in_msg_body~load_int(256);
+        int liquidity = in_msg_body~load_int(128);
+        int fee_growth_inside_0_last_x128 = in_msg_body~load_int(256);
+        int fee_growth_inside_1_last_x128 = in_msg_body~load_int(256);
+        int tokens_owed_0 = in_msg_body~load_int(128);
+        int tokens_owed_1 = in_msg_body~load_int(128);
+
+        cell new_data = begin_cell()
+            .store_uint(liquidity, 128)
+            .store_uint(fee_growth_inside_0_last_x128, 256)
+            .store_uint(fee_growth_inside_1_last_x128, 128)
+            .store_uint(tokens_owed_0, 128)
+            .store_uint(tokens_owed_1, 128)
+            .end_cell();
+        position::set(positions, key, new_data.begin_parse());
+        ~dump(key);
         save_data();
         return ();
     }
@@ -62,5 +80,6 @@ global cell positions;
 
 (int, int, int, int, int) get_position(slice owner, int tick_lower, int tick_upper) method_id {
     load_data();
-    return positions.position::get(owner, tick_lower, tick_upper);
+    (slice address_1, slice address_2) = load_msg_addr(owner);
+    return positions.position::get(address_1, tick_lower, tick_upper);
 }
