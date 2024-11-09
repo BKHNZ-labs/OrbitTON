@@ -34,10 +34,6 @@ namespace PoolWrapper {
     batchTickCode: Cell;
   }
 
-  export interface SetAdminAddressMsg {
-    address: Address;
-  }
-
   export class PoolTest implements Contract {
     static workchain = 0;
 

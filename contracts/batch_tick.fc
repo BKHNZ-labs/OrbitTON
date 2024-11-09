@@ -1,0 +1,56 @@
+#include "imports/stdlib.fc";
+#include "batch_tick/opcodes.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+
+global int batch_index;
+global int tick_spacing;
+global slice pool_address;
+global cell ticks;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  batch_index = ds~load_uint(8);
+  tick_spacing = ds~load_int(24);
+  pool_address = ds~load_msg_addr();
+  ticks = ds~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_uint(batch_index, 8)
+      .store_int(tick_spacing, 24)
+      .store_slice(pool_address)
+      .store_ref(ticks)
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}

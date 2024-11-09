@@ -30,18 +30,17 @@ global cell lp_account_code;
 () save_data() impure inline_ref {
   set_data(
     begin_cell()
-            .store_int(is_locked, 8)
-            .store_int(pool_seqno, 64)
-            .store_slice(admin_address)
-            .store_ref(
+      .store_int(is_locked, 8)
+      .store_int(pool_seqno, 64)
+      .store_slice(admin_address)
+      .store_ref(
       begin_cell()
-                    .store_ref(pool_code)
-                    .store_ref(batch_tick_code)
-                    .store_ref(position_code)
-                    .store_ref(lp_account_code)
-                .end_cell()
-    )
-        .end_cell()
+              .store_ref(pool_code)
+              .store_ref(batch_tick_code)
+              .store_ref(position_code)
+              .store_ref(lp_account_code)
+        .end_cell())
+    .end_cell()
   );
 }
 
