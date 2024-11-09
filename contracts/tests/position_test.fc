@@ -1,0 +1,80 @@
+#include "../imports/stdlib.fc";
+#include "../libraries/position.fc";
+
+const op::position_update = "op::position_update"c;
+const op::position_create = "op::position_create"c;
+global cell positions;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    positions = ds~load_dict();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+        .store_dict(positions)
+        .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+
+    slice sender_address = cs~load_msg_addr();
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+    if (op == op::position_update) {
+        int key = in_msg_body~load_uint(256);
+        int liquidity_delta = in_msg_body~load_uint(128);
+        int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
+        int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
+        slice data = position::get_position_by_key(positions, key);
+        (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::info(data);
+        cell new_data = position::update(data, liquidity_delta,fee_growth_inside_0_x128,fee_growth_inside_1_x128);
+        position::set(positions, key, new_data);
+        save_data();
+        return ();
+    }
+
+    if (op == op::position_create) {
+        int key = in_msg_body~load_uint(256);
+        int liquidity = in_msg_body~load_uint(128);
+        int fee_growth_inside_0_last_x128 = in_msg_body~load_uint(256);
+        int fee_growth_inside_1_last_x128 = in_msg_body~load_uint(256);
+        cell new_data = begin_cell()
+            .store_uint(liquidity, 128)
+            .store_uint(fee_growth_inside_0_last_x128, 256)
+            .store_uint(fee_growth_inside_1_last_x128, 256)
+            .store_uint(0, 128)
+            .store_uint(0, 128)
+            .end_cell();
+        positions~position::set(key, new_data);
+        save_data();
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+(int, int, int, int, int) get_position(slice owner, int tick_lower, int tick_upper) method_id {
+    load_data();
+    slice owner = owner~load_msg_addr();
+    return positions.position::get(owner, tick_lower, tick_upper);
+}

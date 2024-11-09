@@ -2,7 +2,7 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { BitMathTest } from '../wrappers/tests/BitMathTest';
+import { BitMathTest } from '../../wrappers/tests/BitMathTest';
 
 describe('BitMathTest', () => {
   let code: Cell;

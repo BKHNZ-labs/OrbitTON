@@ -2,9 +2,9 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { UnsafeCastTest } from '../wrappers/tests/UnsafeCastTest';
+import { UnsafeCastTest } from '../../wrappers/tests/UnsafeCastTest';
 import Decimal from 'decimal.js';
-import { MaxUint128, pseudoRandomBigNumberOnUint128, pseudoRandomBigNumberOnUint256 } from './shared/utils';
+import { MaxUint128, pseudoRandomBigNumberOnUint128, pseudoRandomBigNumberOnUint256 } from '../shared/utils';
 
 describe('UnsafeCastTest', () => {
   let code: Cell;

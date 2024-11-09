@@ -2,9 +2,9 @@ import { compile } from '@ton/blueprint';
 import { beginCell, Cell, toNano } from '@ton/core';
 import { Blockchain, BlockchainTransaction, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import '@ton/test-utils';
-import { SwapMathTest } from '../wrappers/tests/SwapMathTest';
-import { encodePriceSqrt, expandTo18Decimals } from './shared/utils';
-import { SqrtPriceMathTest } from '../wrappers/tests/SqrtPriceMathTest';
+import { SwapMathTest } from '../../wrappers/tests/SwapMathTest';
+import { encodePriceSqrt, expandTo18Decimals } from '../shared/utils';
+import { SqrtPriceMathTest } from '../../wrappers/tests/SqrtPriceMathTest';
 
 const Q128 = BigInt(2) ** BigInt(128);
 describe('SwapMath', () => {

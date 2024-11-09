@@ -2,9 +2,9 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { FullMathTest } from '../wrappers/tests/FullMathTest';
+import { FullMathTest } from '../../wrappers/tests/FullMathTest';
 import Decimal from 'decimal.js';
-import { MaxUint256, Q128 } from './shared/utils';
+import { MaxUint256, Q128 } from '../shared/utils';
 
 describe('FullMath', () => {
   let code: Cell;

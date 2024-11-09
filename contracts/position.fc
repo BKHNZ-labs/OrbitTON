@@ -1,0 +1,78 @@
+#include "imports/stdlib.fc";
+#include "position/opcodes.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+
+global int position_id;
+global int liquidity;
+global int fee_growth_inside0_last_x128;
+global int fee_growth_inside1_last_x128;
+global int token_owed0;
+global int token_owed1;
+global slice pool_address;
+global slice owner_address;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  slice first_slice = ds~load_ref().begin_parse();
+  position_id = first_slice~load_uint(256);
+  liquidity = first_slice~load_uint(128);
+  fee_growth_inside0_last_x128 = first_slice~load_uint(256);
+  fee_growth_inside1_last_x128 = first_slice~load_uint(256);
+  slice second_slice = ds~load_ref().begin_parse();
+  token_owed0 = second_slice~load_uint(128);
+  token_owed1 = second_slice~load_uint(128);
+  pool_address = second_slice~load_msg_addr();
+  owner_address = second_slice~load_msg_addr();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_ref(
+      begin_cell()
+          .store_uint(position_id, 256)
+          .store_uint(liquidity, 128)
+          .store_uint(fee_growth_inside0_last_x128, 256)
+          .store_uint(fee_growth_inside1_last_x128, 256)
+        .end_cell()
+    )
+      .store_ref(
+      begin_cell()
+          .store_uint(token_owed0, 128)
+          .store_uint(token_owed1, 128)
+          .store_slice(pool_address)
+          .store_slice(owner_address)
+        .end_cell()
+    )
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
