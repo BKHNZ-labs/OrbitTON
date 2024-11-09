@@ -2,11 +2,11 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { PositionTest } from '../wrappers/tests/PositionTest';
+import { PositionTest } from '../../wrappers/tests/PositionTest';
 import Decimal from 'decimal.js';
-import { encodePriceSqrt, expandTo18Decimals, MaxUint128, MaxUint256 } from './shared/utils';
+import { encodePriceSqrt, expandTo18Decimals, MaxUint128, MaxUint256 } from '../shared/utils';
 import BigNumber from 'bignumber.js';
-import { crc32 } from '../wrappers';
+import { crc32 } from '../../wrappers';
 
 describe('PositionTest', () => {
   let code: Cell;

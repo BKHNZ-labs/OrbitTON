@@ -3,7 +3,7 @@ import { beginCell, Cell, toNano } from '@ton/core';
 import { Blockchain, BlockchainTransaction, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import '@ton/test-utils';
 import { ExitCode } from './ExitCode';
-import { LiquidityMathTest } from '../wrappers/tests/LiquidityMathTest';
+import { LiquidityMathTest } from '../../wrappers/tests/LiquidityMathTest';
 
 const Q128 = BigInt(2) ** BigInt(128);
 describe('LiquidityMath', () => {
@@ -63,9 +63,9 @@ describe('LiquidityMath', () => {
     });
     it('gas add', async () => {
       console.log((await contract.getAddDelta(15n, 4n)).gasUsed);
-    })
+    });
     it('gas sub', async () => {
       console.log((await contract.getAddDelta(15n, -4n)).gasUsed);
-    })
+    });
   });
 });

@@ -2,8 +2,8 @@ import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { TickMathTest } from '../wrappers/tests/TickMathTest';
-import { encodePriceSqrt } from './shared/utils';
+import { TickMathTest } from '../../wrappers/tests/TickMathTest';
+import { encodePriceSqrt } from '../shared/utils';
 import Decimal from 'decimal.js';
 
 const MIN_TICK = -887272n;
