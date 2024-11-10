@@ -182,18 +182,15 @@ describe('TickTest', () => {
 
   describe('#update', () => {
     it('flips from zero to nonzero', async () => {
-      const result = await tickTest.sendSetUpdate(
-        deployer.getSender(),
-        toNano(0.05),
-        0n,
-        0n,
-        1n,
-        0n,
-        0n,
-        0n,
-        false,
-        3n,
-      );
+      const tx = await tickTest.sendSetUpdate(deployer.getSender(), toNano(0.05), 0n, 0n, 1n, 0n, 0n, 0n, false, 3n);
+      printTransactionFees(tx.transactions);
+
+      // expect(tx.transactions).toHaveTransaction({
+      //   from: deployer.address,
+      //   to: tickTest.address,
+      //   deploy: true,
+      //   success: true,
+      // });
     });
   });
 });

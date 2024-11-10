@@ -39,6 +39,7 @@ cell pack_tick(
     int tick_cumulative_outside, 
     int initialized
 ) {
+    ~dump(null());
     ~dump(liquidity_gross);
     ~dump(liquidity_net);
     ~dump(fee_growth_outside_0_x128);
@@ -46,13 +47,12 @@ cell pack_tick(
     ~dump(tick_cumulative_outside);
     ~dump(initialized);
     builder b = begin_cell()
-        .store_uint(128, liquidity_gross);
-    ;; .store_int(128, liquidity_net)
-    ;; .store_uint(256, fee_growth_outside_0_x128)
-    ;; .store_uint(256, fee_growth_outside_1_x128)
-    ;; .store_int(56, tick_cumulative_outside)
-    ;; .store_int(2, initialized);
-    ~dump(b);
+        .store_uint(liquidity_gross, 128)
+        .store_int(liquidity_net, 128)
+        .store_uint(fee_growth_outside_0_x128, 256)
+        .store_uint(fee_growth_outside_1_x128, 256)
+        .store_int(tick_cumulative_outside, 56)
+        .store_int(initialized, 2);
     return b.end_cell();
 }
                
