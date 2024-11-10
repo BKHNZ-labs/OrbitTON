@@ -25,7 +25,7 @@ slice position::get_position_by_key(cell self, int key) {
 }
 
 (int, int, int, int, int) position::info(slice data) {
-    int liquidity = data~load_uint(128);
+    int liquidity = data~load_int(128);
     int fee_growth_inside_0_last_x128 = data~load_uint(256);
     int fee_growth_inside_1_last_x128 = data~load_uint(256);
     int tokens_owed_0 = data~load_uint(128);
@@ -74,23 +74,23 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
         liquidity_next = liquidity_math::add_delta(liquidity, liquidity_delta);
     }
 
-    int tokens_owed_0 = full_math::mul_div(fee_growth_inside_0_x128 - fee_growth_inside_0_last_x128, liquidity, fixed_point_128::q128);
-    int tokens_owed_1 = full_math::mul_div(fee_growth_inside_1_x128 - fee_growth_inside_1_last_x128, liquidity, fixed_point_128::q128);
+    int tokens_owed_0_new = full_math::mul_div(fee_growth_inside_0_x128 - fee_growth_inside_0_last_x128, liquidity, fixed_point_128::q128);
+    int tokens_owed_1_new = full_math::mul_div(fee_growth_inside_1_x128 - fee_growth_inside_1_last_x128, liquidity, fixed_point_128::q128);
 
     if (liquidity_delta != 0) {
         liquidity = liquidity_next;
     }
     fee_growth_inside_0_last_x128 = fee_growth_inside_0_x128;
     fee_growth_inside_1_last_x128 = fee_growth_inside_1_x128;
-    if ((tokens_owed_0 > 0) | (tokens_owed_1 > 0)) {
-        tokens_owed_0 += tokens_owed_0;
-        tokens_owed_1 += tokens_owed_1;
+    if ((tokens_owed_0_new > 0) | (tokens_owed_1_new > 0)) {
+        tokens_owed_0 += tokens_owed_0_new;
+        tokens_owed_1 += tokens_owed_0_new;
     }
 
     return begin_cell()
-        .store_uint(liquidity, 128)
+        .store_int(liquidity, 128)
         .store_uint(fee_growth_inside_0_last_x128, 256)
-        .store_uint(fee_growth_inside_1_last_x128, 128)
+        .store_uint(fee_growth_inside_1_last_x128, 256)
         .store_uint(tokens_owed_0, 128)
         .store_uint(tokens_owed_1, 128)
         .end_cell();

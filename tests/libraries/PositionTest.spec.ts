@@ -81,7 +81,18 @@ describe('PositionTest', () => {
     });
   }
 
+  function assertPositionEqual(expectedPosition: any, actualPosition: any) {
+    const [expectedLiquidity, expectedFeeGrowthInside0X128, expectedFeeGrowthInside1X128, expectedTokensOwed0, expectedTokensOwed1] = expectedPosition;
+    const [actualLiquidity, actualFeeGrowthInside0X128, actualFeeGrowthInside1X128, actualTokensOwed0, actualTokensOwed1] = actualPosition;
+    expect(actualLiquidity).toEqual(expectedLiquidity);
+    expect(actualFeeGrowthInside0X128).toEqual(expectedFeeGrowthInside0X128);
+    expect(actualFeeGrowthInside1X128).toEqual(expectedFeeGrowthInside1X128);
+    expect(actualTokensOwed0).toEqual(expectedTokensOwed0);
+    expect(actualTokensOwed1).toEqual(expectedTokensOwed1);
+  }
+
   describe('#create', () => {
+    // action on pool function: mint()
     it('create position', async () => {
       let tx = await createPosition(-10, 10, 100n, 0n, 0n);
       expect(tx.transactions).toHaveTransaction({
@@ -91,9 +102,45 @@ describe('PositionTest', () => {
         success: true,
       });
       const position = await contract.getPosition(deployer.address, -10, 10);
-      console.log({
-        position,
-      });
+      assertPositionEqual([100n, 0n, 0n, 0n, 0n], position);
+    });
+
+    // NOTE: this case will be revert when minting a new position from pool contract
+    // not from position contract
+    it('create position with the same upper and lower tick', async () => {
+      await createPosition(10, 10, 100n, 0n, 0n);
+      const position = await contract.getPosition(deployer.address, 10, 10);
+      assertPositionEqual([100n, 0n, 0n, 0n, 0n], position);
     });
   });
+
+  describe('#update', () => {
+    it('update arbitrary position', async () => {
+      await createPosition(-10, 10, 100n, 0n, 0n);
+      await updatePosition(-10, 10, 0n, 340282366920938463463374607431768211456n, 340282366920938463463374607431768211456n);
+      const position = await contract.getPosition(deployer.address, -10, 10);
+      assertPositionEqual([100n, 340282366920938463463374607431768211456n, 340282366920938463463374607431768211456n, 100n, 100n], position);
+    });
+
+    it('update position on increase liquidity', async () => {
+      await createPosition(-10, 10, 100n, 0n, 0n);
+      await updatePosition(-10, 10, 100n, 0n, 0n);
+      const position = await contract.getPosition(deployer.address, -10, 10);
+      assertPositionEqual([200n, 0n, 0n, 0n, 0n], position);
+    });
+
+    it('update position on decrease liquidity', async () => {
+      await createPosition(-10, 10, 100n, 0n, 0n);
+      await updatePosition(-10, 10, -50n, 0n, 0n);
+      const position = await contract.getPosition(deployer.address, -10, 10);
+      assertPositionEqual([50n, 0n, 0n, 0n, 0n], position);
+    });
+
+    it('update position on claim fee', async () => {
+      await createPosition(-10, 10, 100n, 0n, 0n);
+      await updatePosition(-10, 10, 0n, 360282366920938463463374607431768211456n, 360282366920938463463374607431768211456n);
+      const position = await contract.getPosition(deployer.address, -10, 10);
+      assertPositionEqual([100n, 360282366920938463463374607431768211456n, 360282366920938463463374607431768211456n, 105n, 105n], position);
+    });
+  })
 });
