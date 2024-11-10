@@ -2,7 +2,7 @@ const int max::uint8 = 0xff;
 const int max::uint16 = 0xffff;
 const int max::uint32 = 0xffffffff;
 const int max::uint64 = 0xffffffffffffffff;
-const int max::uint128 = 0xffffffffffffffffffffffffffffffff;
+const int max::uint128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 const int max::uint160 = 0xffffffffffffffffffffffffffffffffffffffff;
 const int max::uint256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 

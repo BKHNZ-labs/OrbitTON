@@ -7,6 +7,7 @@
     "test": "yarn blueprint build --all && jest --verbose"
   },
   "devDependencies": {
+    "@ton-community/tlb-codegen": "^1.1.0",
     "@ton/blueprint": "^0.24.0",
     "@ton/core": "~0",
     "@ton/crypto": "^3.3.0",

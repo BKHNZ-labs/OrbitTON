@@ -1,0 +1,116 @@
+#include "../imports/stdlib.fc";
+#include "../libraries/tick.fc";
+#include "../utils/messages.fc";
+
+global cell ticks;
+
+const int op::set_tick = "set_tick"c;
+
+const int op::tick_update = "tick_update"c;
+
+const int op::tick_clear = "tick_clear"c;
+
+const int op::tick_cross = "tick_cross"c;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ticks = ds~load_dict();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+        .store_dict(ticks)
+        .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    cs~load_msg_addr();
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+    if(op == op::set_tick){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, cell tick_info) = (body~load_int(24), body~load_ref());
+        slice tick_info_cs = tick_info.begin_parse();
+        ( _, _,  _, _,  _, _ ) = unpack_tick(tick_info_cs); ;; validate tick data
+        ticks~idict_set(24, tick, tick_info_cs);
+        save_data();
+        return ();
+    }
+    if(op == op::tick_update){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, int tick_current, int liquidity_delta, int fee_growth_global_0_X128, int fee_growth_global_1_X128, int tick_cumulative, int upper, int max_liquidity) = (body~load_int(24), body~load_int(24), body~load_int(128), body~load_uint(256), body~load_uint(256), body~load_int(56),body~load_uint(1), body~load_uint(128));
+        int flipped = ticks~tick::update(tick, tick_current, liquidity_delta, fee_growth_global_0_X128, fee_growth_global_1_X128, tick_cumulative, upper, max_liquidity);
+        emit_log_simple(my_address().slice_hash(), begin_cell().store_int(flipped,2).end_cell(),query_id);
+        save_data();
+        return ();
+    }
+    if(op == op::tick_clear){
+        slice body = in_msg_body~load_ref().begin_parse();
+        int tick = body~load_int(24);
+        (cell new_ticks, int success) = ticks.idict_delete?(24, tick);
+        ticks = new_ticks;
+        save_data();
+        return ();
+    }
+    if(op == op::tick_cross){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, int fee_growth_global_0_X128, int fee_growth_global_1_X128,int tick_cumulative) = (body~load_int(24), body~load_uint(256), body~load_uint(256), body~load_int(56));
+        int liquidity_net = ticks~tick::cross(tick, fee_growth_global_0_X128, fee_growth_global_1_X128, tick_cumulative);
+        save_data();
+        return ();
+    }
+  
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int tick_spacing_to_max_liquidity_per_tick(int tick_spacing) method_id {
+    return tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+}
+
+
+
+(int, int) get_fee_growth_inside(
+    int tick_lower,
+    int tick_upper,
+    int tick_current,
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128 
+) method_id {
+    load_data();
+    return tick::get_fee_growth_inside(ticks, tick_lower, tick_upper, tick_current, fee_growth_global_0X128, fee_growth_global_1X128);
+}
+
+slice get_tick(
+    int tick
+) method_id {
+    load_data();
+    (slice tick, int exist) = ticks.idict_get?(24,tick);
+    if (exist){
+        return tick;
+    } 
+    return begin_cell()
+            .store_int(0, 128)
+            .store_int(0, 128)
+            .store_uint(0, 256)
+            .store_uint(0, 256)
+            .store_int(0, 56)
+            .store_int(0, 1)
+            .end_cell().begin_parse();
+}

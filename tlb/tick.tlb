@@ -1,0 +1,1 @@
+tick#_ liquidity_gross:uint128 liquidity_net:int128 fee_growth_outside_0_x128:uint256 fee_growth_outside_1_x128:uint256 tick_cumulative_outside:int56 initialized:Bool = Info;
