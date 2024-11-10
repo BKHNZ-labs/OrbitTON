@@ -63,7 +63,7 @@ export class PositionTest implements Contract {
         .storeUint(crc32('op::position_create'), 32)
         .storeUint(ops.queryId ?? 0, 64)
         .storeUint(BigInt(key), 256)
-        .storeUint(liquidity, 128)
+        .storeInt(liquidity, 128)
         .storeUint(feeGrowthInside0X128, 256)
         .storeUint(feeGrowthInside1X128, 256)
         .endCell(),
@@ -81,15 +81,21 @@ export class PositionTest implements Contract {
     feeGrowthInside1X128: bigint,
     ops: ValueOps,
   ) {
-    const key = beginCell().storeAddress(owner).storeInt(tickLower, 24).storeInt(tickUpper, 24).endCell().hash();
+    const keyHash = beginCell()
+      .storeSlice(beginCell().storeAddress(owner).endCell().beginParse())
+      .storeInt(tickLower, 24)
+      .storeInt(tickUpper, 24)
+      .endCell()
+      .hash();
+    const key = BigInt('0x' + Buffer.from(keyHash).toString('hex'));
     await provider.internal(via, {
       sendMode: SendMode.PAY_GAS_SEPARATELY,
       ...ops,
       body: beginCell()
         .storeUint(crc32('op::position_update'), 32)
         .storeUint(ops.queryId ?? 0, 64)
-        .storeBuffer(key, 32)
-        .storeUint(liquidityDelta, 128)
+        .storeUint(BigInt(key), 256)
+        .storeInt(liquidityDelta, 128)
         .storeUint(feeGrowthInside0X128, 256)
         .storeUint(feeGrowthInside1X128, 256)
         .endCell(),

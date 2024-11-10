@@ -41,20 +41,20 @@ global cell positions;
 
     if (op == op::position_update) {
         int key = in_msg_body~load_uint(256);
-        int liquidity_delta = in_msg_body~load_uint(128);
+        int liquidity_delta = in_msg_body~load_int(128);
         int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
         int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
         slice data = position::get_position_by_key(positions, key);
-        (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::info(data);
         cell new_data = position::update(data, liquidity_delta,fee_growth_inside_0_x128,fee_growth_inside_1_x128);
-        position::set(positions, key, new_data);
+        slice new_data_slide = new_data.begin_parse();
+        positions~position::set(key, new_data);
         save_data();
         return ();
     }
 
     if (op == op::position_create) {
         int key = in_msg_body~load_uint(256);
-        int liquidity = in_msg_body~load_uint(128);
+        int liquidity = in_msg_body~load_int(128);
         int fee_growth_inside_0_last_x128 = in_msg_body~load_uint(256);
         int fee_growth_inside_1_last_x128 = in_msg_body~load_uint(256);
         cell new_data = begin_cell()
