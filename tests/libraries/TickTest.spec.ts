@@ -9,8 +9,8 @@ import {
 import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
-import { TickTest } from '../wrappers/tests/TickTest';
-import { loadInfo } from '../tlb/tick';
+import { TickTest } from '../../wrappers/tests/TickTest';
+import { loadInfo } from '../../tlb/tick';
 const maxUint256 = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
 
 export enum FeeAmount {
