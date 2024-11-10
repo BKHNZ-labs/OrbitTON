@@ -44,6 +44,18 @@ export class TickTest implements Contract {
         .endCell(),
     });
   }
+  async sendClearTick(provider: ContractProvider, via: Sender, value: bigint, tick: bigint) {
+    return await provider.internal(via, {
+      value,
+      sendMode: SendMode.PAY_GAS_SEPARATELY,
+      body: beginCell()
+        .storeUint(TickTestOp.TickDelete, 32)
+        .storeUint(0, 64)
+        .storeRef(beginCell().storeInt(tick, 24).endCell())
+        .endCell(),
+    });
+  }
+
   async sendSetUpdate(
     provider: ContractProvider,
     via: Sender,
@@ -73,6 +85,32 @@ export class TickTest implements Contract {
             .storeInt(tickCumulative, 56)
             .storeUint(upper ? 1 : 0, 1)
             .storeUint(maxLiquidity, 128)
+            .endCell(),
+        )
+        .endCell(),
+    });
+  }
+  async sendCross(
+    provider: ContractProvider,
+    via: Sender,
+    value: bigint,
+    tick: bigint,
+    feeGrowthGlobal0X128: bigint,
+    feeGrowthGlobal1X128: bigint,
+    tickCumulative: bigint,
+  ) {
+    return await provider.internal(via, {
+      value,
+      sendMode: SendMode.PAY_GAS_SEPARATELY,
+      body: beginCell()
+        .storeUint(TickTestOp.TickCross, 32)
+        .storeUint(0, 64)
+        .storeRef(
+          beginCell()
+            .storeInt(tick, 24)
+            .storeUint(feeGrowthGlobal0X128, 256)
+            .storeUint(feeGrowthGlobal1X128, 256)
+            .storeInt(tickCumulative, 56)
             .endCell(),
         )
         .endCell(),
@@ -122,5 +160,15 @@ export class TickTest implements Contract {
     const feeGrowthInside0X128 = result.stack.readBigNumber();
     const feeGrowthInside1X128 = result.stack.readBigNumber();
     return { feeGrowthInside0X128, feeGrowthInside1X128 };
+  }
+
+  async getTick(provider: ContractProvider, tick: bigint) {
+    const result = await provider.get('get_tick', [
+      {
+        type: 'int',
+        value: BigInt(tick),
+      },
+    ]);
+    return result.stack.readCell();
   }
 }

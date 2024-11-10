@@ -39,20 +39,14 @@ cell pack_tick(
     int tick_cumulative_outside, 
     int initialized
 ) {
-    ~dump(null());
-    ~dump(liquidity_gross);
-    ~dump(liquidity_net);
-    ~dump(fee_growth_outside_0_x128);
-    ~dump(fee_growth_outside_1_x128);
-    ~dump(tick_cumulative_outside);
-    ~dump(initialized);
+    
     builder b = begin_cell()
         .store_uint(liquidity_gross, 128)
         .store_int(liquidity_net, 128)
         .store_uint(fee_growth_outside_0_x128, 256)
         .store_uint(fee_growth_outside_1_x128, 256)
         .store_int(tick_cumulative_outside, 56)
-        .store_int(initialized, 2);
+        .store_int(initialized, 1);
     return b.end_cell();
 }
                
@@ -148,8 +142,7 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     int liquidity_gross_after = liquidity_math::add_delta(liquidity_gross_before, liquidity_delta);
 
     throw_unless(error::tick::L0, liquidity_gross_after <= max_liquidity);
-
-    int flipped = (liquidity_gross_after == 0) & (liquidity_gross_before == 0);
+    int flipped = (liquidity_gross_after == 0) != (liquidity_gross_before == 0);
 
     if (liquidity_gross_before == 0){
         if(tick <= tick_current){
@@ -161,10 +154,7 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     }
     liquidity_net = upper ? liquidity_net - liquidity_delta : liquidity_net + liquidity_delta;
     cell new_tick = pack_tick(liquidity_gross_after, liquidity_net, fee_growth_outside_0_x128, fee_growth_outside_1_x128, tick_cumulative_outside, initialized);
-    ~dump(222);
     tick_map~idict_set(24, tick, new_tick.begin_parse());
-    ~dump(new_tick);
-    
     return (tick_map, (flipped));
 }
 
@@ -181,9 +171,7 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     int tick,
     int fee_growth_global_0_x128,
     int fee_growth_global_1_x128,
-    int seconds_per_liquidity_cumulative_x128,
-    int tick_cumulative,
-    int time
+    int tick_cumulative
 ){
     (slice info_raw, _) = tick_map.idict_get?(24, tick);
     (
@@ -198,6 +186,6 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     fee_growth_outside_0_x128 = fee_growth_global_0_x128 - fee_growth_outside_0_x128;
     fee_growth_outside_1_x128 = fee_growth_global_1_x128 - fee_growth_outside_1_x128;
     tick_cumulative_outside = tick_cumulative - tick_cumulative_outside;
-    tick_map~idict_set(24,tick,pack_tick(liquidity_gross,liquidity_net,fee_growth_outside_0_x128,fee_growth_outside_1_x128,tick_cumulative_outside,initialized).begin_parse());
+    tick_map~idict_set(24,tick,pack_tick(liquidity_gross, liquidity_net, fee_growth_outside_0_x128,fee_growth_outside_1_x128, tick_cumulative_outside, initialized).begin_parse());
     return (tick_map, (liquidity_net));
 }

@@ -57,19 +57,22 @@ const int op::tick_cross = "tick_cross"c;
         slice body = in_msg_body~load_ref().begin_parse();
         (int tick, int tick_current, int liquidity_delta, int fee_growth_global_0_X128, int fee_growth_global_1_X128, int tick_cumulative, int upper, int max_liquidity) = (body~load_int(24), body~load_int(24), body~load_int(128), body~load_uint(256), body~load_uint(256), body~load_int(56),body~load_uint(1), body~load_uint(128));
         int flipped = ticks~tick::update(tick, tick_current, liquidity_delta, fee_growth_global_0_X128, fee_growth_global_1_X128, tick_cumulative, upper, max_liquidity);
-        ~dump(flipped);
-        ;; emit_log_simple(my_address().slice_hash(), begin_cell().store_int(flipped,2).end_cell(),query_id);
+        emit_log_simple(my_address().slice_hash(), begin_cell().store_int(flipped,2).end_cell(),query_id);
+        save_data();
         return ();
     }
     if(op == op::tick_clear){
         slice body = in_msg_body~load_ref().begin_parse();
         int tick = body~load_int(24);
+        (cell new_ticks, int success) = ticks.idict_delete?(24, tick);
+        ticks = new_ticks;
         save_data();
         return ();
     }
     if(op == op::tick_cross){
         slice body = in_msg_body~load_ref().begin_parse();
         (int tick, int fee_growth_global_0_X128, int fee_growth_global_1_X128,int tick_cumulative) = (body~load_int(24), body~load_uint(256), body~load_uint(256), body~load_int(56));
+        int liquidity_net = ticks~tick::cross(tick, fee_growth_global_0_X128, fee_growth_global_1_X128, tick_cumulative);
         save_data();
         return ();
     }
@@ -92,4 +95,22 @@ int tick_spacing_to_max_liquidity_per_tick(int tick_spacing) method_id {
 ) method_id {
     load_data();
     return tick::get_fee_growth_inside(ticks, tick_lower, tick_upper, tick_current, fee_growth_global_0X128, fee_growth_global_1X128);
+}
+
+slice get_tick(
+    int tick
+) method_id {
+    load_data();
+    (slice tick, int exist) = ticks.idict_get?(24,tick);
+    if (exist){
+        return tick;
+    } 
+    return begin_cell()
+            .store_int(0, 128)
+            .store_int(0, 128)
+            .store_uint(0, 256)
+            .store_uint(0, 256)
+            .store_int(0, 56)
+            .store_int(0, 1)
+            .end_cell().begin_parse();
 }
