@@ -33,19 +33,18 @@
     (int jetton_amount, slice from_user) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr());
     cell ref_cs = in_msg_body~load_ref();
     slice ref_ds = ref_cs.begin_parse();
-
-    int tick_lower = ref_ds~load_int(24);
-    int tick_upper = ref_ds~load_int(24);
-    int sqrt_price_limit = ref_ds~load_int(128); 
     throw_unless(error:not_enough_amount, jetton_amount > 0);
-    (int forward_opcode, slice jetton_1_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
+    (int forward_opcode, slice jetton1_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
     if (forward_opcode == op::mint) {
-      slice jetton_0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton_1_wallet);
+      int tick_lower = ref_ds~load_int(24);
+      int tick_upper = ref_ds~load_int(24);
+      int sqrt_price_limit = ref_ds~load_int(128); 
+      slice jetton0_wallet = sender_address;
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet);
       builder msg_body = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
-      if (slice_hash(jetton_0_wallet) < slice_hash(jetton_1_wallet)) {
+      if (slice_hash(jetton0_wallet) < slice_hash(jetton1_wallet)) {
         msg_body = msg_body.store_coins(jetton_amount);
         msg_body = msg_body.store_coins(0);
       } else {
