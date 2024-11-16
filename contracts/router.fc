@@ -38,9 +38,11 @@
     if (forward_opcode == op::mint) {
       int tick_lower = ref_ds~load_int(24);
       int tick_upper = ref_ds~load_int(24);
-      int sqrt_price_limit = ref_ds~load_int(128); 
+      int fee = ref_ds~load_uint(24);
+      int amount0_min = ref_ds~load_uint(256);
+      int amount1_min = ref_ds~load_uint(256);
       slice jetton0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet);
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee);
       builder msg_body = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
@@ -54,9 +56,13 @@
       msg_body = msg_body                    
                   .store_int(tick_lower, 24)
                   .store_int(tick_upper, 24)
-                  .store_int(sqrt_price_limit, 128)
-                  .store_slice(pool_address)
-                  .store_slice(from_user);
+                  .store_uint(fee, 24)
+                  .store_uint(amount0_min, 256)
+                  .store_uint(amount1_min, 256)
+                  .store_ref(begin_cell()
+                              .store_slice(pool_address)
+                              .store_slice(from_user)
+                              .end_cell());
       send_message_with_stateinit(0, pool_address, state_init, msg_body.end_cell(), CARRY_REMAINING_GAS);
     }
     return ();  
