@@ -131,6 +131,7 @@ describe('Router Test', () => {
         jettonAmount: toNano(1000),
         tickLower: 1000n,
         tickUpper: 2000n,
+        tickSpacing: 300n,
         responseAddress: deployer.address,
         toAddress: routerContract.address,
       },

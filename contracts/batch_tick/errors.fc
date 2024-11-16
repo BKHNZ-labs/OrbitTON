@@ -1,0 +1,2 @@
+const error::wrong_range_batch_tick = 201;
+const error::wrong_upper = 203;

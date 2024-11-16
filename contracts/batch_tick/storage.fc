@@ -1,0 +1,26 @@
+global int storage::batch_index;
+global slice storage::pool_address;
+global cell storage::ticks;
+global cell storage::batch_tick_code;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  storage::batch_index = ds~load_uint(8);
+  storage::pool_address = ds~load_msg_addr();
+  storage::ticks = ds~load_dict();
+  storage::batch_tick_code = ds~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_uint(storage::batch_index, 8)
+      .store_slice(storage::pool_address)
+      .store_dict(storage::ticks)
+      .store_ref(storage::batch_tick_code)
+    .end_cell()
+  );
+}

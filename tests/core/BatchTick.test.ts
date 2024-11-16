@@ -1,4 +1,4 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
+import { Blockchain, printTransactionFees, SandboxContract, TreasuryContract } from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
@@ -26,7 +26,7 @@ describe('BatchTick Test', () => {
       BatchTickWrapper.BatchTickTest.create(code, {
         batchIndex: 0n,
         poolAddress: deployer.address,
-        tickSpacing: 300n,
+        batchTickCode: code,
       }),
     );
     const deployResult = await contract.sendDeploy(deployer.getSender(), toNano('0.05'));
@@ -38,7 +38,39 @@ describe('BatchTick Test', () => {
     });
   });
 
-  it('log address', async () => {
-    console.log(contract.address);
+  it('test simple batch tick', async () => {
+    let txResult = await contract.sendUpdateTickLower(
+      deployer.getSender(),
+      {
+        currentTick: 15000n,
+        feeGrowthInside0LastX128: 0n,
+        feeGrowthInside1LastX128: 0n,
+        liquidity: 1000n,
+        maxLiquidity: 10000000n,
+        tickLower: 500n,
+        tickUpper: 20000n,
+      },
+      {
+        value: toNano(1),
+      },
+    );
+    printTransactionFees(txResult.transactions);
+
+    txResult = await contract.sendUpdateTickLower(
+      deployer.getSender(),
+      {
+        currentTick: 15000n,
+        feeGrowthInside0LastX128: 0n,
+        feeGrowthInside1LastX128: 0n,
+        liquidity: 1000n,
+        maxLiquidity: 10000000n,
+        tickLower: 500n,
+        tickUpper: 60000n,
+      },
+      {
+        value: toNano(1),
+      },
+    );
+    printTransactionFees(txResult.transactions);
   });
 });

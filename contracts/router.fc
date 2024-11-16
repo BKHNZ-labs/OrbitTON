@@ -38,6 +38,7 @@
     if (forward_opcode == op::mint) {
       int tick_lower = ref_ds~load_int(24);
       int tick_upper = ref_ds~load_int(24);
+      int tick_spacing = ref_ds~load_int(24);
       int fee = ref_ds~load_uint(24);
       int amount0_min = ref_ds~load_uint(256);
       int amount1_min = ref_ds~load_uint(256);
@@ -56,6 +57,7 @@
       msg_body = msg_body                    
                   .store_int(tick_lower, 24)
                   .store_int(tick_upper, 24)
+                  .store_int(tick_spacing, 24)
                   .store_uint(amount0_min, 256)
                   .store_uint(amount1_min, 256)
                   .store_ref(begin_cell()

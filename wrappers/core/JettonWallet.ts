@@ -48,6 +48,7 @@ namespace JettonWalletWrapper {
     fwdAmount: bigint;
     tickLower: bigint;
     tickUpper: bigint;
+    tickSpacing: bigint;
     fee: bigint;
     amount0InMin: bigint;
     amount1InMin: bigint;
@@ -69,6 +70,7 @@ namespace JettonWalletWrapper {
           beginCell()
             .storeInt(data.tickLower, 24)
             .storeInt(data.tickUpper, 24)
+            .storeInt(data.tickSpacing, 24)
             .storeUint(data.fee, 24)
             .storeUint(data.amount0InMin, 256)
             .storeUint(data.amount1InMin, 256)

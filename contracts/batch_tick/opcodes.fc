@@ -1,2 +1,2 @@
-const op::update_tick = "op::update_tick"c;
-const op::forward_update_tick = "op::forward_update_tick"c;
+const op::update_tick_lower = "op::update_tick_lower"c;
+const op::update_tick_upper = "op::update_tick_upper"c;
