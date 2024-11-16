@@ -1,9 +1,19 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
+import {
+  Blockchain,
+  prettyLogTransaction,
+  prettyLogTransactions,
+  printTransactionFees,
+  SandboxContract,
+  TreasuryContract,
+} from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import RouterWrapper from '../../wrappers/core/Router';
-import { MaxUint128, pseudoRandomBigNumberOnUint128, pseudoRandomBigNumberOnUint256 } from '../shared/utils';
+import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
+import JettonWalletWrapper from '../../wrappers/core/JettonWallet';
+import { JettonWallet } from '@ton/ton';
+import PoolWrapper from '../../wrappers/core/Pool';
 
 describe('Router Test', () => {
   let code: Cell;
@@ -14,30 +24,121 @@ describe('Router Test', () => {
 
   let blockchain: Blockchain;
   let deployer: SandboxContract<TreasuryContract>;
-  let contract: SandboxContract<RouterWrapper.RouterTest>;
+  let routerContract: SandboxContract<RouterWrapper.RouterTest>;
+  let token0MasterContract: SandboxContract<JettonMinterWrapper.JettonMinter>;
+  let token0WalletContract: SandboxContract<JettonWalletWrapper.JettonWallet>;
+  let token1MasterContract: SandboxContract<JettonMinterWrapper.JettonMinter>;
+  let token1WalletContract: SandboxContract<JettonWalletWrapper.JettonWallet>;
 
   beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
-    contract = blockchain.openContract(
+    routerContract = blockchain.openContract(
       RouterWrapper.RouterTest.create(code, {
         adminAddress: deployer.address,
         batchTickCode: beginCell().endCell(),
         lpAccountCode: beginCell().endCell(),
-        positionCode: beginCell().endCell(),
-        poolCode: beginCell().endCell(),
+        positionCode: await compile('Position'),
+        poolCode: await compile('Pool'),
       }),
     );
-    const deployResult = await contract.sendDeploy(deployer.getSender(), toNano('0.05'));
+    token0MasterContract = blockchain.openContract(
+      JettonMinterWrapper.JettonMinter.createFromConfig({
+        adminAddress: deployer.address,
+        content: beginCell().storeBuffer(Buffer.from('Token0')).endCell(),
+      }),
+    );
+    token1MasterContract = blockchain.openContract(
+      JettonMinterWrapper.JettonMinter.createFromConfig({
+        adminAddress: deployer.address,
+        content: beginCell().storeBuffer(Buffer.from('Token1')).endCell(),
+      }),
+    );
+    let deployResult = await routerContract.sendDeploy(deployer.getSender(), toNano('0.05'));
     expect(deployResult.transactions).toHaveTransaction({
       from: deployer.address,
-      to: contract.address,
+      to: routerContract.address,
       deploy: true,
       success: true,
     });
+    deployResult = await token0MasterContract.sendDeploy(deployer.getSender(), {
+      value: toNano('0.05'),
+    });
+    expect(deployResult.transactions).toHaveTransaction({
+      from: deployer.address,
+      to: token0MasterContract.address,
+      deploy: true,
+      success: true,
+    });
+    deployResult = await token1MasterContract.sendDeploy(deployer.getSender(), {
+      value: toNano('0.05'),
+    });
+    expect(deployResult.transactions).toHaveTransaction({
+      from: deployer.address,
+      to: token1MasterContract.address,
+      deploy: true,
+      success: true,
+    });
+    await token0MasterContract.sendMint(
+      deployer.getSender(),
+      {
+        toAddress: deployer.address,
+        jettonAmount: toNano(1000000),
+        amount: toNano(0.5), // deploy fee
+      },
+      {
+        queryId: 0,
+        value: toNano(1),
+      },
+    );
+    await token1MasterContract.sendMint(
+      deployer.getSender(),
+      {
+        toAddress: deployer.address,
+        jettonAmount: toNano(1000000),
+        amount: toNano(0.5), // deploy fee
+      },
+      {
+        queryId: 0,
+        value: toNano(1),
+      },
+    );
+
+    const token0Wallet = await token0MasterContract.getWalletAddress(deployer.address);
+    const token0WalletInstance = JettonWalletWrapper.JettonWallet.createFromAddress(token0Wallet);
+    token0WalletContract = blockchain.openContract(token0WalletInstance);
+
+    const token1Wallet = await token1MasterContract.getWalletAddress(deployer.address);
+    const token1WalletInstance = JettonWalletWrapper.JettonWallet.createFromAddress(token1Wallet);
+    token1WalletContract = blockchain.openContract(token1WalletInstance);
   });
 
-  it('log address', async () => {
-    console.log(contract.address);
+  it('Send op:mint', async () => {
+    const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
+    console.log('Router address:', routerContract.address.toString());
+    console.log('Router wallet address', routerJetton0Wallet.toString());
+    console.log('Router admin:', await routerContract.getAdminAddress());
+    console.log('Start transfer');
+    let tx = await token0WalletContract.sendTransfer(
+      deployer.getSender(),
+      {
+        forwardOpcode: PoolWrapper.Opcodes.Mint,
+        jetton1Wallet: routerJetton0Wallet,
+        amount0InMin: toNano(0),
+        amount1InMin: toNano(0),
+        fee: 3000n,
+        fwdAmount: toNano(0.3),
+        jettonAmount: toNano(1000),
+        tickLower: 1000n,
+        tickUpper: 2000n,
+        responseAddress: deployer.address,
+        toAddress: routerContract.address,
+      },
+      {
+        value: toNano(1),
+      },
+    );
+    printTransactionFees(tx.transactions);
+    prettyLogTransactions(tx.transactions);
   });
 });

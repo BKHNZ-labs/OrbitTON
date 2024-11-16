@@ -8,7 +8,6 @@ global int amount0;
 global int amount1;
 global int tick_lower;
 global int tick_upper;
-global int sqrt_price_limit;
 global slice pool_address;
 global slice owner_address;
 

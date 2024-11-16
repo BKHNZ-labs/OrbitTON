@@ -1,0 +1,7 @@
+int op::jetton_transfer() asm "0xf8a7ea5 PUSHINT";
+int op::jetton_transfer_notification() asm "0x7362d09c PUSHINT";
+int op::jetton_internal_transfer() asm "0x178d4519 PUSHINT";
+int op::jetton_excesses() asm "0xd53276db PUSHINT";
+int op::jetton_burn() asm "0x595f07bc PUSHINT";
+int op::jetton_burn_notification() asm "0x7bdd97de PUSHINT";
+int op::jetton_mint() asm "21 PUSHINT";
