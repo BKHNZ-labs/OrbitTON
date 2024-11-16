@@ -34,7 +34,7 @@
     cell ref_cs = in_msg_body~load_ref();
     slice ref_ds = ref_cs.begin_parse();
     throw_unless(error:not_enough_amount, jetton_amount > 0);
-    (int forward_opcode, slice jetton1_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
+    (int forward_opcode, slice jetton1_wallet) = (in_msg_body~load_uint(32), in_msg_body~load_msg_addr());
     if (forward_opcode == op::mint) {
       int tick_lower = ref_ds~load_int(24);
       int tick_upper = ref_ds~load_int(24);
@@ -56,7 +56,6 @@
       msg_body = msg_body                    
                   .store_int(tick_lower, 24)
                   .store_int(tick_upper, 24)
-                  .store_uint(fee, 24)
                   .store_uint(amount0_min, 256)
                   .store_uint(amount1_min, 256)
                   .store_ref(begin_cell()
@@ -116,6 +115,7 @@
 }
 
 slice get_admin_address() method_id {
+  ~dump(null());
   load_data();
   return storage::admin_address;
 }
