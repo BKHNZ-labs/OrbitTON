@@ -14,6 +14,7 @@ import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../../wrappers/core/JettonWallet';
 import { JettonWallet } from '@ton/ton';
 import PoolWrapper from '../../wrappers/core/Pool';
+import { encodePriceSqrt } from '../shared/utils';
 
 describe('Router Test', () => {
   let code: Cell;
@@ -126,14 +127,21 @@ describe('Router Test', () => {
         jetton0_wallet: routerJetton0Wallet,
         jetton1_wallet: routerJetton1Wallet,
         fee: 3000,
-        sqrt_price_x96: 4295128740n,
+        sqrt_price_x96: encodePriceSqrt(1n, 10n),
         tick_spacing: 60,
       },
       {
         value: toNano('0.1'),
       },
     );
-    printTransactionFees(createPool.transactions);
+    const poolAddress = await routerContract.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
+    expect(createPool.transactions).toHaveTransaction({
+      from: routerContract.address,
+      to: poolAddress,
+    });
+    const testPool = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(poolAddress));
+    const lpAccount = await testPool.getLpAccountAddress(deployer.address, -10n, 10n);
+    console.log('LP account address:', lpAccount.toString());
   });
 
   it('Send op:mint', async () => {

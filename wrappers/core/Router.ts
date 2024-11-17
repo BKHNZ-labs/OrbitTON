@@ -128,6 +128,34 @@ namespace RouterWrapper {
       const result = await provider.get('get_lp_account_code', []);
       return result.stack.readCell();
     }
+
+    async getPoolAddress(
+      provider: ContractProvider,
+      token0: Address,
+      token1: Address,
+      fee: bigint,
+      tick_spacing: bigint,
+    ): Promise<Address> {
+      const result = await provider.get('get_pool_address', [
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(token0).endCell(),
+        },
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(token1).endCell(),
+        },
+        {
+          type: 'int',
+          value: fee,
+        },
+        {
+          type: 'int',
+          value: tick_spacing,
+        },
+      ]);
+      return result.stack.readAddress();
+    }
   }
 }
 

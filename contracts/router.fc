@@ -219,3 +219,9 @@ cell get_lp_account_code() method_id {
   return storage::lp_account_code;
 }
 
+slice get_pool_address(slice token0_address, slice token1_address, int fee, int tick_spacing) method_id {
+  load_data();
+  (_, slice pool_address) = get_pool_state_init_and_address(token0_address,token1_address,fee,tick_spacing);
+  return pool_address;
+}
+

@@ -69,6 +69,7 @@ describe('Pool Test', () => {
   it('should deploy successfully', async () => {
     console.log(pool.address);
   });
+
   describe('#mint', () => {
     it('should receive op::mint success', async () => {
       const result = await pool.sendMint(router.getSender(), toNano(0.05), {
