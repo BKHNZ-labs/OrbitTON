@@ -35,8 +35,8 @@
     throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
     int tick_lower = in_msg_body~load_int(24);
     int tick_upper = in_msg_body~load_int(24);
-    int lower_range = storage::batch_index * constants::batch_index_range;
-    int upper_range = (storage::batch_index + 1) * constants::batch_index_range - 1;
+    int lower_range = storage::batch_index * storage::tick_spacing * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * storage::tick_spacing * constants::batch_index_range - 1;
     throw_unless(error::wrong_range_batch_tick, (tick_lower <= tick_upper) & (tick_lower >= lower_range) & (tick_lower <= upper_range));
     int current_tick = in_msg_body~load_int(24);
     int liquidity = in_msg_body~load_uint(128);
