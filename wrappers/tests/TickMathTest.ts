@@ -41,7 +41,6 @@ export class TickMathTest implements Contract {
         value: sqrtRatio,
       },
     ]);
-    console.log('gasUsed', result.gasUsed);
     return result.stack.readBigNumber();
   }
 }
