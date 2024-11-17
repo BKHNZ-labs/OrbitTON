@@ -2,6 +2,7 @@
 #include "libraries/sqrt_price_math.fc";
 #include "libraries/tick_math.fc";
 #include "libraries/tick_bitmap.fc";
+#include "libraries/tick.fc";
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
@@ -16,8 +17,6 @@
 #include "batch_tick/constants.fc";
 #include "batch_tick/opcodes.fc";
 #include "batch_tick/utils.fc";
-;; FIXME: add maxLiquidityPerTick
-#include "libraries/tick.fc";
 
 
 
@@ -27,6 +26,7 @@ global slice jetton1_wallet; ;; 267
 global int fee; ;; 24 - uint
 global int protocol_fee; ;; 8 - uint
 global int sqrt_price_x96; ;; 160 - uint
+global int max_liquidity_per_tick; ;; 128 - uint
 
 global int tick_spacing; ;; 24
 global int tick; ;; 24
@@ -64,6 +64,7 @@ global cell batch_tick_code;
 
   slice third_cell = ds~load_ref().begin_parse();
   position_seqno = third_cell~load_uint(256);
+  max_liquidity_per_tick = third_cell~load_uint(128);
   tick_bitmap = third_cell~load_ref();
   position_code = third_cell~load_ref();
   lp_account_code = third_cell~load_ref();
@@ -97,6 +98,7 @@ global cell batch_tick_code;
       .store_ref(
       begin_cell()
           .store_uint(position_seqno, 256)
+          .store_uint(max_liquidity_per_tick, 128)
           .store_ref(tick_bitmap)
           .store_ref(position_code)
           .store_ref(lp_account_code)
@@ -125,6 +127,26 @@ global cell batch_tick_code;
   int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
   int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
   
+  if (op == op::initialize) {
+    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    (int relative_sqrt_price_x96, slice response_address) = (in_msg_body~load_uint(160), in_msg_body~load_msg_addr());
+    int relative_tick = tick_math::get_tick_at_sqrt_ratio(relative_sqrt_price_x96);
+    tick = relative_tick;
+    sqrt_price_x96 = relative_sqrt_price_x96;
+    max_liquidity_per_tick = tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+    builder body = begin_cell()
+            .store_uint(op::cb_create_pool, 32)
+            .store_uint(query_id, 64)
+            .store_slice(jetton0_wallet)
+            .store_slice(jetton1_wallet)
+            .store_uint(fee, 24)
+            .store_int(tick_spacing, 24)
+            .store_slice(response_address);
+    send_simple_message(0, router_address, body.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
+  }
+
   if(op == op::mint){
     throw_unless(error::unauthorized, compare_address(sender_address, router_address));
     slice body = in_msg_body~load_ref().begin_parse();
@@ -199,7 +221,6 @@ global cell batch_tick_code;
         .store_uint(fee_growth_global1_x128, 256)
         .store_int(0, 2)
         .store_uint(tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing), 128); ;; FIXME: add maxLiquidityPerTick
-
     send_message_with_stateinit(remaining_gas, batch_tick_address, state_init, send_batch_tick_body.end_cell(), NORMAL);
     save_data();
     return ();

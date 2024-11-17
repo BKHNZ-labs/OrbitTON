@@ -1,0 +1,7 @@
+op_create_pool#ad85e6b3 
+    query_id:uint64
+    jetton0_wallet: MsgAddress
+    jetton1_wallet: MsgAddress
+    fee: uint24
+    tick_spacing: int24
+    sqrt_price_x96: uint160 = OpCreatePool;
