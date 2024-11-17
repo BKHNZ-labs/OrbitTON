@@ -64,6 +64,14 @@
                               .end_cell());
       send_message_with_stateinit(0, pool_address, state_init, msg_body.end_cell(), CARRY_REMAINING_GAS);
     }
+
+    if (forward_opcode == op::swap) {
+
+    }
+
+    if (forward_opcode == op::burn) {
+
+    }
     return ();  
   }
 
