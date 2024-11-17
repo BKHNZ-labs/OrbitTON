@@ -76,6 +76,7 @@ namespace PoolWrapper {
         .storeRef(
           beginCell()
             .storeUint(0n, 256)
+            .storeUint(0, 128)
             .storeRef(
               beginCell()
                 .storeDict(Dictionary.empty(Dictionary.Keys.Int(16), Dictionary.Values.Cell()))
