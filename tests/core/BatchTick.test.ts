@@ -1,4 +1,10 @@
-import { Blockchain, printTransactionFees, SandboxContract, TreasuryContract } from '@ton/sandbox';
+import {
+  Blockchain,
+  prettyLogTransactions,
+  printTransactionFees,
+  SandboxContract,
+  TreasuryContract,
+} from '@ton/sandbox';
 import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
@@ -72,5 +78,6 @@ describe('BatchTick Test', () => {
       },
     );
     printTransactionFees(txResult.transactions);
+    prettyLogTransactions(txResult.transactions);
   });
 });

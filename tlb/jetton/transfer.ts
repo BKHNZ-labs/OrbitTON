@@ -33,7 +33,7 @@ export interface MintParams {
 }
 
 /*
-op_jetton_transfer#0xf8a7ea5
+op_jetton_transfer#f8a7ea5
         query_id: uint64
         jetton_amount: uint128
         to_address: MsgAddress
@@ -99,7 +99,7 @@ export function storeMintParams(mintParams: MintParams): (builder: Builder) => v
 }
 
 /*
-op_jetton_transfer#0xf8a7ea5
+op_jetton_transfer#f8a7ea5
         query_id: uint64
         jetton_amount: uint128
         to_address: MsgAddress
@@ -111,8 +111,8 @@ op_jetton_transfer#0xf8a7ea5
 */
 
 export function loadOpJettonTransfer(slice: Slice): OpJettonTransfer {
-  if (slice.remainingBits >= 36 && slice.preloadUint(36) == 0xf8a7ea5) {
-    slice.loadUint(36);
+  if (slice.remainingBits >= 28 && slice.preloadUint(28) == 0xf8a7ea5) {
+    slice.loadUint(28);
     let query_id: number = slice.loadUint(64);
     let jetton_amount: bigint = slice.loadUintBig(128);
     let to_address: Address | ExternalAddress | null = slice.loadAddressAny();
@@ -140,13 +140,15 @@ export function loadOpJettonTransfer(slice: Slice): OpJettonTransfer {
 }
 
 export function storeOpJettonTransfer(opJettonTransfer: OpJettonTransfer): (builder: Builder) => void {
+  console.log(opJettonTransfer.fwd_amount);
   return (builder: Builder) => {
-    builder.storeUint(0xf8a7ea5, 36);
+    builder.storeUint(0xf8a7ea5, 28);
     builder.storeUint(opJettonTransfer.query_id, 64);
-    builder.storeUint(opJettonTransfer.jetton_amount, 128);
+    builder.storeCoins(opJettonTransfer.jetton_amount);
     builder.storeAddress(opJettonTransfer.to_address);
     builder.storeAddress(opJettonTransfer.response_address);
-    builder.storeUint(opJettonTransfer.fwd_amount, 128);
+    builder.storeCoins(opJettonTransfer.fwd_amount);
+    builder.storeDict(Dictionary.empty());
     builder.storeUint(opJettonTransfer.forward_opcode, 32);
     builder.storeAddress(opJettonTransfer.jetton1_wallet);
     let cell1 = beginCell();
