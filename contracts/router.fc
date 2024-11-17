@@ -67,6 +67,31 @@
     return ();  
   }
 
+  if (op == op::pay_to) {
+    slice recipient = in_msg_body~load_msg_addr();
+    int exit_code = in_msg_body~load_uint(32);
+    slice ds = in_msg_body~load_ref().begin_parse();
+    int sqrt_price_x96 = ds~load_int(160);
+    slice token0_address = ds~load_msg_addr();
+    int token0_amount = ds~load_coins();
+    slice token1_address = ds~load_msg_addr();
+    int token1_amount = ds~load_coins();
+    int fee = ds~load_uint(24);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(sqrt_price_x96, token0_address, token1_address, fee);
+    throw_unless(error::unauthorized, compare_address(sender_address, pool_address) != -1);
+    if (token0_amount > 0) {
+      var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
+      body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(0, token0_address, body0.end_cell(), CARRY_REMAINING_GAS);
+    }
+    if (token1_amount > 0) {
+      var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
+      body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(0, token1_address, body1.end_cell(), CARRY_REMAINING_GAS);
+    }
+    return ();
+  }
+
   ;; [MONITOR]
   if (op == op::set_admin_address) {
     throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
