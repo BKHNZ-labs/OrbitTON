@@ -10,6 +10,7 @@ import {
   pseudoRandomBigNumberOnUint256,
 } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
+import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 
 describe('Pool Test', () => {
   let code: Cell;
@@ -27,8 +28,7 @@ describe('Pool Test', () => {
   let router: SandboxContract<TreasuryContract>;
   let pool: SandboxContract<PoolWrapper.PoolTest>;
   let tickMath: SandboxContract<TickMathTest>;
-
-  beforeEach(async () => {
+  const tickSpacing = beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
     router = await blockchain.treasury('router');
@@ -42,13 +42,13 @@ describe('Pool Test', () => {
         positionCode: beginCell().endCell(),
         lpAccountCode,
         routerAddress: router.address,
-        fee: 3000n,
+        fee: BigInt(FeeAmount.MEDIUM),
         jetton0Wallet: deployer.address,
         jetton1Wallet: deployer.address,
         protocolFee: 0n,
         sqrtPriceX96: sqrtPrice,
         tick,
-        tickSpacing: 300n,
+        tickSpacing: BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]),
       }),
     );
     const deployResult = await pool.sendDeploy(deployer.getSender(), toNano('0.05'));
@@ -139,7 +139,7 @@ describe('Pool Test', () => {
           jetton_amount_1: 1n,
           tick_lower: -10,
           tick_upper: 10,
-          liquidity_delta: 1000n,
+          liquidity_delta: 3161n,
           recipient: deployer.address,
         },
       });
