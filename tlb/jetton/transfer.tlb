@@ -1,0 +1,17 @@
+mint#_  sqrt_price_x96: uint160
+        tick_lower: int24
+        tick_upper: int24
+        fee: uint24
+        tick_spacing: int24
+        liquidity_delta: int128
+        recipient: MsgAddress = MintParams;
+
+op_jetton_transfer#f8a7ea5
+        query_id: uint64
+        jetton_amount: uint128
+        to_address: MsgAddress
+        response_address: MsgAddress
+        fwd_amount: uint128
+        forward_opcode: uint32
+        jetton1_wallet: MsgAddress
+        mint: ^MintParams = OpJettonTransfer;
