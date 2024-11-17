@@ -9,26 +9,33 @@ import {
   pseudoRandomBigNumberOnUint128,
   pseudoRandomBigNumberOnUint256,
 } from '../shared/utils';
+import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 
 describe('Pool Test', () => {
   let code: Cell;
   let lpAccountCode: Cell;
+  let tickMathCode: Cell;
 
   beforeAll(async () => {
     code = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
+    tickMathCode = await compile('TickMathTest');
   });
 
   let blockchain: Blockchain;
   let deployer: SandboxContract<TreasuryContract>;
   let router: SandboxContract<TreasuryContract>;
   let pool: SandboxContract<PoolWrapper.PoolTest>;
+  let tickMath: SandboxContract<TickMathTest>;
 
   beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
     router = await blockchain.treasury('router');
-
+    tickMath = blockchain.openContract(TickMathTest.createFromData(tickMathCode, beginCell().endCell()));
+    await tickMath.sendDeploy(deployer.getSender(), toNano('0.05'));
+    const sqrtPrice = encodePriceSqrt(1n, 10n);
+    const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
     pool = blockchain.openContract(
       PoolWrapper.PoolTest.create(code, {
         batchTickCode: beginCell().endCell(),
@@ -39,8 +46,8 @@ describe('Pool Test', () => {
         jetton0Wallet: deployer.address,
         jetton1Wallet: deployer.address,
         protocolFee: 0n,
-        sqrtPriceX96: encodePriceSqrt(1n, 10n),
-        tick: 0n,
+        sqrtPriceX96: sqrtPrice,
+        tick,
         tickSpacing: 300n,
       }),
     );
@@ -109,7 +116,7 @@ describe('Pool Test', () => {
       });
     });
 
-    it('should receive op::cb_add_liquidity success', async () => {
+    it('initialize the pool at price of 10:1', async () => {
       await pool.sendMint(router.getSender(), toNano(0.05), {
         kind: 'InMsgBody',
         query_id: 0,
