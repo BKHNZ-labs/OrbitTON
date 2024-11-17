@@ -31,6 +31,7 @@ describe('BatchTick Test', () => {
     contract = blockchain.openContract(
       BatchTickWrapper.BatchTickTest.create(code, {
         batchIndex: 0n,
+        tickSpacing: 60n,
         poolAddress: deployer.address,
         batchTickCode: code,
       }),

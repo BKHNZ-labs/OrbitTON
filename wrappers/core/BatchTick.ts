@@ -21,6 +21,7 @@ namespace BatchTickWrapper {
 
   export interface InstantiateMsg {
     batchIndex: bigint;
+    tickSpacing: bigint;
     poolAddress: Address;
     batchTickCode: Cell;
   }
@@ -93,7 +94,8 @@ namespace BatchTickWrapper {
 
     static create(code: Cell, initMsg: InstantiateMsg) {
       const data = beginCell()
-        .storeUint(initMsg.batchIndex, 8)
+        .storeInt(initMsg.batchIndex, 16)
+        .storeInt(initMsg.tickSpacing, 24)
         .storeAddress(initMsg.poolAddress)
         .storeDict(Dictionary.empty()) // empty dict
         .storeRef(initMsg.batchTickCode)

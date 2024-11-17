@@ -48,8 +48,8 @@
     int flipped_lower = storage::ticks~tick::update(tick_lower, current_tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
 
     if (tick_upper > upper_range) {
-      int upper_batch_tick_index = tick_upper / constants::batch_index_range;
-      (cell state_init, slice upper_batch_tick_address) = get_batch_tick_state_init_and_address(upper_batch_tick_index, storage::pool_address, storage::batch_tick_code);
+      int upper_batch_tick_index = calculate_batch_tick_index(tick_upper, storage::tick_spacing);
+      (cell state_init, slice upper_batch_tick_address) = get_batch_tick_state_init_and_address(upper_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
       builder msg = begin_cell()
                       .store_uint(op::update_tick_upper, 32)
                       .store_uint(query_id, 64)
@@ -78,7 +78,7 @@
 
   if (op == op::update_tick_upper) {
     int prev_batch_tick_index = storage::batch_index - 1;
-    slice prev_batch_tick_address = get_batch_tick_address(prev_batch_tick_index, storage::pool_address, storage::batch_tick_code);
+    slice prev_batch_tick_address = get_batch_tick_address(prev_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, prev_batch_tick_address));
     int flipped_lower = in_msg_body~load_int(2);
     int tick_upper = in_msg_body~load_int(24);
