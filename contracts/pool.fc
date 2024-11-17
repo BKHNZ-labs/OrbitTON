@@ -1,8 +1,18 @@
 #include "imports/stdlib.fc";
-#include "pool/opcodes.fc";
+#include "libraries/sqrt_price_math.fc";
+#include "libraries/tick_math.fc";
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
+#include "lp_account/opcodes.fc";
+#include "router/opcodes.fc";
+#include "pool/params.fc";
+#include "pool/opcodes.fc";
+#include "pool/lp_account-utils.fc";
+#include "pool/router-utils.fc";
+#include "pool/errors.fc";
+
+
 
 global slice router_address; ;; 267
 global slice jetton_0_wallet; ;; 267
@@ -102,12 +112,84 @@ global cell batch_tick_code;
   if (flags & 1) { ;; ignore all bounced messages
     return ();
   }
-
   load_data(); ;; here we populate the storage variables
 
   slice sender_address = cs~load_msg_addr();
   int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
   int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+  
+  if(op == op::mint){
+    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    slice body = in_msg_body~load_ref().begin_parse();
+    (int jetton_amount_0, int jetton_amount_1,  int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_uint(256), body~load_uint(256), body~load_int(24), body~load_int(24), body~load_int(128),  body~load_msg_addr());
+    
+    cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, lp_account_code);
+    slice to_lp_account_address = calculate_lp_account_address(state_init);
+    
+    builder body = begin_cell()
+            .store_uint(op::add_liquidity, 32)
+            .store_uint(query_id, 64)
+            .store_coins(jetton_amount_0)
+            .store_coins(jetton_amount_1)
+            .store_int(liquidity_delta, 128);
+
+    send_message_with_stateinit(0, to_lp_account_address, state_init, body.end_cell(), CARRY_REMAINING_GAS);
+    return ();
+  }
+
+  if(op == op::cb_add_liquidity){
+    slice body = in_msg_body~load_ref().begin_parse();
+    (int jetton_0_amount, int jetton_1_amount, int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_uint(256), body~load_uint(256), body~load_int(24), body~load_int(24), body~load_int(128), body~load_msg_addr());
+    slice lp_account = calculate_user_lp_account_address(recipient,my_address(),tick_lower,tick_upper,lp_account_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, lp_account));
+    int amount0 = 0;
+    int amount1 = 0;
+
+    if(tick < tick_lower){
+      amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    } 
+    
+    if(tick < tick_upper) {
+      amount0 = sqrt_price_math::get_amount0_delta_special(sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+      amount1 = sqrt_price_math::get_amount1_delta_special(
+        tick_math::get_sqrt_ratio_at_tick(tick_lower),
+        sqrt_price_x96,
+        liquidity_delta
+      );
+    }
+
+    if(tick_upper < tick){
+      amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    }
+
+    if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount) ){
+      ;; refunds to user
+      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT,jetton_0_wallet, jetton_0_amount,jetton_1_wallet, jetton_1_amount); 
+      send_simple_message(0, router_address,low_amount_body.end_cell(),CARRY_REMAINING_GAS);
+      return ();
+    } 
+
+    ;; send batch tick
+
+    return ();
+  }
+
+  if(op == op::burn){
+
+  }
+
+  if(op == op::cb_burn){
+
+  }
+
+  if(op == op::swap){
+
+  }
+
+  if(op == op::cb_update_fee_growth_inside){
+
+  }
+
 
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
@@ -115,4 +197,10 @@ global cell batch_tick_code;
 (int, int) get_collected_fees() method_id {
   load_data();
   return (collected_protocol_fee_0, collected_protocol_fee_1);
+}
+
+
+slice get_lp_account_address(slice user_address, int tick_lower, int tick_upper) method_id {
+  load_data();
+  return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, lp_account_code);
 }

@@ -1,4 +1,4 @@
 const int error::not_enough_gas = 1111;
 const error::invalid_message = 49;
 const int error::wrong_workchain = 333;
-const int error::unauthorized = 401;
+const int error::unauthorized = 1000;
