@@ -28,7 +28,7 @@ describe('Pool Test', () => {
   let router: SandboxContract<TreasuryContract>;
   let pool: SandboxContract<PoolWrapper.PoolTest>;
   let tickMath: SandboxContract<TickMathTest>;
-  const tickSpacing = beforeEach(async () => {
+  beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
     router = await blockchain.treasury('router');

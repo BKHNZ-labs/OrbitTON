@@ -1,0 +1,39 @@
+global int storage::is_locked;
+global int storage::pool_seqno;
+global slice storage::admin_address;
+global cell storage::pool_code;
+global cell storage::batch_tick_code;
+global cell storage::position_code;
+global cell storage::lp_account_code;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  storage::is_locked = ds~load_int(8);
+  storage::pool_seqno = ds~load_uint(64);
+  storage::admin_address = ds~load_msg_addr();
+  slice code_storage = ds~load_ref().begin_parse();
+  storage::pool_code = code_storage~load_ref();
+  storage::batch_tick_code = code_storage~load_ref();
+  storage::position_code = code_storage~load_ref();
+  storage::lp_account_code = code_storage~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_int(storage::is_locked, 8)
+      .store_uint(storage::pool_seqno, 64)
+      .store_slice(storage::admin_address)
+      .store_ref(
+      begin_cell()
+              .store_ref(storage::pool_code)
+              .store_ref(storage::batch_tick_code)
+              .store_ref(storage::position_code)
+              .store_ref(storage::lp_account_code)
+        .end_cell())
+    .end_cell()
+  );
+}

@@ -52,6 +52,7 @@ namespace RouterWrapper {
     static create(code: Cell, initMsg: InstantiateMsg) {
       const data = beginCell()
         .storeInt(-1, 8)
+        .storeUint(0, 64)
         .storeAddress(initMsg.adminAddress)
         .storeRef(
           beginCell()
@@ -87,6 +88,7 @@ namespace RouterWrapper {
 
     async getAdminAddress(provider: ContractProvider): Promise<Address> {
       const result = await provider.get('get_admin_address', []);
+      console.log(result);
       return result.stack.readAddress();
     }
 

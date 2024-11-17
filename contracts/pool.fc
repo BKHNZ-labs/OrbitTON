@@ -15,18 +15,18 @@
 
 
 global slice router_address; ;; 267
-global slice jetton_0_wallet; ;; 267
-global slice jetton_1_wallet; ;; 267
+global slice jetton0_wallet; ;; 267
+global slice jetton1_wallet; ;; 267
 global int fee; ;; 24 - uint
 global int protocol_fee; ;; 8 - uint
 global int sqrt_price_x96; ;; 160 - uint
 
 global int tick_spacing; ;; 24
 global int tick; ;; 24
-global int fee_growth_global_0_x128; ;; 256 - uint
-global int fee_growth_global_1_x128; ;; 256 - uint
-global int collected_protocol_fee_0; ;; 128 - uint
-global int collected_protocol_fee_1; ;; 128 - uint
+global int fee_growth_global0_x128; ;; 256 - uint
+global int fee_growth_global1_x128; ;; 256 - uint
+global int collected_protocol_fee0; ;; 128 - uint
+global int collected_protocol_fee1; ;; 128 - uint
 global int liquidity; ;; 128 - uint
 
 global int position_seqno; ;; 256 - uint
@@ -40,8 +40,8 @@ global cell batch_tick_code;
   var ds = get_data().begin_parse();
   slice first_cell = ds~load_ref().begin_parse();
   router_address = first_cell~load_msg_addr();
-  jetton_0_wallet = first_cell~load_msg_addr();
-  jetton_1_wallet = first_cell~load_msg_addr();
+  jetton0_wallet = first_cell~load_msg_addr();
+  jetton1_wallet = first_cell~load_msg_addr();
   fee = first_cell~load_uint(24);
   protocol_fee = first_cell~load_uint(8);
   sqrt_price_x96 = first_cell~load_uint(160);
@@ -49,10 +49,10 @@ global cell batch_tick_code;
   slice second_cell = ds~load_ref().begin_parse();
   tick_spacing = second_cell~load_int(24);
   tick = second_cell~load_int(24);
-  fee_growth_global_0_x128 = second_cell~load_uint(256);
-  fee_growth_global_1_x128 = second_cell~load_uint(256);
-  collected_protocol_fee_0 = second_cell~load_uint(128);
-  collected_protocol_fee_1 = second_cell~load_uint(128);
+  fee_growth_global0_x128 = second_cell~load_uint(256);
+  fee_growth_global1_x128 = second_cell~load_uint(256);
+  collected_protocol_fee0 = second_cell~load_uint(128);
+  collected_protocol_fee1 = second_cell~load_uint(128);
   liquidity = second_cell~load_uint(128);
 
   slice third_cell = ds~load_ref().begin_parse();
@@ -71,8 +71,8 @@ global cell batch_tick_code;
       .store_ref(
       begin_cell()
           .store_slice(router_address)
-          .store_slice(jetton_0_wallet)
-          .store_slice(jetton_1_wallet)
+          .store_slice(jetton0_wallet)
+          .store_slice(jetton1_wallet)
           .store_uint(fee, 24)
           .store_uint(protocol_fee, 8)
           .store_uint(sqrt_price_x96, 160)
@@ -81,10 +81,10 @@ global cell batch_tick_code;
       begin_cell()
           .store_int(tick_spacing, 24)
           .store_int(tick, 24)
-          .store_uint(fee_growth_global_0_x128, 256)
-          .store_uint(fee_growth_global_1_x128, 256)
-          .store_uint(collected_protocol_fee_0, 128)
-          .store_uint(collected_protocol_fee_1, 128)
+          .store_uint(fee_growth_global0_x128, 256)
+          .store_uint(fee_growth_global1_x128, 256)
+          .store_uint(collected_protocol_fee0, 128)
+          .store_uint(collected_protocol_fee1, 128)
           .store_uint(liquidity, 128)
           .end_cell())
       .store_ref(
@@ -196,7 +196,7 @@ global cell batch_tick_code;
 
 (int, int) get_collected_fees() method_id {
   load_data();
-  return (collected_protocol_fee_0, collected_protocol_fee_1);
+  return (collected_protocol_fee0, collected_protocol_fee1);
 }
 
 

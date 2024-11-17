@@ -1,0 +1,54 @@
+(slice) get_serialized_address(int workchain, int address) inline {
+  return (begin_cell()
+        .store_uint(4, 3)
+        .store_uint(workchain, 8)
+        .store_uint(address, 256)
+  ).end_cell().begin_parse();
+}
+
+cell pack_pool_data(int sqrt_price_x96, slice jetton_0_wallet, slice jetton_1_wallet, int fee, cell batch_tick_code, cell position_code, cell lp_account_code) inline_ref {
+  return begin_cell()
+        .store_ref(begin_cell()
+          .store_slice(my_address())     
+          .store_slice(jetton_0_wallet)
+          .store_slice(jetton_1_wallet)
+          .store_uint(fee, 24)         
+          .store_uint(0, 8)     
+          .store_uint(sqrt_price_x96, 160)    
+          .end_cell())
+        .store_ref(begin_cell()
+          .store_int(0, 24)     
+          .store_int(0, 24)     
+          .store_uint(0, 256)    
+          .store_uint(0, 256)    
+          .store_uint(0, 128)    
+          .store_uint(0, 128)    
+          .store_uint(0, 128)    
+          .end_cell())
+        .store_ref(begin_cell()
+          .store_uint(0, 256)    
+          .store_ref(begin_cell().store_dict(new_dict()).end_cell())
+          .store_ref(batch_tick_code)    
+          .store_ref(position_code)    
+          .store_ref(lp_account_code)    
+          .end_cell())
+    .end_cell();
+}
+
+(cell, slice) get_pool_state_init_and_address(int sqrt_price_x96, slice token0_address, slice token1_address, int fee) inline {
+  builder state_init_builder = begin_cell()
+        .store_uint(0, 2)
+        .store_dict(storage::pool_code);
+
+  if (slice_hash(token0_address) < slice_hash(token1_address)) {
+    state_init_builder = state_init_builder.store_dict(pack_pool_data(sqrt_price_x96, token0_address, token1_address, fee, storage::batch_tick_code, storage::position_code, storage::lp_account_code));
+  } else {
+    state_init_builder = state_init_builder.store_dict(pack_pool_data(sqrt_price_x96, token1_address, token0_address, fee, storage::batch_tick_code, storage::position_code, storage::lp_account_code));
+  }
+
+  cell state_init = state_init_builder
+        .store_uint(0, 1)
+        .end_cell();
+    
+  return (state_init, get_serialized_address(WORKCHAIN, cell_hash(state_init)));
+}

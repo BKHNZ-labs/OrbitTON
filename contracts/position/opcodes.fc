@@ -1,1 +1,2 @@
 const op::mint_position = "op::mint_position"c;
+const op::burn_position = "op::burn_position"c;

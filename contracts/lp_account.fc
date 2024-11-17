@@ -9,8 +9,13 @@ global slice pool_address;
 global slice recipient;
 global int tick_lower;
 global int tick_upper;
+<<<<<<< HEAD
 global int amount0;
 global int amount1;
+=======
+global slice pool_address;
+global slice owner_address;
+>>>>>>> 86c3ba896d7567dc527e476e62df53feb632a002
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {

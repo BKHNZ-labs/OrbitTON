@@ -65,7 +65,6 @@ export class TickTest implements Contract {
     liquidityDelta: bigint,
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
-    tickCumulative: bigint,
     upper: boolean,
     maxLiquidity: bigint,
   ) {
@@ -82,7 +81,6 @@ export class TickTest implements Contract {
             .storeInt(liquidityDelta, 128)
             .storeUint(feeGrowthGlobal0X128, 256)
             .storeUint(feeGrowthGlobal1X128, 256)
-            .storeInt(tickCumulative, 56)
             .storeUint(upper ? 1 : 0, 1)
             .storeUint(maxLiquidity, 128)
             .endCell(),
@@ -97,7 +95,6 @@ export class TickTest implements Contract {
     tick: bigint,
     feeGrowthGlobal0X128: bigint,
     feeGrowthGlobal1X128: bigint,
-    tickCumulative: bigint,
   ) {
     return await provider.internal(via, {
       value,
@@ -110,7 +107,6 @@ export class TickTest implements Contract {
             .storeInt(tick, 24)
             .storeUint(feeGrowthGlobal0X128, 256)
             .storeUint(feeGrowthGlobal1X128, 256)
-            .storeInt(tickCumulative, 56)
             .endCell(),
         )
         .endCell(),

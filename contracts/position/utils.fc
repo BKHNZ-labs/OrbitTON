@@ -1,0 +1,42 @@
+cell pack_position_code(int position_id, slice pool_address, slice owner_address) inline {
+  return begin_cell()
+          .store_ref(begin_cell()
+              .store_uint(position_id, 256)
+              .store_uint(0, 128)
+              .store_uint(0, 256)
+              .store_uint(0, 256)
+              .end_cell())
+          .store_ref(begin_cell()
+              .store_uint(0, 128)
+              .store_uint(0, 128)
+              .store_slice(pool_address)
+              .store_slice(owner_address)
+              .end_cell())
+        .end_cell();
+}
+
+cell calculate_position_state_init(int position_id, slice pool_address, slice owner_address, cell position_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(position_code)
+    .store_dict(pack_position_code(position_id, pool_address, owner_address))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_position_address(cell state_init) inline {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_position_state_init_and_address(int position_id, slice pool_address, slice owner_address, cell position_code) inline {
+  cell state_init = calculate_position_state_init(position_id, pool_address, owner_address, position_code);
+  return (state_init, calculate_position_address(state_init));
+}
+
+slice get_position_address(int position_id, slice pool_address, slice owner_address, cell position_code) inline {
+  cell state_init = calculate_position_state_init(position_id, pool_address, owner_address, position_code);
+  return calculate_position_address(state_init);
+}

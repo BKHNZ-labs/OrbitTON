@@ -95,3 +95,38 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
         .store_uint(tokens_owed_1, 128)
         .end_cell();
 }
+
+
+(int,int,int,int,int) position::simulate_update(
+    int liquidity, 
+    int fee_growth_inside_0_last_x128, 
+    int fee_growth_inside_1_last_x128, 
+    int tokens_owed_0, 
+    int tokens_owed_1,
+    int liquidity_delta,
+    int fee_growth_inside_0_x128,
+    int fee_growth_inside_1_x128) 
+{
+    int liquidity_next = 0;
+    if (liquidity_delta == 0) {
+        throw_unless(error::position::NP, liquidity > 0);
+        liquidity_next = liquidity;
+    } else {
+        liquidity_next = liquidity_math::add_delta(liquidity, liquidity_delta);
+    }
+
+    int tokens_owed_0_new = full_math::mul_div(fee_growth_inside_0_x128 - fee_growth_inside_0_last_x128, liquidity, fixed_point_128::q128);
+    int tokens_owed_1_new = full_math::mul_div(fee_growth_inside_1_x128 - fee_growth_inside_1_last_x128, liquidity, fixed_point_128::q128);
+
+    if (liquidity_delta != 0) {
+        liquidity = liquidity_next;
+    }
+    fee_growth_inside_0_last_x128 = fee_growth_inside_0_x128;
+    fee_growth_inside_1_last_x128 = fee_growth_inside_1_x128;
+    if ((tokens_owed_0_new > 0) | (tokens_owed_1_new > 0)) {
+        tokens_owed_0 += tokens_owed_0_new;
+        tokens_owed_1 += tokens_owed_0_new;
+    }
+
+    return (liquidity, fee_growth_inside_0_last_x128, fee_growth_inside_1_last_x128, tokens_owed_0, tokens_owed_1);
+}

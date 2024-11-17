@@ -1,0 +1,36 @@
+cell pack_batch_tick_code(int batch_index, slice pool_address, cell ticks, cell batch_tick_code) inline {
+  return begin_cell()
+    .store_uint(batch_index, 8)
+    .store_slice(pool_address)
+    .store_dict(ticks)
+    .store_ref(batch_tick_code)
+  .end_cell();
+}
+
+cell calculate_batch_tick_state_init(int batch_index, slice pool_address, cell ticks, cell batch_tick_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(batch_tick_code)
+    .store_dict(pack_batch_tick_code(batch_index, pool_address, ticks, batch_tick_code))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_batch_tick_address(cell state_init) inline {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_batch_tick_state_init_and_address(int batch_index, slice pool_address, cell batch_tick_code) inline {
+  cell state_init = calculate_batch_tick_state_init(batch_index, pool_address, new_dict(), batch_tick_code);
+  return (state_init, calculate_batch_tick_address(state_init));
+}
+
+slice get_batch_tick_address(int batch_index, slice pool_address, cell batch_tick_code) inline {
+  cell state_init = calculate_batch_tick_state_init(batch_index, pool_address, new_dict(), batch_tick_code);
+  return calculate_batch_tick_address(state_init);
+}
+
+

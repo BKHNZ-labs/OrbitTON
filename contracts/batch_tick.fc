@@ -1,35 +1,15 @@
 #include "imports/stdlib.fc";
-#include "batch_tick/opcodes.fc";
+#include "common/utils.fc";
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
-
-global int batch_index;
-global int tick_spacing;
-global slice pool_address;
-global cell ticks;
-
-;; load_data populates storage variables using stored data
-() load_data() impure {
-  var ds = get_data().begin_parse();
-  batch_index = ds~load_uint(8);
-  tick_spacing = ds~load_int(24);
-  pool_address = ds~load_msg_addr();
-  ticks = ds~load_ref();
-  ds.end_parse();
-}
-
-;; save_data stores storage variables as a cell into persistent storage
-() save_data() impure inline_ref {
-  set_data(
-    begin_cell()
-      .store_uint(batch_index, 8)
-      .store_int(tick_spacing, 24)
-      .store_slice(pool_address)
-      .store_ref(ticks)
-    .end_cell()
-  );
-}
+#include "batch_tick/constants.fc";
+#include "batch_tick/errors.fc";
+#include "batch_tick/opcodes.fc";
+#include "batch_tick/storage.fc";
+#include "batch_tick/utils.fc";
+#include "libraries/tick.fc";
+#include "pool/opcodes.fc";
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -51,6 +31,77 @@ global cell ticks;
   int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
   int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
+  if (op == op::update_tick_lower) {
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+    int tick_lower = in_msg_body~load_int(24);
+    int tick_upper = in_msg_body~load_int(24);
+    int lower_range = storage::batch_index * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * constants::batch_index_range - 1;
+    throw_unless(error::wrong_range_batch_tick, (tick_lower <= tick_upper) & (tick_lower >= lower_range) & (tick_lower <= upper_range));
+    int current_tick = in_msg_body~load_int(24);
+    int liquidity = in_msg_body~load_uint(128);
+    int fee_growth_global0_x128 = in_msg_body~load_uint(256);
+    int fee_growth_global1_x128 = in_msg_body~load_uint(256);
+    int upper = in_msg_body~load_int(2);
+    throw_unless(error::wrong_upper, upper == 0);
+    int max_liquidity = in_msg_body~load_uint(128);
+    int flipped_lower = storage::ticks~tick::update(tick_lower, current_tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
+
+    if (tick_upper > upper_range) {
+      int upper_batch_tick_index = tick_upper / constants::batch_index_range;
+      (cell state_init, slice upper_batch_tick_address) = get_batch_tick_state_init_and_address(upper_batch_tick_index, storage::pool_address, storage::batch_tick_code);
+      builder msg = begin_cell()
+                      .store_uint(op::update_tick_upper, 32)
+                      .store_uint(query_id, 64)
+                      .store_int(flipped_lower, 2)
+                      .store_int(tick_upper, 24)
+                      .store_int(current_tick, 24)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_global0_x128, 256)
+                      .store_uint(fee_growth_global1_x128, 256)
+                      .store_int(-1, 2) ;; true
+                      .store_uint(max_liquidity, 128);
+      send_message_with_stateinit(0, upper_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+    } else {
+      int flipped_upper = storage::ticks~tick::update(tick_upper, current_tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
+      builder msg = begin_cell()
+                      .store_uint(op::cb_update_fee_growth_inside, 32)
+                      .store_uint(query_id, 64)
+                      .store_uint(liquidity, 128)
+                      .store_int(flipped_lower, 2)
+                      .store_int(flipped_upper, 2);
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_tick_upper) {
+    int prev_batch_tick_index = storage::batch_index - 1;
+    slice prev_batch_tick_address = get_batch_tick_address(prev_batch_tick_index, storage::pool_address, storage::batch_tick_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, prev_batch_tick_address));
+    int flipped_lower = in_msg_body~load_int(2);
+    int tick_upper = in_msg_body~load_int(24);
+    int tick = in_msg_body~load_int(24);
+    int lower_range = storage::batch_index * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * constants::batch_index_range - 1;
+    throw_unless(error::wrong_range_batch_tick, (tick_upper >= lower_range) & (tick_upper <= upper_range));
+    int liquidity = in_msg_body~load_uint(128);
+    int fee_growth_global0_x128 = in_msg_body~load_uint(256);
+    int fee_growth_global1_x128 = in_msg_body~load_uint(256);
+    int upper = in_msg_body~load_int(2);
+    int max_liquidity = in_msg_body~load_uint(128);
+    int flipped_upper = storage::ticks~tick::update(tick_upper, tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
+    builder msg = begin_cell()
+                    .store_uint(op::cb_update_fee_growth_inside, 32)
+                    .store_uint(query_id, 64)
+                    .store_uint(liquidity, 128)
+                    .store_int(flipped_lower, 2)
+                    .store_int(flipped_upper, 2);
+    send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
+  }
 
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
