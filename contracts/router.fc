@@ -35,15 +35,15 @@
     slice ref_ds = ref_cs.begin_parse();
     throw_unless(error:not_enough_amount, jetton_amount > 0);
     (int forward_opcode, slice jetton1_wallet) = (in_msg_body~load_uint(32), in_msg_body~load_msg_addr());
+
     if (forward_opcode == op::mint) {
-      int sqrt_price_x96 = ref_ds~load_int(160);
       int tick_lower = ref_ds~load_int(24);
       int tick_upper = ref_ds~load_int(24);
       int fee = ref_ds~load_uint(24);
       int tick_spacing = ref_ds~load_int(24);
       int liquidity_delta = ref_ds~load_int(128);
       slice jetton0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(sqrt_price_x96, jetton0_wallet, jetton1_wallet, fee);
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
       builder msg_body = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
@@ -79,13 +79,13 @@
     slice recipient = in_msg_body~load_msg_addr();
     int exit_code = in_msg_body~load_uint(32);
     slice ds = in_msg_body~load_ref().begin_parse();
-    int sqrt_price_x96 = ds~load_int(160);
     slice token0_address = ds~load_msg_addr();
     int token0_amount = ds~load_coins();
     slice token1_address = ds~load_msg_addr();
     int token1_amount = ds~load_coins();
     int fee = ds~load_uint(24);
-    (cell state_init, slice pool_address) = get_pool_state_init_and_address(sqrt_price_x96, token0_address, token1_address, fee);
+    int tick_spacing = ds~load_int(24);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     throw_unless(error::unauthorized, compare_address(sender_address, pool_address) != -1);
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
@@ -97,6 +97,48 @@
       body1 = body1.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(0, token1_address, body1.end_cell(), CARRY_REMAINING_GAS);
     }
+    return ();
+  }
+
+  if (op == op::create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    int sqrt_price_x96 = in_msg_body~load_uint(160);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    builder msg = begin_cell()
+                    .store_uint(op::initialize, 32)
+                    .store_uint(query_id, 64)
+                    .store_uint(sqrt_price_x96, 160)
+                    .store_slice(sender_address);
+    send_message_with_stateinit(0, pool_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+    storage::pool_seqno = storage::pool_seqno + 1;
+    save_data();
+    return ();
+  }
+  
+  if (op == op::cb_create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    slice response_address = in_msg_body~load_msg_addr();
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    if (compare_address(sender_address, pool_address)) {
+      storage::pool_seqno = storage::pool_seqno + 1;
+      ;; emit event
+      cell data = begin_cell()
+                    .store_slice(sender_address)
+                    .store_slice(token0_address)
+                    .store_slice(token1_address)
+                    .store_uint(fee, 24)
+                    .store_int(tick_spacing, 24)
+                    .end_cell();
+      emit_log_simple(storage::pool_seqno - 1, data, query_id);
+      save_data();
+    }
+    send_empty_message(0, response_address, CARRY_REMAINING_GAS + IGNORE_ERRORS);
     return ();
   }
 
@@ -148,7 +190,6 @@
 }
 
 slice get_admin_address() method_id {
-  ~dump(null());
   load_data();
   return storage::admin_address;
 }

@@ -10,9 +10,11 @@ import {
   SendMode,
 } from '@ton/core';
 import { crc32, ValueOps } from '..';
+import { OpCreatePool, storeOpCreatePool } from '../../tlb/router/create_pool';
 
 namespace RouterWrapper {
   export const Opcodes = {
+    CreatePool: crc32('op::create_pool'),
     SetAdminAddress: crc32('op::set_admin_address'),
     UpdateLockState: crc32('op::update_lock_state'),
     UpdatePoolCode: crc32('op::update_pool_code'),
@@ -71,6 +73,16 @@ namespace RouterWrapper {
         value,
         sendMode: SendMode.PAY_GAS_SEPARATELY,
         body: beginCell().endCell(),
+      });
+    }
+
+    async sendCreatePool(provider: ContractProvider, via: Sender, data: OpCreatePool, ops: ValueOps) {
+      let cell = beginCell();
+      storeOpCreatePool(data)(cell);
+      await provider.internal(via, {
+        ...ops,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: cell.endCell(),
       });
     }
 

@@ -1,3 +1,5 @@
+const op::create_pool = "op::create_pool"c;
+const op::cb_create_pool = "op::cb_create_pool"c;
 const op::set_admin_address = "op::set_admin_address"c;
 const op::update_lock_state = "op::update_lock_state"c;
 const op::update_pool_code = "op::update_pool_code"c;

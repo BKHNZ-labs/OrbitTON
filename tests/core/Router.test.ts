@@ -113,6 +113,29 @@ describe('Router Test', () => {
     token1WalletContract = blockchain.openContract(token1WalletInstance);
   });
 
+  it('Send op:create_pool', async () => {
+    const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
+    console.log('Router wallet address', routerJetton0Wallet.toString());
+    const routerJetton1Wallet = await token1MasterContract.getWalletAddress(routerContract.address);
+    console.log('Router wallet address', routerJetton1Wallet.toString());
+    const createPool = await routerContract.sendCreatePool(
+      deployer.getSender(),
+      {
+        kind: 'OpCreatePool',
+        query_id: 0,
+        jetton0_wallet: routerJetton0Wallet,
+        jetton1_wallet: routerJetton1Wallet,
+        fee: 3000,
+        sqrt_price_x96: 4295128740n,
+        tick_spacing: 60,
+      },
+      {
+        value: toNano('0.1'),
+      },
+    );
+    printTransactionFees(createPool.transactions);
+  });
+
   it('Send op:mint', async () => {
     const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
     console.log('Router address:', routerContract.address.toString());

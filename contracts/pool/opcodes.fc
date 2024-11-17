@@ -1,6 +1,8 @@
 const op::cb_update_fee_growth_inside = "op::cb_update_fee_growth_inside"c;
+const op::initialize = "op::initialize"c;
 const op::mint = "op::mint"c;
 const op::cb_add_liquidity = "op::cb_add_liquidity"c;
 const op::swap = "op::swap"c;
 const op::burn = "op::burn"c;
 const op::cb_burn = "op::cb_burn"c;
+
