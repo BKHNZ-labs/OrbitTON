@@ -77,11 +77,7 @@ namespace PoolWrapper {
           beginCell()
             .storeUint(0n, 256)
             .storeUint(0, 128)
-            .storeRef(
-              beginCell()
-                .storeDict(Dictionary.empty(Dictionary.Keys.Int(16), Dictionary.Values.Cell()))
-                .endCell(),
-            )
+            .storeRef(beginCell().storeDict(Dictionary.empty()).endCell())
             .storeRef(initMsg.positionCode)
             .storeRef(initMsg.lpAccountCode)
             .storeRef(initMsg.batchTickCode)
