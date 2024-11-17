@@ -39,7 +39,7 @@
     int upper_range = (storage::batch_index + 1) * constants::batch_index_range - 1;
     throw_unless(error::wrong_range_batch_tick, (tick_lower <= tick_upper) & (tick_lower >= lower_range) & (tick_lower <= upper_range));
     int current_tick = in_msg_body~load_int(24);
-    int liquidity = in_msg_body~load_uint(128);
+    int liquidity_delta = in_msg_body~load_uint(128);
     int fee_growth_global0_x128 = in_msg_body~load_uint(256);
     int fee_growth_global1_x128 = in_msg_body~load_uint(256);
     int upper = in_msg_body~load_int(2);

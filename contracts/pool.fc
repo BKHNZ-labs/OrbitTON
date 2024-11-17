@@ -178,7 +178,18 @@ global cell batch_tick_code;
 
     ;; send batch tick
     int batch_tick_index = calculate_batch_tick_index(tick, tick_spacing);
-
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, pool_address ,ticks, batch_tick_code);
+    builder send_batch_tick_body = begin_cell()
+        .store_uint(op::update_tick_lower, 32)
+        .store_uint(query_id, 64)
+        .store_int(tick_lower, 24)
+        .store_int(tick_upper, 24)
+        .store_int(tick, 24)
+        .store_uint(liquidity_delta, 128)
+        .store_uint(fee_growth_global0_x128, 256)
+        .store_uint(fee_growth_global1_x128, 256)
+        .store_int(0, 2)
+        .store_uint(liquidity, 128);
     return ();
   }
 
