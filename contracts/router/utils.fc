@@ -13,7 +13,7 @@ cell pack_pool_data(int sqrt_price_x96, slice jetton_0_wallet, slice jetton_1_wa
           .store_slice(jetton_0_wallet)
           .store_slice(jetton_1_wallet)
           .store_uint(fee, 24)         
-          .store_uint(0, 8)     
+          .store_uint(0, 8)
           .store_uint(sqrt_price_x96, 160)    
           .end_cell())
         .store_ref(begin_cell()

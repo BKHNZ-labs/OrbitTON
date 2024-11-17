@@ -4,10 +4,6 @@ const op::update_pool_code = "op::update_pool_code"c;
 const op::update_account_code = "op::update_account_code"c;
 const op::update_batch_tick_code = "op::update_batch_tick_code"c;
 const op::update_position_code = "op::update_position_code"c;
-<<<<<<< HEAD
-const op::pay_to = "op::pay_to"c;
-=======
 const op::update_lp_account_code = "op::update_lp_account_code"c;
 const op::pay_to = "op::pay_to"c;
 
->>>>>>> 86c3ba896d7567dc527e476e62df53feb632a002

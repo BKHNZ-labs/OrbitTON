@@ -5,6 +5,8 @@ import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
 import {
   encodePriceSqrt,
+  getMaxTick,
+  getMinTick,
   MaxUint128,
   pseudoRandomBigNumberOnUint128,
   pseudoRandomBigNumberOnUint256,
@@ -28,6 +30,8 @@ describe('Pool Test', () => {
   let router: SandboxContract<TreasuryContract>;
   let pool: SandboxContract<PoolWrapper.PoolTest>;
   let tickMath: SandboxContract<TickMathTest>;
+  const tickMin = getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
+  const tickMax = getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
   beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
@@ -117,31 +121,37 @@ describe('Pool Test', () => {
     });
 
     it('initialize the pool at price of 10:1', async () => {
+      const lpAccount = await pool.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
       await pool.sendMint(router.getSender(), toNano(0.05), {
         kind: 'InMsgBody',
         query_id: 0,
         body: {
           kind: 'MintParams',
-          jetton_amount_0: 0n,
-          jetton_amount_1: 1n,
-          tick_lower: -10,
-          tick_upper: 10,
-          liquidity_delta: 1000n,
+          jetton_amount_0: 9996n,
+          jetton_amount_1: 0n,
+          tick_lower: tickMin,
+          tick_upper: tickMax,
+          liquidity_delta: 3161n,
           recipient: deployer.address,
         },
       });
-      const result = await pool.sendMint(router.getSender(), toNano(0.05), {
+      const result = await pool.sendMint(router.getSender(), toNano(0.5), {
         kind: 'InMsgBody',
         query_id: 0,
         body: {
           kind: 'MintParams',
           jetton_amount_0: 0n,
-          jetton_amount_1: 1n,
-          tick_lower: -10,
-          tick_upper: 10,
+          jetton_amount_1: 2000n,
+          tick_lower: tickMin,
+          tick_upper: tickMax,
           liquidity_delta: 3161n,
           recipient: deployer.address,
         },
+      });
+      printTransactionFees(result.transactions);
+      expect(result.transactions).toHaveTransaction({
+        from: lpAccount,
+        to: pool.address,
       });
     });
   });

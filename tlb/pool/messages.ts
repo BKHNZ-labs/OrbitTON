@@ -12,8 +12,8 @@ export function bitLen(n: number) {
 }
 
 /*
-mint#_  jetton_amount_0:uint256 
-        jetton_amount_1:uint256 
+mint#_  jetton_amount_0:Grams 
+        jetton_amount_1:Grams 
         tick_lower:int24 
         tick_upper:int24 
         liquidity_delta:int128 
@@ -43,8 +43,8 @@ export interface InMsgBody {
 }
 
 /*
-mint#_  jetton_amount_0:uint256 
-        jetton_amount_1:uint256 
+mint#_  jetton_amount_0:Grams 
+        jetton_amount_1:Grams 
         tick_lower:int24 
         tick_upper:int24 
         liquidity_delta:int128 
@@ -52,8 +52,8 @@ mint#_  jetton_amount_0:uint256
 */
 
 export function loadMintParams(slice: Slice): MintParams {
-    let jetton_amount_0: bigint = slice.loadUintBig(256);
-    let jetton_amount_1: bigint = slice.loadUintBig(256);
+    let jetton_amount_0: bigint = slice.loadCoins();
+    let jetton_amount_1: bigint = slice.loadCoins();
     let tick_lower: number = slice.loadInt(24);
     let tick_upper: number = slice.loadInt(24);
     let liquidity_delta: bigint = slice.loadIntBig(128);
@@ -72,8 +72,8 @@ export function loadMintParams(slice: Slice): MintParams {
 
 export function storeMintParams(mintParams: MintParams): (builder: Builder) => void {
     return ((builder: Builder) => {
-        builder.storeUint(mintParams.jetton_amount_0, 256);
-        builder.storeUint(mintParams.jetton_amount_1, 256);
+        builder.storeCoins(mintParams.jetton_amount_0);
+        builder.storeCoins(mintParams.jetton_amount_1);
         builder.storeInt(mintParams.tick_lower, 24);
         builder.storeInt(mintParams.tick_upper, 24);
         builder.storeInt(mintParams.liquidity_delta, 128);

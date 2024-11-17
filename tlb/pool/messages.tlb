@@ -1,5 +1,5 @@
-mint#_  jetton_amount_0:uint256 
-        jetton_amount_1:uint256 
+mint#_  jetton_amount_0:Grams 
+        jetton_amount_1:Grams 
         tick_lower:int24 
         tick_upper:int24 
         liquidity_delta:int128 
