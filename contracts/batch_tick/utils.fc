@@ -34,3 +34,9 @@ slice get_batch_tick_address(int batch_index, slice pool_address, cell batch_tic
 }
 
 
+int calculate_batch_tick_index(int tick, int tick_spacing){
+  if(tick < 0){
+    return tick ^/ (constants::batch_index_range * tick_spacing);
+  }
+  return tick / (constants::batch_index_range * tick_spacing);
+}
