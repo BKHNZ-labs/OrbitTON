@@ -1,1 +1,3 @@
 const int exit::refund = 0;
+
+const GAS::REFUND = 100000000;

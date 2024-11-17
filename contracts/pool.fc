@@ -1,6 +1,7 @@
 #include "imports/stdlib.fc";
 #include "libraries/sqrt_price_math.fc";
 #include "libraries/tick_math.fc";
+#include "libraries/tick_bitmap.fc";
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
@@ -15,6 +16,9 @@
 #include "batch_tick/constants.fc";
 #include "batch_tick/opcodes.fc";
 #include "batch_tick/utils.fc";
+;; FIXME: add maxLiquidityPerTick
+#include "libraries/tick.fc";
+
 
 
 global slice router_address; ;; 267
@@ -134,8 +138,8 @@ global cell batch_tick_code;
             .store_coins(jetton_amount_0)
             .store_coins(jetton_amount_1)
             .store_int(liquidity_delta, 128);
-
     send_message_with_stateinit(0, to_lp_account_address, state_init, body.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
     return ();
   }
 
@@ -171,14 +175,19 @@ global cell batch_tick_code;
       return ();
     } 
 
-    const refund_amount0 = jetton_0_amount - amount0;
-    const refund_amount1 = jetton_1_amount - amount1;
-    builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, jetton0_wallet, refund_amount0, jetton1_wallet, refund_amount1, fee, tick_spacing);
-    send_simple_message(0, router_address, refund_body, CARRY_REMAINING_GAS);
+    int refund_amount0 = jetton_0_amount - amount0;
+    int refund_amount1 = jetton_1_amount - amount1;
+
+    if((refund_amount0 > 0) | (refund_amount1 > 0)){
+      ;; refunds to user
+      builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, jetton0_wallet, refund_amount0, jetton1_wallet, refund_amount1, fee, tick_spacing);
+      send_simple_message(GAS::REFUND, router_address, refund_body.end_cell(), NORMAL);
+    }
 
     ;; send batch tick
-    int batch_tick_index = calculate_batch_tick_index(tick, tick_spacing);
-    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, pool_address ,ticks, batch_tick_code);
+    int remaining_gas = msg_value - GAS::REFUND;
+    int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()
         .store_uint(op::update_tick_lower, 32)
         .store_uint(query_id, 64)
@@ -189,7 +198,10 @@ global cell batch_tick_code;
         .store_uint(fee_growth_global0_x128, 256)
         .store_uint(fee_growth_global1_x128, 256)
         .store_int(0, 2)
-        .store_uint(liquidity, 128);
+        .store_uint(tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing), 128); ;; FIXME: add maxLiquidityPerTick
+
+    send_message_with_stateinit(remaining_gas, batch_tick_address, state_init, send_batch_tick_body.end_cell(), NORMAL);
+    save_data();
     return ();
   }
 
@@ -206,7 +218,18 @@ global cell batch_tick_code;
   }
 
   if(op == op::cb_update_fee_growth_inside){
-
+    (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int fee_growth_inside_0X128, int fee_growth_inside_1X128) = (in_msg_body~load_int(16),in_msg_body~load_uint(128), in_msg_body~load_int(24), in_msg_body~load_int(2), in_msg_body~load_int(24), in_msg_body~load_int(2), in_msg_body~load_uint(256), in_msg_body~load_uint(256));
+    slice batch_tick_address = get_batch_tick_address(batch_tick_index,tick_spacing,my_address(),batch_tick_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
+    liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
+    if(flipped_lower){
+      tick_bitmap~tick_bitmap::flip_tick(tick_lower, tick_spacing);
+    }
+    if(flipped_upper){
+      tick_bitmap~tick_bitmap::flip_tick(tick_upper, tick_spacing);
+    }
+    save_data();
+    return();
   }
 
 

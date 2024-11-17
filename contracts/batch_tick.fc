@@ -40,13 +40,14 @@
     throw_unless(error::wrong_range_batch_tick, (tick_lower <= tick_upper) & (tick_lower >= lower_range) & (tick_lower <= upper_range));
     int current_tick = in_msg_body~load_int(24);
     int liquidity_delta = in_msg_body~load_uint(128);
-    int fee_growth_global0_x128 = in_msg_body~load_uint(256);
-    int fee_growth_global1_x128 = in_msg_body~load_uint(256);
+    int fee_growth_global_0X128 = in_msg_body~load_uint(256);
+    int fee_growth_global_1X128 = in_msg_body~load_uint(256);
     int upper = in_msg_body~load_int(2);
     throw_unless(error::wrong_upper, upper == 0);
     int max_liquidity = in_msg_body~load_uint(128);
-    int flipped_lower = storage::ticks~tick::update(tick_lower, current_tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
-
+    int flipped_lower = storage::ticks~tick::update(tick_lower, current_tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, upper, max_liquidity);
+    (int fee_growth_below_0X128, int fee_growth_below_1X128) = storage::ticks.tick::get_fee_growth_below(tick_lower, current_tick,  fee_growth_global_0X128,
+      fee_growth_global_1X128);
     if (tick_upper > upper_range) {
       int upper_batch_tick_index = calculate_batch_tick_index(tick_upper, storage::tick_spacing);
       (cell state_init, slice upper_batch_tick_address) = get_batch_tick_state_init_and_address(upper_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
@@ -54,22 +55,48 @@
                       .store_uint(op::update_tick_upper, 32)
                       .store_uint(query_id, 64)
                       .store_int(flipped_lower, 2)
+                      .store_int(tick_lower, 24)
                       .store_int(tick_upper, 24)
                       .store_int(current_tick, 24)
-                      .store_uint(liquidity, 128)
-                      .store_uint(fee_growth_global0_x128, 256)
-                      .store_uint(fee_growth_global1_x128, 256)
+                      .store_uint(liquidity_delta, 128)
+                      .store_uint(fee_growth_global_0X128, 256)
+                      .store_uint(fee_growth_global_1X128, 256)
                       .store_int(-1, 2) ;; true
-                      .store_uint(max_liquidity, 128);
+                      .store_uint(max_liquidity, 128)
+                      .store_ref(
+        begin_cell()
+                            .store_uint(fee_growth_below_0X128, 256)
+                            .store_uint(fee_growth_below_1X128, 256)
+                          .end_cell()
+      );
       send_message_with_stateinit(0, upper_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
     } else {
-      int flipped_upper = storage::ticks~tick::update(tick_upper, current_tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
+      int flipped_upper = storage::ticks~tick::update(tick_upper, current_tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, upper, max_liquidity);
+      (int fee_growth_above_0X128, int fee_growth_above_1X128) = storage::ticks.tick::get_fee_growth_above(
+        tick_upper,
+        current_tick,
+        fee_growth_global_0X128,
+        fee_growth_global_1X128 
+      );
+        (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick::get_fee_growth_inside(
+        fee_growth_global_0X128,
+        fee_growth_global_1X128,
+        fee_growth_below_0X128,
+        fee_growth_below_1X128,
+        fee_growth_above_0X128,
+        fee_growth_above_1X128
+      );
       builder msg = begin_cell()
-                      .store_uint(op::cb_update_fee_growth_inside, 32)
-                      .store_uint(query_id, 64)
-                      .store_uint(liquidity, 128)
-                      .store_int(flipped_lower, 2)
-                      .store_int(flipped_upper, 2);
+                    .store_uint(op::cb_update_fee_growth_inside, 32)
+                    .store_uint(query_id, 64)
+                    .store_int(storage::batch_index, 16)
+                    .store_uint(liquidity_delta, 128)
+                    .store_int(tick_lower, 24)
+                    .store_int(flipped_lower, 2)
+                    .store_int(tick_upper, 24)
+                    .store_int(flipped_upper, 2)
+                    .store_uint(fee_growth_inside_0X128, 256)
+                    .store_uint(fee_growth_inside_1X128, 256);
       send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
     }
     save_data();
@@ -81,23 +108,45 @@
     slice prev_batch_tick_address = get_batch_tick_address(prev_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, prev_batch_tick_address));
     int flipped_lower = in_msg_body~load_int(2);
+    int tick_lower = in_msg_body~load_int(24);
     int tick_upper = in_msg_body~load_int(24);
     int tick = in_msg_body~load_int(24);
-    int lower_range = storage::batch_index * constants::batch_index_range;
-    int upper_range = (storage::batch_index + 1) * constants::batch_index_range - 1;
+    int lower_range = storage::batch_index * storage::tick_spacing * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * storage::tick_spacing * constants::batch_index_range - 1;
     throw_unless(error::wrong_range_batch_tick, (tick_upper >= lower_range) & (tick_upper <= upper_range));
-    int liquidity = in_msg_body~load_uint(128);
-    int fee_growth_global0_x128 = in_msg_body~load_uint(256);
-    int fee_growth_global1_x128 = in_msg_body~load_uint(256);
+    int liquidity_delta = in_msg_body~load_uint(128);
+    int fee_growth_global_0X128 = in_msg_body~load_uint(256);
+    int fee_growth_global_1X128 = in_msg_body~load_uint(256);
     int upper = in_msg_body~load_int(2);
     int max_liquidity = in_msg_body~load_uint(128);
-    int flipped_upper = storage::ticks~tick::update(tick_upper, tick, liquidity, fee_growth_global0_x128, fee_growth_global1_x128, upper, max_liquidity);
+    slice fee_lower_info_cs = in_msg_body~load_ref().begin_parse();
+    (int fee_growth_below_0X128, int fee_growth_below_1X128) = (fee_lower_info_cs~load_uint(256), fee_lower_info_cs~load_uint(256));
+    (int fee_growth_above_0X128, int fee_growth_above_1X128) = storage::ticks.tick::get_fee_growth_above(
+      tick_upper,
+      tick,
+      fee_growth_global_0X128,
+      fee_growth_global_1X128 
+    );
+    (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick::get_fee_growth_inside(
+      fee_growth_global_0X128,
+      fee_growth_global_1X128,
+      fee_growth_below_0X128,
+      fee_growth_below_1X128,
+      fee_growth_above_0X128,
+      fee_growth_above_1X128
+    );
+    int flipped_upper = storage::ticks~tick::update(tick_upper, tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, upper, max_liquidity);
     builder msg = begin_cell()
                     .store_uint(op::cb_update_fee_growth_inside, 32)
                     .store_uint(query_id, 64)
-                    .store_uint(liquidity, 128)
+                    .store_int(storage::batch_index, 16)
+                    .store_uint(liquidity_delta, 128)
+                    .store_int(tick_lower, 24)
                     .store_int(flipped_lower, 2)
-                    .store_int(flipped_upper, 2);
+                    .store_int(tick_upper, 24)
+                    .store_int(flipped_upper, 2)
+                    .store_uint(fee_growth_inside_0X128, 256)
+                    .store_uint(fee_growth_inside_1X128, 256);
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return ();

@@ -36,6 +36,12 @@ slice get_batch_tick_address(int batch_index, int tick_spacing, slice pool_addre
 
 
 int calculate_batch_tick_index(int tick, int tick_spacing){
+  if(constants::batch_index_range * tick_spacing > 887272){
+    if(tick < 0){
+      return -1;
+    }
+    return 0;
+  }
   if(tick < 0){
     return tick ^/ (constants::batch_index_range * tick_spacing);
   }

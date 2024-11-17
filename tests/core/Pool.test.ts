@@ -18,11 +18,13 @@ describe('Pool Test', () => {
   let code: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
+  let batchTickCode: Cell;
 
   beforeAll(async () => {
     code = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
     tickMathCode = await compile('TickMathTest');
+    batchTickCode = await compile('BatchTick');
   });
 
   let blockchain: Blockchain;
@@ -42,7 +44,7 @@ describe('Pool Test', () => {
     const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
     pool = blockchain.openContract(
       PoolWrapper.PoolTest.create(code, {
-        batchTickCode: beginCell().endCell(),
+        batchTickCode: batchTickCode,
         positionCode: beginCell().endCell(),
         lpAccountCode,
         routerAddress: router.address,
@@ -135,7 +137,7 @@ describe('Pool Test', () => {
           recipient: deployer.address,
         },
       });
-      const result = await pool.sendMint(router.getSender(), toNano(0.5), {
+      const result = await pool.sendMint(router.getSender(), toNano(1), {
         kind: 'InMsgBody',
         query_id: 0,
         body: {
