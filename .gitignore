@@ -17,3 +17,5 @@ Session.vim
 # yarn
 .yarn/*
 .yarn
+
+references/*

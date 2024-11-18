@@ -64,8 +64,7 @@
                       .store_uint(fee_growth_global_1X128, 256)
                       .store_int(-1, 2) ;; true
                       .store_uint(max_liquidity, 128)
-                      .store_ref(
-        begin_cell()
+                      .store_ref(begin_cell()
                             .store_uint(fee_growth_below_0X128, 256)
                             .store_uint(fee_growth_below_1X128, 256)
                             .store_slice(recipient)
@@ -105,6 +104,12 @@
                         .end_cell()
                     );
       send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      if (flipped_upper) {
+        storage::ticks~idict_delete?(24, tick_upper);
+      }
+    }
+    if (flipped_lower) {
+      storage::ticks~idict_delete?(24, tick_lower);
     }
     save_data();
     return ();
@@ -125,6 +130,7 @@
     int fee_growth_global_0X128 = in_msg_body~load_uint(256);
     int fee_growth_global_1X128 = in_msg_body~load_uint(256);
     int upper = in_msg_body~load_int(2);
+    throw_unless(error::wrong_upper, upper == -1);
     int max_liquidity = in_msg_body~load_uint(128);
     slice fee_lower_info_cs = in_msg_body~load_ref().begin_parse();
     (int fee_growth_below_0X128, int fee_growth_below_1X128) = (fee_lower_info_cs~load_uint(256), fee_lower_info_cs~load_uint(256));
@@ -161,8 +167,19 @@
                         .end_cell()
                     );
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    if (flipped_upper) {
+      storage::ticks~idict_delete?(24, tick_upper);
+    }
     save_data();
     return ();
+  }
+
+  if (op == op::internal_swap) {
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+  }
+
+  if (op == op::cross_swap) {
+    
   }
 
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw

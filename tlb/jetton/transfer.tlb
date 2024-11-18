@@ -6,7 +6,7 @@ mint#_  sqrt_price_x96: uint160
         liquidity_delta: int128
         recipient: MsgAddress = MintParams;
 
-op_jetton_transfer#f8a7ea5
+op_jetton_transfer#0f8a7ea5
         query_id: uint64
         jetton_amount: uint128
         to_address: MsgAddress
