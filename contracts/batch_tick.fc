@@ -104,11 +104,11 @@
                         .end_cell()
                     );
       send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
-      if (flipped_upper) {
+      if (liquidity_delta < 0 & flipped_upper) {
         storage::ticks~idict_delete?(24, tick_upper);
       }
     }
-    if (flipped_lower) {
+    if (liquidity_delta < 0 & flipped_lower) {
       storage::ticks~idict_delete?(24, tick_lower);
     }
     save_data();
@@ -167,7 +167,7 @@
                         .end_cell()
                     );
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
-    if (flipped_upper) {
+    if (liquidity_delta < 0 & flipped_upper) {
       storage::ticks~idict_delete?(24, tick_upper);
     }
     save_data();
@@ -176,6 +176,7 @@
 
   if (op == op::internal_swap) {
     throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+
   }
 
   if (op == op::cross_swap) {
