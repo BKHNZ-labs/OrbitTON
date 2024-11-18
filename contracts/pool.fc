@@ -162,7 +162,9 @@ global cell batch_tick_code;
     (int jetton_amount_0, int jetton_amount_1,  int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128),  body~load_msg_addr());
     cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, lp_account_code);
     slice to_lp_account_address = calculate_lp_account_address(state_init);
-    
+    ~dump(null());
+    ~dump(jetton_amount_0);
+    ~dump(jetton_amount_1);
     builder body = begin_cell()
             .store_uint(op::add_liquidity, 32)
             .store_uint(query_id, 64)
@@ -181,7 +183,6 @@ global cell batch_tick_code;
     throw_unless(error::unauthorized, compare_address(sender_address, lp_account));
     int amount0 = 0;
     int amount1 = 0;
-  
     if(tick < tick_lower){
       amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     } 
@@ -198,14 +199,14 @@ global cell batch_tick_code;
     if(tick_upper < tick){
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
-
+   
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount) ){
       ;; refunds to user
-      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT,jetton0_wallet, jetton_0_amount, jetton1_wallet, jetton_1_amount, fee, tick_spacing); 
+      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, jetton0_wallet, jetton_0_amount, jetton1_wallet, jetton_1_amount, fee, tick_spacing); 
       send_simple_message(0, router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
       return ();
     } 
-
+  
     int refund_amount0 = jetton_0_amount - amount0;
     int refund_amount1 = jetton_1_amount - amount1;
 
@@ -216,7 +217,7 @@ global cell batch_tick_code;
     }
 
     ;; send batch tick
-    int remaining_gas = msg_value - GAS::REFUND;
+    int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
     (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()

@@ -29,9 +29,9 @@ cell pack_pool_data(slice jetton_0_wallet, slice jetton_1_wallet, int fee, int t
           .store_uint(0, 256)    
           .store_uint(0, 128)
           .store_ref(begin_cell().store_dict(new_dict()).end_cell())
-          .store_ref(batch_tick_code)    
           .store_ref(position_code)    
           .store_ref(lp_account_code)    
+          .store_ref(batch_tick_code)    
           .end_cell())
     .end_cell();
 }
@@ -41,7 +41,7 @@ cell pack_pool_data(slice jetton_0_wallet, slice jetton_1_wallet, int fee, int t
         .store_uint(0, 2)
         .store_dict(storage::pool_code);
 
-  if (slice_hash(token0_address) < slice_hash(token1_address)) {
+  if (slice_hash(token0_address) > slice_hash(token1_address)) {
     state_init_builder = state_init_builder.store_dict(pack_pool_data(token0_address, token1_address, fee, tick_spacing, storage::batch_tick_code, storage::position_code, storage::lp_account_code));
   } else {
     state_init_builder = state_init_builder.store_dict(pack_pool_data(token1_address, token0_address, fee, tick_spacing, storage::batch_tick_code, storage::position_code, storage::lp_account_code));

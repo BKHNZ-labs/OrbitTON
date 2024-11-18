@@ -51,7 +51,7 @@ global int amount1;
   if (flags & 1) { ;; ignore all bounced messages
     return ();
   }
-  
+
   load_data(); ;; here we populate the storage variables
 
   slice sender_address = cs~load_msg_addr();
