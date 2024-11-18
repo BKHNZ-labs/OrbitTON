@@ -17,6 +17,9 @@
 #include "batch_tick/constants.fc";
 #include "batch_tick/opcodes.fc";
 #include "batch_tick/utils.fc";
+#include "position/utils.fc";
+#include "position/opcodes.fc";
+
 
 
 
@@ -226,7 +229,12 @@ global cell batch_tick_code;
         .store_uint(fee_growth_global0_x128, 256)
         .store_uint(fee_growth_global1_x128, 256)
         .store_int(0, 2)
-        .store_uint(tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing), 128); ;; FIXME: add maxLiquidityPerTick
+        .store_uint(max_liquidity_per_tick, 128)
+        .store_ref(
+      begin_cell()
+            .store_slice(recipient)
+          .end_cell()
+    );
     send_message_with_stateinit(remaining_gas, batch_tick_address, state_init, send_batch_tick_body.end_cell(), NORMAL);
     save_data();
     return ();
@@ -245,23 +253,34 @@ global cell batch_tick_code;
   }
 
   if(op == op::cb_update_fee_growth_inside){
-    (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int fee_growth_inside_0X128, int fee_growth_inside_1X128) = (in_msg_body~load_int(16),in_msg_body~load_uint(128), in_msg_body~load_int(24), in_msg_body~load_int(2), in_msg_body~load_int(24), in_msg_body~load_int(2), in_msg_body~load_uint(256), in_msg_body~load_uint(256));
-    slice batch_tick_address = get_batch_tick_address(batch_tick_index,tick_spacing,my_address(),batch_tick_code);
+    slice body = in_msg_body~load_ref().begin_parse();
+    (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int fee_growth_inside_0X128, int fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
+    slice batch_tick_address = get_batch_tick_address(batch_tick_index, tick_spacing, my_address(),batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
     liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
-    ~dump(tick_lower);
-    ~dump(tick_spacing);
     if(flipped_lower){
       tick_bitmap~tick_bitmap::flip_tick(tick_lower, tick_spacing);
     }
     if(flipped_upper){
       tick_bitmap~tick_bitmap::flip_tick(tick_upper, tick_spacing);
     }
+
+   
+    (cell state_init, slice position_address) = get_position_state_init_and_address(position_seqno, my_address(), owner_address, position_code);
+
+    builder mint_body = begin_cell()
+                          .store_uint(op::mint_position, 32)
+                          .store_uint(query_id, 64)
+                          .store_int(liquidity_delta,128)
+                          .store_uint(fee_growth_inside_0X128, 256)
+                          .store_uint(fee_growth_inside_1X128, 256);
+
+    send_message_with_stateinit(0, position_address, state_init, mint_body.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return();
   }
 
-
+  
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
 
@@ -274,4 +293,14 @@ global cell batch_tick_code;
 slice get_lp_account_address(slice user_address, int tick_lower, int tick_upper) method_id {
   load_data();
   return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, lp_account_code);
+}
+
+int get_batch_tick_index(int tick) method_id {
+  load_data();
+  return calculate_batch_tick_index(tick, tick_spacing);
+}
+
+slice get_calculate_batch_tick_address(int batch_tick_index) method_id {
+  load_data();
+  return get_batch_tick_address(batch_tick_index, tick_spacing, my_address(), batch_tick_code);
 }

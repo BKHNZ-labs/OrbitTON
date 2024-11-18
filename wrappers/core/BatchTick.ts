@@ -127,6 +127,16 @@ namespace BatchTickWrapper {
         body: BatchTickTest.buildUpdateTickUpperPacket(data),
       });
     }
+
+    async getTick(provider: ContractProvider, tick: bigint) {
+      const result = await provider.get('get_tick', [
+        {
+          type: 'int',
+          value: BigInt(tick),
+        },
+      ]);
+      return result.stack.readCell();
+    }
   }
 }
 

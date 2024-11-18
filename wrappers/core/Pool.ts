@@ -32,6 +32,7 @@ namespace PoolWrapper {
     positionCode: Cell;
     lpAccountCode: Cell;
     batchTickCode: Cell;
+    maxLiquidity?: bigint;
   }
 
   export class PoolTest implements Contract {
@@ -76,7 +77,7 @@ namespace PoolWrapper {
         .storeRef(
           beginCell()
             .storeUint(0n, 256)
-            .storeUint(0, 128)
+            .storeUint(initMsg.maxLiquidity ?? 0, 128)
             .storeRef(beginCell().storeDict(Dictionary.empty()).endCell())
             .storeRef(initMsg.positionCode)
             .storeRef(initMsg.lpAccountCode)
@@ -140,6 +141,26 @@ namespace PoolWrapper {
         },
       ]);
 
+      return result.stack.readAddress();
+    }
+
+    async getBatchTickIndex(provider: ContractProvider, tick: bigint): Promise<bigint> {
+      const result = await provider.get('get_batch_tick_index', [
+        {
+          type: 'int',
+          value: tick,
+        },
+      ]);
+      return result.stack.readBigNumber();
+    }
+
+    async getBatchTickAddress(provider: ContractProvider, batchTickIndex: bigint): Promise<Address> {
+      const result = await provider.get('get_calculate_batch_tick_address', [
+        {
+          type: 'int',
+          value: batchTickIndex,
+        },
+      ]);
       return result.stack.readAddress();
     }
   }
