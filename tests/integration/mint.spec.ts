@@ -3,14 +3,7 @@ import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
-import {
-  encodePriceSqrt,
-  getMaxTick,
-  getMinTick,
-  MaxUint128,
-  pseudoRandomBigNumberOnUint128,
-  pseudoRandomBigNumberOnUint256,
-} from '../shared/utils';
+import { encodePriceSqrt, getMaxTick, getMinTick } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 import BatchTickWrapper from '../../wrappers/core/BatchTick';
