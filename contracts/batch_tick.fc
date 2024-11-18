@@ -11,12 +11,12 @@
 #include "libraries/tick.fc";
 #include "pool/opcodes.fc";
 
-(int, slice, int) find_next_tick(int tick_index, int zero_for_one) {
-  if (zero_for_one) {
-    return ticks.dict_get_prev?(key_len, tick_index);
-  }
-  return ticks.dict_get_next?(key_len, tick_index);
-}
+;; (int, slice, int) find_next_tick(int tick_index, int zero_for_one) {
+;;   if (zero_for_one) {
+;;     return ticks.dict_get_prev?(key_len, tick_index);
+;;   }
+;;   return ticks.dict_get_next?(key_len, tick_index);
+;; }
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
