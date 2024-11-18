@@ -157,6 +157,7 @@ describe('Pool Test', () => {
       const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
       const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
       const position0Address = await poolContract.getPositionAddressBySeq(0n);
+      // console.log(await poolContract.getPoolInfo());
 
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,

@@ -311,3 +311,8 @@ int get_position_seqno() method_id {
   load_data();
   return position_seqno;
 }
+
+;; (int, int, int, int, int) get_pool_info() method_id {
+;;   load_data();
+;;   return (fee, tick_spacing, tick, sqrt_price_x96, liquidity);
+;; }

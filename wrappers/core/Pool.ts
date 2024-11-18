@@ -178,6 +178,16 @@ namespace PoolWrapper {
       const result = await provider.get('get_position_seqno', []);
       return result.stack.readBigNumber();
     }
+
+    async getPoolInfo(provider: ContractProvider) {
+      const result = await provider.get('get_pool_info', []);
+      const fee = result.stack.readBigNumber();
+      const tickSpacing = result.stack.readBigNumber();
+      const tick = result.stack.readBigNumber();
+      const sqrtPriceX96 = result.stack.readBigNumber();
+      const liquidity = result.stack.readBigNumber();
+      return { fee, tickSpacing, tick, sqrtPriceX96, liquidity };
+    }
   }
 }
 
