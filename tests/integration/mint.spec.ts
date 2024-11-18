@@ -156,6 +156,8 @@ describe('Pool Test', () => {
       const pool = await router.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
       const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
       const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
+      const position0Address = await poolContract.getPositionAddressBySeq(0n);
+
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,
         to: pool,
@@ -232,7 +234,13 @@ describe('Pool Test', () => {
         to: pool,
         success: true,
       });
-
+      expect(transfer1.transactions).toHaveTransaction({
+        from: pool,
+        to: position0Address,
+        success: true,
+      });
+      const currentSeq = await poolContract.getPositionSeqno();
+      expect(currentSeq).toBe(1n);
       let batchTickIndexLower = await poolContract.getBatchTickIndex(BigInt(tickMin));
       let batchTickLowerAddress = await poolContract.getBatchTickAddress(batchTickIndexLower);
       let bathTickLowerContract = blockchain.openContract(

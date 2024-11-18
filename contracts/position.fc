@@ -32,6 +32,7 @@
     int liquidity_delta = in_msg_body~load_int(128);
     int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
     int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
+    storage::owner_address = in_msg_body;
     (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::simulate_update(
       storage::liquidity, 
       storage::fee_growth_inside0_last_x128, storage::fee_growth_inside1_last_x128, 

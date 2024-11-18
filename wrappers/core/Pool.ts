@@ -163,6 +163,21 @@ namespace PoolWrapper {
       ]);
       return result.stack.readAddress();
     }
+
+    async getPositionAddressBySeq(provider: ContractProvider, seq: bigint): Promise<Address> {
+      const result = await provider.get('get_position_address_by_seq', [
+        {
+          type: 'int',
+          value: seq,
+        },
+      ]);
+      return result.stack.readAddress();
+    }
+
+    async getPositionSeqno(provider: ContractProvider): Promise<bigint> {
+      const result = await provider.get('get_position_seqno', []);
+      return result.stack.readBigNumber();
+    }
   }
 }
 

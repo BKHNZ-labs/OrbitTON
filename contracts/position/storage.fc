@@ -19,7 +19,7 @@ global slice storage::owner_address;
   storage::token_owed0 = second_slice~load_uint(128);
   storage::token_owed1 = second_slice~load_uint(128);
   storage::pool_address = second_slice~load_msg_addr();
-  storage::owner_address = second_slice~load_msg_addr();
+  storage::owner_address = second_slice;
   ds.end_parse();
 }
 
