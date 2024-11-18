@@ -182,24 +182,24 @@
   }
 
   if (op == op::internal_swap) {
-    throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
-    (int amount_specified, int sqrt_price_x96, int zero_for_one, int sqrt_price_limit_x96, int tick, int fee_growth_global_x128, int protocol_fee) = (
-      in_msg_body~load_int(128),
-      in_msg_body~load_uint(160),
-      in_msg_body~load_int(2),
-      in_msg_body~load_uint(160),
-      in_msg_body~load_int(24),
-      in_msg_body~load_uint(256),
-      in_msg_body~load_uint(128)
-    );
-    slice next_ref = in_msg_body~load_ref().begin_parse();
-    slice response_address = next_ref~load_msg_addr();
+    ;; throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+    ;; (int amount_specified, int sqrt_price_x96, int zero_for_one, int sqrt_price_limit_x96, int tick, int fee_growth_global_x128, int protocol_fee) = (
+    ;;   in_msg_body~load_int(128),
+    ;;   in_msg_body~load_uint(160),
+    ;;   in_msg_body~load_int(2),
+    ;;   in_msg_body~load_uint(160),
+    ;;   in_msg_body~load_int(24),
+    ;;   in_msg_body~load_uint(256),
+    ;;   in_msg_body~load_uint(128)
+    ;; );
+    ;; slice next_ref = in_msg_body~load_ref().begin_parse();
+    ;; slice response_address = next_ref~load_msg_addr();
     
-    while ((amount_specified != 0) & (sqrt_price_x96 != sqrt_price_limit_x96)) {
-      int step::sqrt_price_start_x96 = sqrt_price_x96;
-      (int prev, slice tick, int existed) = find_next_tick(tick, zero_for_one);
-    }
-
+    ;; while ((amount_specified != 0) & (sqrt_price_x96 != sqrt_price_limit_x96)) {
+    ;;   int step::sqrt_price_start_x96 = sqrt_price_x96;
+    ;;   (int prev, slice tick, int existed) = find_next_tick(tick, zero_for_one);
+    ;; }
+    return ();
   }
 
   if (op == op::cross_swap) {
