@@ -35,3 +35,6 @@ export function pseudoRandomBigNumberOnUint256() {
   const result = (MaxUint256 * BigInt(pad.mul(randomDecimal).round().toString())) / BigInt(pad.toString());
   return result;
 }
+
+export const getMinTick = (tickSpacing: number) => Math.ceil(-887272 / tickSpacing) * tickSpacing;
+export const getMaxTick = (tickSpacing: number) => Math.floor(887272 / tickSpacing) * tickSpacing;

@@ -1,0 +1,112 @@
+;; cross_swap
+cell batch_tick::pack_cross_swap(
+  int batch_index,
+  int zero_for_one,
+  int amount_specified,
+  int liquidity,
+  int tick,
+  int sqrt_price_x96,
+  int sqrt_price_limit_x96,
+  int fee,
+  int fee_growth_global0_x128,
+  int fee_growth_global1_x128,
+  cell cache,
+  cell state,
+  slice response_address
+) {
+  return begin_cell()
+          .store_ref(begin_cell()
+            .store_ref(begin_cell()
+                .store_int(batch_index, 16)
+                .store_int(zero_for_one, 2)
+                .store_int(amount_specified, 128)
+                .store_uint(liquidity, 128)
+                .store_int(tick, 24)
+                .store_uint(sqrt_price_x96, 160)
+                .store_uint(sqrt_price_limit_x96, 160)
+                .store_uint(fee, 24)
+              .end_cell())
+            .store_ref(begin_cell()
+                .store_uint(fee_growth_global0_x128, 256)
+                .store_uint(fee_growth_global1_x128, 256)
+                .store_slice(response_address)
+              .end_cell())
+          .end_cell())
+          .store_ref(cache)
+          .store_ref(state)
+        .end_cell();
+}
+
+(int, int, int, int, int, int, int, int, int, int, cell, cell, slice) batch_tick::unpack_cross_swap(slice ds) {
+  slice ds_0 = ds~load_ref().begin_parse();
+  slice ds_0_1 = ds_0~load_ref().begin_parse();
+  slice ds_0_2 = ds_0~load_ref().begin_parse();
+  cell ds_1 = ds~load_ref();
+  cell ds_2 = ds~load_ref();
+
+  return (
+    ds_0_1~load_int(16),
+    ds_0_1~load_int(2),
+    ds_0_1~load_int(128),
+    ds_0_1~load_uint(128),
+    ds_0_1~load_int(24),
+    ds_0_1~load_uint(160),
+    ds_0_1~load_uint(160),
+    ds_0_1~load_uint(24),
+    ds_0_2~load_uint(256),
+    ds_0_2~load_uint(256),
+    ds_1,
+    ds_2,
+    ds_0_2~load_msg_addr()
+  );
+}
+
+;; cache
+cell batch_tick::pack_cache(int liquidity_start, int fee_protocol) {
+  return begin_cell()
+          .store_uint(liquidity_start, 128)
+          .store_uint(fee_protocol, 8)
+        .end_cell();
+}
+
+(int, int) batch_tick::unpack_cache(slice cache) {
+  return (cache~load_uint(128), cache~load_uint(8));
+}
+
+;; state
+cell batch_tick::pack_state(
+  int amount_specified_remaining, 
+  int amount_calculated, 
+  int sqrt_price_x96,
+  int tick,
+  int fee_growth_global_x128,
+  int protocol_fee,
+  int liquidity) {
+  return begin_cell()
+          .store_ref(begin_cell()
+              .store_int(amount_specified_remaining, 256)
+              .store_int(amount_calculated, 256)
+              .store_uint(sqrt_price_x96, 160)
+              .store_int(tick, 24)
+              .end_cell())
+          .store_ref(begin_cell()
+              .store_uint(fee_growth_global_x128, 256)
+              .store_uint(protocol_fee, 128)
+              .store_uint(liquidity, 128)
+              .end_cell())
+          .end_cell();
+}
+
+(int, int, int ,int ,int ,int ,int) batch_tick::unpack_state(slice state) {
+  slice state_0 = state~load_ref().begin_parse();
+  slice state_1 = state~load_ref().begin_parse();
+  return (
+    state_0~load_int(256),
+    state_0~load_int(256),
+    state_0~load_uint(160),
+    state_0~load_int(24),
+    state_1~load_uint(256),
+    state_1~load_uint(128),
+    state_1~load_uint(128)
+  );
+}

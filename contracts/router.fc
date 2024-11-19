@@ -34,39 +34,124 @@
     cell ref_cs = in_msg_body~load_ref();
     slice ref_ds = ref_cs.begin_parse();
     throw_unless(error:not_enough_amount, jetton_amount > 0);
-    (int forward_opcode, slice jetton1_wallet) = (in_msg_body~load_uint(32), in_msg_body~load_msg_addr());
+    (int forward_opcode, slice jetton1_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
+
     if (forward_opcode == op::mint) {
       int tick_lower = ref_ds~load_int(24);
       int tick_upper = ref_ds~load_int(24);
-      int tick_spacing = ref_ds~load_int(24);
       int fee = ref_ds~load_uint(24);
-      int amount0_min = ref_ds~load_uint(256);
-      int amount1_min = ref_ds~load_uint(256);
+      int tick_spacing = ref_ds~load_int(24);
+      int liquidity_delta = ref_ds~load_int(128);
       slice jetton0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee);
-      builder msg_body = begin_cell()
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
+      builder mint_msg = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
+      builder body_builder = begin_cell();
       if (slice_hash(jetton0_wallet) < slice_hash(jetton1_wallet)) {
-        msg_body = msg_body.store_coins(jetton_amount);
-        msg_body = msg_body.store_coins(0);
+        body_builder = body_builder.store_coins(jetton_amount);
+        body_builder = body_builder.store_coins(0);
       } else {
-        msg_body = msg_body.store_coins(0);
-        msg_body = msg_body.store_coins(jetton_amount);
+        body_builder = body_builder.store_coins(0);
+        body_builder = body_builder.store_coins(jetton_amount);
       }
-      msg_body = msg_body                    
+      body_builder = body_builder                    
                   .store_int(tick_lower, 24)
                   .store_int(tick_upper, 24)
-                  .store_int(tick_spacing, 24)
-                  .store_uint(amount0_min, 256)
-                  .store_uint(amount1_min, 256)
-                  .store_ref(begin_cell()
-                              .store_slice(pool_address)
-                              .store_slice(from_user)
-                              .end_cell());
-      send_message_with_stateinit(0, pool_address, state_init, msg_body.end_cell(), CARRY_REMAINING_GAS);
+                  .store_int(liquidity_delta, 128)
+                  .store_slice(from_user);
+      mint_msg = mint_msg.store_ref(body_builder.end_cell());
+      send_message_with_stateinit(0, pool_address, state_init, mint_msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+
+    if (forward_opcode == op::swap) {;
+      int fee = ref_ds~load_uint(24);
+      int tick_spacing = ref_ds~load_int(24);
+      int zero_for_one = ref_ds~load_int(2);
+      int sqrt_price_limit = ref_ds~load_uint(160);
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton1_wallet, fee, tick_spacing);
+      builder msg = begin_cell()
+                    .store_uint(op::swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_int(jetton_amount, 256)
+                    .store_int(zero_for_one, 2)
+                    .store_uint(sqrt_price_limit, 160)
+                    .store_slice(from_user);
+      send_simple_message(0, pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      return ();
+    }
+
+    if (forward_opcode == op::burn) {
     }
     return ();  
+  }
+
+  if (op == op::pay_to) {
+    slice recipient = in_msg_body~load_msg_addr();
+    int exit_code = in_msg_body~load_uint(32);
+    slice ds = in_msg_body~load_ref().begin_parse();
+    slice token0_address = ds~load_msg_addr();
+    int token0_amount = ds~load_coins();
+    slice token1_address = ds~load_msg_addr();
+    int token1_amount = ds~load_coins();
+    int fee = ds~load_uint(24);
+    int tick_spacing = ds~load_int(24);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
+    int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
+    if (token0_amount > 0) {
+      var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
+      body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
+    }
+    if (token1_amount > 0) {
+      var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
+      body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
+    }
+    return ();
+  }
+
+  if (op == op::create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    int sqrt_price_x96 = in_msg_body~load_uint(160);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    builder msg = begin_cell()
+                    .store_uint(op::initialize, 32)
+                    .store_uint(query_id, 64)
+                    .store_uint(sqrt_price_x96, 160)
+                    .store_slice(sender_address);
+    send_message_with_stateinit(0, pool_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+    storage::pool_seqno = storage::pool_seqno + 1;
+    save_data();
+    return ();
+  }
+  
+  if (op == op::cb_create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    slice response_address = in_msg_body~load_msg_addr();
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    if (compare_address(sender_address, pool_address)) {
+      storage::pool_seqno = storage::pool_seqno + 1;
+      ;; emit event
+      cell data = begin_cell()
+                    .store_slice(sender_address)
+                    .store_slice(token0_address)
+                    .store_slice(token1_address)
+                    .store_uint(fee, 24)
+                    .store_int(tick_spacing, 24)
+                    .end_cell();
+      emit_log_simple(storage::pool_seqno - 1, data, query_id);
+      save_data();
+    }
+    send_empty_message(0, response_address, CARRY_REMAINING_GAS + IGNORE_ERRORS);
+    return ();
   }
 
   ;; [MONITOR]
@@ -117,7 +202,6 @@
 }
 
 slice get_admin_address() method_id {
-  ~dump(null());
   load_data();
   return storage::admin_address;
 }
@@ -145,5 +229,11 @@ cell get_position_code() method_id {
 cell get_lp_account_code() method_id {
   load_data();
   return storage::lp_account_code;
+}
+
+slice get_pool_address(slice token0_address, slice token1_address, int fee, int tick_spacing) method_id {
+  load_data();
+  (_, slice pool_address) = get_pool_state_init_and_address(token0_address,token1_address,fee,tick_spacing);
+  return pool_address;
 }
 

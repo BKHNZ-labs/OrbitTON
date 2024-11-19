@@ -12,6 +12,12 @@ import {
 import { ValueOps } from '../@types';
 import PoolWrapper from './Pool';
 import { JETTON_WALLET_BOC } from '../helpers';
+import {
+  OpJettonTransferMint,
+  OpJettonTransferSwap,
+  storeOpJettonTransferMint,
+  storeOpJettonTransferSwap,
+} from '../../tlb/jetton/transfer';
 
 namespace JettonWalletWrapper {
   export enum JettonOpCodes {
@@ -39,47 +45,7 @@ namespace JettonWalletWrapper {
       .endCell();
   }
 
-  export interface SendTransferInterface {
-    forwardOpcode: number;
-    jetton1Wallet: Address;
-    jettonAmount: bigint;
-    toAddress: Address;
-    responseAddress: Address;
-    fwdAmount: bigint;
-    tickLower: bigint;
-    tickUpper: bigint;
-    tickSpacing: bigint;
-    fee: bigint;
-    amount0InMin: bigint;
-    amount1InMin: bigint;
-  }
-
   export class JettonWallet implements Contract {
-    static buildSendTransferPacket(data: SendTransferInterface, queryId: number = 0) {
-      return beginCell()
-        .storeUint(JettonOpCodes.TRANSFER, 32)
-        .storeUint(queryId, 64)
-        .storeCoins(data.jettonAmount) // 128
-        .storeAddress(data.toAddress) // 167
-        .storeAddress(data.responseAddress) // 167
-        .storeDict(Dictionary.empty())
-        .storeCoins(data.fwdAmount)
-        .storeUint(data.forwardOpcode, 32)
-        .storeAddress(data.jetton1Wallet)
-        .storeRef(
-          beginCell()
-            .storeInt(data.tickLower, 24)
-            .storeInt(data.tickUpper, 24)
-            .storeInt(data.tickSpacing, 24)
-            .storeUint(data.fee, 24)
-            .storeUint(data.amount0InMin, 256)
-            .storeUint(data.amount1InMin, 256)
-            .endCell(),
-        )
-
-        .endCell();
-    }
-
     constructor(
       readonly address: Address,
       readonly init?: { code: Cell; data: Cell },
@@ -104,11 +70,23 @@ namespace JettonWalletWrapper {
       });
     }
 
-    async sendTransfer(provider: ContractProvider, via: Sender, data: SendTransferInterface, opts: ValueOps) {
+    async sendTransferMint(provider: ContractProvider, via: Sender, data: OpJettonTransferMint, opts: ValueOps) {
+      const body = beginCell();
+      storeOpJettonTransferMint(data)(body);
       await provider.internal(via, {
         value: opts.value,
         sendMode: SendMode.PAY_GAS_SEPARATELY,
-        body: JettonWallet.buildSendTransferPacket(data, opts.queryId),
+        body: body.endCell(),
+      });
+    }
+
+    async sendTransferSwap(provider: ContractProvider, via: Sender, data: OpJettonTransferSwap, opts: ValueOps) {
+      const body = beginCell();
+      storeOpJettonTransferSwap(data)(body);
+      await provider.internal(via, {
+        value: opts.value,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: body.endCell(),
       });
     }
 

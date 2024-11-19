@@ -54,62 +54,82 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
 
 }
 
-(int, int) tick::get_fee_growth_inside(
+(int, int) tick::get_fee_growth_below(
     cell tick_map,
     int tick_lower,
+    int tick_current,
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128 
+){
+    (slice lower, int lower_existed) = tick_map.idict_get?(24, tick_lower);
+    (
+        int lower_liquidity_gross, 
+        int lower_liquidity_net, 
+        int lower_fee_growth_outside_0X128, 
+        int lower_fee_growth_outside_1X128, 
+        int lower_initialized
+    ) = lower_existed == -1 ? lower.unpack_tick() : (0,0,0,0,0);
+    int fee_growth_below_0X128 = 0;
+    int fee_growth_below_1X128 = 0;
+
+    if (tick_current >= tick_lower) {
+        fee_growth_below_0X128 = lower_fee_growth_outside_0X128;
+        fee_growth_below_1X128 = lower_fee_growth_outside_1X128;
+    } else {
+        fee_growth_below_0X128 = fee_growth_global_0X128 - lower_fee_growth_outside_0X128;
+        fee_growth_below_1X128 = fee_growth_global_1X128 - lower_fee_growth_outside_1X128;
+    }
+
+    return (fee_growth_below_0X128, fee_growth_below_1X128);
+}
+
+(int, int) tick::get_fee_growth_above(
+    cell tick_map,
     int tick_upper,
     int tick_current,
     int fee_growth_global_0X128,
     int fee_growth_global_1X128 
-) {
-    (slice lower, int lower_existed) = tick_map.idict_get?(24, tick_lower);
+){
     (slice upper, int upper_existed) = tick_map.idict_get?(24, tick_upper);
-    (
-        int lower_liquidity_gross, 
-        int lower_liquidity_net, 
-        int lower_fee_growth_outside_0_x128, 
-        int lower_fee_growth_outside_1_x128, 
-        int lower_initialized
-    ) = lower_existed == -1 ? lower.unpack_tick() : (0,0,0,0,0);
     (
         int upper_liquidity_gross, 
         int upper_liquidity_net, 
-        int upper_fee_growth_outside_0_x128, 
-        int upper_fee_growth_outside_1_x128, 
+        int upper_fee_growth_outside_0X128, 
+        int upper_fee_growth_outside_1X128, 
         int upper_initialized
     ) = upper_existed == -1 ? upper.unpack_tick():(0,0,0,0,0);
 
-    int fee_growth_below_0_x128 = 0;
-    int fee_growth_below_1_x128 = 0;
-
-    if (tick_current >= tick_lower) {
-        fee_growth_below_0_x128 = lower_fee_growth_outside_0_x128;
-        fee_growth_below_1_x128 = lower_fee_growth_outside_1_x128;
-    } else {
-        fee_growth_below_0_x128 = fee_growth_global_0X128 - lower_fee_growth_outside_0_x128;
-        fee_growth_below_1_x128 = fee_growth_global_1X128 - lower_fee_growth_outside_1_x128;
-    }
-
-    int fee_growth_above_0_x128 = 0;
-    int fee_growth_above_1_x128 = 0;
+    int fee_growth_above_0X128 = 0;
+    int fee_growth_above_1X128 = 0;
 
     if (tick_current < tick_upper){
-        fee_growth_above_0_x128 = upper_fee_growth_outside_0_x128;
-        fee_growth_above_1_x128 = upper_fee_growth_outside_1_x128;
+        fee_growth_above_0X128 = upper_fee_growth_outside_0X128;
+        fee_growth_above_1X128 = upper_fee_growth_outside_1X128;
     } else {
-        fee_growth_above_0_x128 = fee_growth_global_0X128 - upper_fee_growth_outside_0_x128;
-        fee_growth_above_1_x128 = fee_growth_global_1X128 - upper_fee_growth_outside_1_x128;
+        fee_growth_above_0X128 = fee_growth_global_0X128 - upper_fee_growth_outside_0X128;
+        fee_growth_above_1X128 = fee_growth_global_1X128 - upper_fee_growth_outside_1X128;
     }
    
-    int feeGrowthInside0X128 = fee_growth_global_0X128 - fee_growth_below_0_x128 - fee_growth_above_0_x128;
-    int feeGrowthInside1X128 = fee_growth_global_1X128 - fee_growth_below_1_x128 - fee_growth_above_1_x128;
-    if (feeGrowthInside0X128 < 0) {
-        feeGrowthInside0X128 = max::uint256 + feeGrowthInside0X128 + 1;
+    return (fee_growth_above_0X128, fee_growth_above_1X128);
+}
+
+(int, int) tick::get_fee_growth_inside(
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128,
+    int fee_growth_below_0X128, 
+    int fee_growth_below_1X128,
+    int fee_growth_above_0X128, 
+    int fee_growth_above_1X128
+) {
+    int fee_growth_inside_0X128 = fee_growth_global_0X128 - fee_growth_below_0X128 - fee_growth_above_0X128;
+    int fee_growth_inside_1X128 = fee_growth_global_1X128 - fee_growth_below_1X128 - fee_growth_above_1X128;
+    if (fee_growth_inside_0X128 < 0) {
+        fee_growth_inside_0X128 = max::uint256 + fee_growth_inside_0X128 + 1;
     }
-    if (feeGrowthInside1X128 < 0) {
-        feeGrowthInside1X128 = max::uint256 + feeGrowthInside1X128 + 1;
+    if (fee_growth_inside_1X128 < 0) {
+        fee_growth_inside_1X128 = max::uint256 + fee_growth_inside_1X128 + 1;
     }
-    return (feeGrowthInside0X128, feeGrowthInside1X128);
+    return (fee_growth_inside_0X128, fee_growth_inside_1X128);
 }
 
 (cell, (int)) ~tick::update(
@@ -131,10 +151,9 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
         int initialized
     ) = existed == -1 ? info_raw.unpack_tick() : (0,0,0,0,0);
     int liquidity_gross_after = liquidity_math::add_delta(liquidity_gross_before, liquidity_delta);
-
+   
     throw_unless(error::tick::L0, liquidity_gross_after <= max_liquidity);
     int flipped = (liquidity_gross_after == 0) != (liquidity_gross_before == 0);
-
     if (liquidity_gross_before == 0){
         if(tick <= tick_current){
             fee_growth_outside_0_x128 = fee_growth_global_0_x128;
@@ -145,6 +164,7 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     liquidity_net = upper ? liquidity_net - liquidity_delta : liquidity_net + liquidity_delta;
     cell new_tick = pack_tick(liquidity_gross_after, liquidity_net, fee_growth_outside_0_x128, fee_growth_outside_1_x128, initialized);
     tick_map~idict_set(24, tick, new_tick.begin_parse());
+   
     return (tick_map, (flipped));
 }
 

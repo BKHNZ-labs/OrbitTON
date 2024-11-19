@@ -6,18 +6,18 @@ import {
   contractAddress,
   ContractProvider,
   Dictionary,
-  DictionaryKey,
-  DictionaryValue,
   Sender,
   SendMode,
 } from '@ton/core';
 import { crc32, ValueOps } from '..';
+import { InMsgBody, storeInMsgBody } from '../../tlb/pool/messages';
 
 namespace PoolWrapper {
   export const Opcodes = {
     Mint: crc32('op::mint'),
     Swap: crc32('op::swap'),
     Burn: crc32('op::burn'),
+    CallBackLiquidity: crc32('op::cb_add_liquidity'),
   };
 
   export interface InstantiateMsg {
@@ -32,6 +32,7 @@ namespace PoolWrapper {
     positionCode: Cell;
     lpAccountCode: Cell;
     batchTickCode: Cell;
+    maxLiquidity?: bigint;
   }
 
   export class PoolTest implements Contract {
@@ -75,12 +76,9 @@ namespace PoolWrapper {
         )
         .storeRef(
           beginCell()
-            .storeUint(0n, 64)
-            .storeRef(
-              beginCell()
-                .storeDict(Dictionary.empty(Dictionary.Keys.Int(16), Dictionary.Values.Cell()))
-                .endCell(),
-            )
+            .storeUint(0n, 256)
+            .storeUint(initMsg.maxLiquidity ?? 0, 128)
+            .storeRef(beginCell().storeDict(Dictionary.empty()).endCell())
             .storeRef(initMsg.positionCode)
             .storeRef(initMsg.lpAccountCode)
             .storeRef(initMsg.batchTickCode)
@@ -99,6 +97,16 @@ namespace PoolWrapper {
       });
     }
 
+    async sendMint(provider: ContractProvider, via: Sender, value: bigint, inMsgBody: InMsgBody) {
+      const body = beginCell();
+      storeInMsgBody(inMsgBody)(body);
+      await provider.internal(via, {
+        value,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: body.endCell(),
+      });
+    }
+
     async getCollectedFees(provider: ContractProvider): Promise<bigint[]> {
       const result = await provider.get('get_collected_fees', []);
       const tuple = result.stack;
@@ -110,6 +118,75 @@ namespace PoolWrapper {
         }
       }
       return data;
+    }
+
+    async getLpAccountAddress(
+      provider: ContractProvider,
+      user: Address,
+      tick_lower: bigint,
+      tick_upper: bigint,
+    ): Promise<Address> {
+      const result = await provider.get('get_lp_account_address', [
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(user).endCell(),
+        },
+        {
+          type: 'int',
+          value: tick_lower,
+        },
+        {
+          type: 'int',
+          value: tick_upper,
+        },
+      ]);
+
+      return result.stack.readAddress();
+    }
+
+    async getBatchTickIndex(provider: ContractProvider, tick: bigint): Promise<bigint> {
+      const result = await provider.get('get_batch_tick_index', [
+        {
+          type: 'int',
+          value: tick,
+        },
+      ]);
+      return result.stack.readBigNumber();
+    }
+
+    async getBatchTickAddress(provider: ContractProvider, batchTickIndex: bigint): Promise<Address> {
+      const result = await provider.get('get_calculate_batch_tick_address', [
+        {
+          type: 'int',
+          value: batchTickIndex,
+        },
+      ]);
+      return result.stack.readAddress();
+    }
+
+    async getPositionAddressBySeq(provider: ContractProvider, seq: bigint): Promise<Address> {
+      const result = await provider.get('get_position_address_by_seq', [
+        {
+          type: 'int',
+          value: seq,
+        },
+      ]);
+      return result.stack.readAddress();
+    }
+
+    async getPositionSeqno(provider: ContractProvider): Promise<bigint> {
+      const result = await provider.get('get_position_seqno', []);
+      return result.stack.readBigNumber();
+    }
+
+    async getPoolInfo(provider: ContractProvider) {
+      const result = await provider.get('get_pool_info', []);
+      const fee = result.stack.readBigNumber();
+      const tickSpacing = result.stack.readBigNumber();
+      const tick = result.stack.readBigNumber();
+      const sqrtPriceX96 = result.stack.readBigNumber();
+      const liquidity = result.stack.readBigNumber();
+      return { fee, tickSpacing, tick, sqrtPriceX96, liquidity };
     }
   }
 }

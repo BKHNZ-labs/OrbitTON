@@ -1,3 +1,5 @@
+const op::create_pool = "op::create_pool"c;
+const op::cb_create_pool = "op::cb_create_pool"c;
 const op::set_admin_address = "op::set_admin_address"c;
 const op::update_lock_state = "op::update_lock_state"c;
 const op::update_pool_code = "op::update_pool_code"c;
@@ -5,5 +7,5 @@ const op::update_account_code = "op::update_account_code"c;
 const op::update_batch_tick_code = "op::update_batch_tick_code"c;
 const op::update_position_code = "op::update_position_code"c;
 const op::update_lp_account_code = "op::update_lp_account_code"c;
-
+const op::pay_to = "op::pay_to"c;
 

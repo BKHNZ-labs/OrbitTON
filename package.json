@@ -1,9 +1,15 @@
 {
-  "name": "OrbitTON",
+  "name": "orbiton-contracts",
   "version": "0.0.1",
+  "main": "build/wrappers/index.js",
+  "files": [
+    "build"
+  ],
   "scripts": {
     "start": "blueprint run",
     "build": "blueprint build",
+    "build:all": "blueprint build --all",
+    "build:npm": "yarn build:all && rm -rf ./dist && tsc --project tsconfig.build.json",
     "test": "yarn blueprint build --all && jest --verbose"
   },
   "devDependencies": {

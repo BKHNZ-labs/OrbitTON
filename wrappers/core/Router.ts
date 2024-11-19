@@ -10,9 +10,11 @@ import {
   SendMode,
 } from '@ton/core';
 import { crc32, ValueOps } from '..';
+import { OpCreatePool, storeOpCreatePool } from '../../tlb/router/create_pool';
 
 namespace RouterWrapper {
   export const Opcodes = {
+    CreatePool: crc32('op::create_pool'),
     SetAdminAddress: crc32('op::set_admin_address'),
     UpdateLockState: crc32('op::update_lock_state'),
     UpdatePoolCode: crc32('op::update_pool_code'),
@@ -74,6 +76,16 @@ namespace RouterWrapper {
       });
     }
 
+    async sendCreatePool(provider: ContractProvider, via: Sender, data: OpCreatePool, ops: ValueOps) {
+      let cell = beginCell();
+      storeOpCreatePool(data)(cell);
+      await provider.internal(via, {
+        ...ops,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: cell.endCell(),
+      });
+    }
+
     async sendSetAdminAddress(provider: ContractProvider, via: Sender, data: SetAdminAddressMsg, ops: ValueOps) {
       await provider.internal(via, {
         sendMode: SendMode.PAY_GAS_SEPARATELY,
@@ -115,6 +127,34 @@ namespace RouterWrapper {
     async getLpAccountCode(provider: ContractProvider): Promise<Cell> {
       const result = await provider.get('get_lp_account_code', []);
       return result.stack.readCell();
+    }
+
+    async getPoolAddress(
+      provider: ContractProvider,
+      token0: Address,
+      token1: Address,
+      fee: bigint,
+      tick_spacing: bigint,
+    ): Promise<Address> {
+      const result = await provider.get('get_pool_address', [
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(token0).endCell(),
+        },
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(token1).endCell(),
+        },
+        {
+          type: 'int',
+          value: fee,
+        },
+        {
+          type: 'int',
+          value: tick_spacing,
+        },
+      ]);
+      return result.stack.readAddress();
     }
   }
 }

@@ -1,0 +1,19 @@
+builder build_pay_to_msg(int query_id, slice recipient, int exit_code, slice jetton_0_wallet, int jetton_0_amount, slice jetton_1_wallet, int jetton_1_amount, int fee, int tick_spacing) {
+    builder body = begin_cell()
+        .store_uint(op::pay_to,32)
+        .store_uint(query_id, 64)
+        .store_slice(recipient)
+        .store_uint(exit_code, 32)
+        .store_ref(
+        begin_cell()
+                .store_slice(jetton_0_wallet)
+                .store_coins(jetton_0_amount)
+                .store_slice(jetton_1_wallet)
+                .store_coins(jetton_1_amount)
+                .store_uint(fee, 24)
+                .store_int(tick_spacing, 24)
+            .end_cell()
+    );
+
+    return body;
+}

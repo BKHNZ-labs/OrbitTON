@@ -1,0 +1,10 @@
+mint#_  jetton_amount_0:Grams 
+        jetton_amount_1:Grams 
+        tick_lower:int24 
+        tick_upper:int24 
+        liquidity_delta:int128 
+        recipient:MsgAddress = MintParams;
+        
+op_mint#ecad15c4 
+    query_id:uint64
+    body: ^MintParams = InMsgBody;

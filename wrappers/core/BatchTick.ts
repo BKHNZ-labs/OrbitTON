@@ -21,6 +21,7 @@ namespace BatchTickWrapper {
 
   export interface InstantiateMsg {
     batchIndex: bigint;
+    tickSpacing: bigint;
     poolAddress: Address;
     batchTickCode: Cell;
   }
@@ -93,7 +94,8 @@ namespace BatchTickWrapper {
 
     static create(code: Cell, initMsg: InstantiateMsg) {
       const data = beginCell()
-        .storeUint(initMsg.batchIndex, 8)
+        .storeInt(initMsg.batchIndex, 16)
+        .storeInt(initMsg.tickSpacing, 24)
         .storeAddress(initMsg.poolAddress)
         .storeDict(Dictionary.empty()) // empty dict
         .storeRef(initMsg.batchTickCode)
@@ -124,6 +126,16 @@ namespace BatchTickWrapper {
         sendMode: SendMode.PAY_GAS_SEPARATELY,
         body: BatchTickTest.buildUpdateTickUpperPacket(data),
       });
+    }
+
+    async getTick(provider: ContractProvider, tick: bigint) {
+      const result = await provider.get('get_tick', [
+        {
+          type: 'int',
+          value: BigInt(tick),
+        },
+      ]);
+      return result.stack.readCell();
     }
   }
 }

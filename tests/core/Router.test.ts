@@ -6,7 +6,7 @@ import {
   SandboxContract,
   TreasuryContract,
 } from '@ton/sandbox';
-import { beginCell, Cell, toNano } from '@ton/core';
+import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import RouterWrapper from '../../wrappers/core/Router';
@@ -14,6 +14,7 @@ import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../../wrappers/core/JettonWallet';
 import { JettonWallet } from '@ton/ton';
 import PoolWrapper from '../../wrappers/core/Pool';
+import { encodePriceSqrt } from '../shared/utils';
 
 describe('Router Test', () => {
   let code: Cell;
@@ -113,27 +114,60 @@ describe('Router Test', () => {
     token1WalletContract = blockchain.openContract(token1WalletInstance);
   });
 
-  it('Send op:mint', async () => {
+  it('Send op:create_pool', async () => {
     const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
-    console.log('Router address:', routerContract.address.toString());
     console.log('Router wallet address', routerJetton0Wallet.toString());
-    console.log('Router admin:', await routerContract.getAdminAddress());
-    console.log('Start transfer');
-    let tx = await token0WalletContract.sendTransfer(
+    const routerJetton1Wallet = await token1MasterContract.getWalletAddress(routerContract.address);
+    console.log('Router wallet address', routerJetton1Wallet.toString());
+    const createPool = await routerContract.sendCreatePool(
       deployer.getSender(),
       {
-        forwardOpcode: PoolWrapper.Opcodes.Mint,
-        jetton1Wallet: routerJetton0Wallet,
-        amount0InMin: toNano(0),
-        amount1InMin: toNano(0),
-        fee: 3000n,
-        fwdAmount: toNano(0.3),
-        jettonAmount: toNano(1000),
-        tickLower: 1000n,
-        tickUpper: 2000n,
-        tickSpacing: 300n,
-        responseAddress: deployer.address,
-        toAddress: routerContract.address,
+        kind: 'OpCreatePool',
+        query_id: 0,
+        jetton0_wallet: routerJetton0Wallet,
+        jetton1_wallet: routerJetton1Wallet,
+        fee: 3000,
+        sqrt_price_x96: encodePriceSqrt(1n, 10n),
+        tick_spacing: 60,
+      },
+      {
+        value: toNano('0.1'),
+      },
+    );
+    const poolAddress = await routerContract.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
+    expect(createPool.transactions).toHaveTransaction({
+      from: routerContract.address,
+      to: poolAddress,
+    });
+    const testPool = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(poolAddress));
+    const lpAccount = await testPool.getLpAccountAddress(deployer.address, -10n, 10n);
+    console.log('LP account address:', lpAccount.toString());
+  });
+
+  it('Send op:mint', async () => {
+    const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
+    const routerJetton1Wallet = await token1MasterContract.getWalletAddress(routerContract.address);
+    let tx = await token0WalletContract.sendTransferMint(
+      deployer.getSender(),
+      {
+        kind: 'OpJettonTransferMint',
+        query_id: 0,
+        jetton_amount: 9996n,
+        to_address: routerContract.address,
+        response_address: deployer.address,
+        custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+        forward_ton_amount: toNano(0.8),
+        either_payload: true,
+        mint: {
+          kind: 'MintParams',
+          forward_opcode: PoolWrapper.Opcodes.Mint,
+          jetton1_wallet: routerJetton1Wallet,
+          tick_lower: 100,
+          tick_upper: 3000,
+          tick_spacing: 60,
+          fee: 3000,
+          liquidity_delta: 3161n,
+        },
       },
       {
         value: toNano(1),

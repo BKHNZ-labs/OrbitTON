@@ -1,2 +1,4 @@
 const op::update_tick_lower = "op::update_tick_lower"c;
 const op::update_tick_upper = "op::update_tick_upper"c;
+const op::internal_swap = "op::internal_swap"c;
+const op::cross_swap = "op::cross_swap"c;

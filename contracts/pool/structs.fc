@@ -1,0 +1,53 @@
+;; cb_swap
+cell pack_cb_swap(
+  int batch_index, 
+  int tick, 
+  int sqrt_price_x96, 
+  int liquidity, 
+  int fee_growth_global0_x128, 
+  int fee_growth_global1_x128,
+  int zero_for_one,
+  int protocol_fee,
+  int amount0,
+  int amount1,
+  slice response_address
+) {
+  return begin_cell()
+          .store_ref(begin_cell()
+                      .store_int(batch_index, 16)
+                      .store_int(tick, 24)
+                      .store_uint(sqrt_price_x96, 160)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_global0_x128, 256)
+                      .store_uint(fee_growth_global1_x128, 256)
+                      .end_cell())
+          .store_ref(begin_cell()
+                      .store_int(zero_for_one, 2)
+                      .store_uint(protocol_fee, 128)
+                      .store_int(amount0, 256)
+                      .store_int(amount1, 256)
+                      .end_cell())
+          .store_ref(begin_cell()
+                      .store_slice(response_address)
+                      .end_cell())
+          .end_cell();
+}
+
+(int, int, int, int, int, int, int, int, int, int, slice) unpack_cb_swap(slice ds) {
+  slice ds_0 = ds~load_ref().begin_parse();
+  slice ds_1 = ds~load_ref().begin_parse();
+  slice ds_2 = ds~load_ref().begin_parse();
+  return (
+    ds_0~load_int(16),
+    ds_0~load_int(24),
+    ds_0~load_uint(160),
+    ds_0~load_uint(128),
+    ds_0~load_uint(256),
+    ds_0~load_uint(256),
+    ds_1~load_int(2),
+    ds_1~load_uint(128),
+    ds_1~load_int(256),
+    ds_1~load_int(256),
+    ds_2~load_msg_addr()
+  );
+}
