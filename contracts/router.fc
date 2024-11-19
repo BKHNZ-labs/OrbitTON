@@ -48,7 +48,7 @@
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
       builder body_builder = begin_cell();
-      if (slice_hash(jetton0_wallet) > slice_hash(jetton1_wallet)) {
+      if (slice_hash(jetton0_wallet) < slice_hash(jetton1_wallet)) {
         body_builder = body_builder.store_coins(jetton_amount);
         body_builder = body_builder.store_coins(0);
       } else {

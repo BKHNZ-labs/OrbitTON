@@ -158,81 +158,138 @@ describe('Pool Test', () => {
       const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
       const position0Address = await poolContract.getPositionAddressBySeq(0n);
       // console.log(await poolContract.getPoolInfo());
-
-      printTransactionFees(createPool.transactions);
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,
         to: pool,
         success: true,
       });
       // Create position
-      const transfer0 = await token0WalletContract.sendTransferMint(
-        deployer.getSender(),
-        {
-          kind: 'OpJettonTransferMint',
-          query_id: 0,
-          jetton_amount: 9996n,
-          to_address: router.address,
-          response_address: deployer.address,
-          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-          forward_ton_amount: toNano(0.8),
-          either_payload: true,
-          mint: {
-            kind: 'MintParams',
-            forward_opcode: PoolWrapper.Opcodes.Mint,
-            jetton1_wallet: routerJetton1Wallet,
-            tick_lower: tickMin,
-            tick_upper: tickMax,
-            tick_spacing: 60,
-            fee: 3000,
-            liquidity_delta: 3161n,
-          },
-        },
-        {
-          value: toNano(1.2),
-        },
-      );
 
-      const transfer1 = await token1WalletContract.sendTransferMint(
-        deployer.getSender(),
-        {
-          kind: 'OpJettonTransferMint',
-          query_id: 0,
-          jetton_amount: 2000n,
-          to_address: router.address,
-          response_address: deployer.address,
-          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-          forward_ton_amount: toNano(0.8),
-          either_payload: true,
-          mint: {
-            kind: 'MintParams',
-            forward_opcode: PoolWrapper.Opcodes.Mint,
-            jetton1_wallet: routerJetton0Wallet,
-            tick_lower: tickMin,
-            tick_upper: tickMax,
-            tick_spacing: 60,
-            fee: 3000,
-            liquidity_delta: 3161n,
+      let transfer0;
+      let transfer1;
+      if (
+        BigInt(`0x${beginCell().storeAddress(routerJetton0Wallet).endCell().hash().toString('hex')}`) <
+        BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`)
+      ) {
+        transfer0 = await token0WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 9996n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton1Wallet,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
           },
-        },
-        {
-          value: toNano(1.2),
-        },
-      );
+          {
+            value: toNano(1.2),
+          },
+        );
 
-      printTransactionFees(transfer0.transactions);
+        transfer1 = await token1WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 2000n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton0Wallet,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1.2),
+          },
+        );
+      } else {
+        transfer0 = await token1WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 9996n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton0Wallet,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+
+        transfer1 = await token0WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 2000n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton1Wallet,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+      }
+
       expect(transfer0.transactions).toHaveTransaction({
         from: pool,
         to: lpAccount,
         success: true,
       });
-      printTransactionFees(transfer1.transactions);
       expect(transfer1.transactions).toHaveTransaction({
         from: pool,
         to: lpAccount,
         success: true,
       });
-      console.log('Hey');
       expect(transfer1.transactions).toHaveTransaction({
         from: lpAccount,
         to: pool,

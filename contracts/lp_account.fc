@@ -72,12 +72,12 @@ global int amount1;
                    .store_coins(amount0)
                    .store_coins(amount1)
                    .store_int(tick_lower, 24)
-                   .store_int(tick_upper, 24)
-                   .store_int(liquidity_delta, 128)
+                    .store_int(tick_upper, 24)
+                    .store_int(liquidity_delta, 128)
                    .store_slice(recipient)
                    .end_cell()
                 )
-               ;
+       ;
            
             send_simple_message(0, pool_address, body.end_cell(), CARRY_REMAINING_GAS);
             amount0 = 0;

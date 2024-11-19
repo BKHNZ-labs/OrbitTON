@@ -143,8 +143,8 @@ global cell batch_tick_code;
       builder body = begin_cell()
             .store_uint(op::cb_create_pool, 32)
             .store_uint(query_id, 64)
-            .store_slice(jetton0_wallet)
-            .store_slice(jetton1_wallet)
+            .store_slice(jetton0_wallet) ;; jetton 1
+            .store_slice(jetton1_wallet) ;; jetton 0
             .store_uint(fee, 24)
             .store_int(tick_spacing, 24)
             .store_slice(response_address);
@@ -195,7 +195,7 @@ global cell batch_tick_code;
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
    
-    if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount) ){
+    if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
       builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, jetton0_wallet, jetton_0_amount, jetton1_wallet, jetton_1_amount, fee, tick_spacing); 
       send_simple_message(0, router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
@@ -207,11 +207,9 @@ global cell batch_tick_code;
 
     if((refund_amount0 > 0) | (refund_amount1 > 0)){
       ;; refunds to user
-      ~dump(null());
       builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, jetton0_wallet, refund_amount0, jetton1_wallet, refund_amount1, fee, tick_spacing);
       send_simple_message(GAS::REFUND, router_address, refund_body.end_cell(), NORMAL);
     }
-    ~dump(null());
 
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
@@ -372,7 +370,7 @@ int get_position_seqno() method_id {
   return position_seqno;
 }
 
-;; (int, int, int, int, int) get_pool_info() method_id {
-;;   load_data();
-;;   return (fee, tick_spacing, tick, sqrt_price_x96, liquidity);
-;; }
+(int, int, int, int, int) get_pool_info() method_id {
+  load_data();
+  return (fee, tick_spacing, tick, sqrt_price_x96, liquidity);
+}
