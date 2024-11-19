@@ -216,7 +216,7 @@ global cell batch_tick_code;
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
-    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()
         .store_uint(op::update_tick_lower, 32)
         .store_uint(query_id, 64)
@@ -248,6 +248,21 @@ global cell batch_tick_code;
 
   if(op == op::swap){
 
+  }
+
+  if (op == op::cb_swap) {
+    (int r_batch_index, int r_tick, int r_sqrt_price_x96, int r_liquidity, int r_fee_growth_global0_x128, int r_fee_growth_global1_x128, int r_amount0, int r_amount1, slice response_address) = unpack_cb_swap(in_msg_body);
+    slice batch_tick_address = get_batch_tick_address(r_batch_index, tick_spacing, my_address(), batch_tick_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
+    tick = r_tick;
+    sqrt_price_x96 = r_sqrt_price_x96;
+    liquidity = r_liquidity;
+    fee_growth_global0_x128 = r_fee_growth_global0_x128;
+    fee_growth_global1_x128 = r_fee_growth_global1_x128;
+    cell msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,jetton0_wallet, r_amount0, jetton1_wallet, r_amount1, fee, tick_spacing);
+    send_simple_message(0, router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
   }
 
   if(op == op::cb_update_fee_growth_inside){
