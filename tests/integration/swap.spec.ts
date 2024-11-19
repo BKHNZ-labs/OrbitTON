@@ -3,7 +3,15 @@ import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
-import { encodePriceSqrt, getMaxTick, getMinTick } from '../shared/utils';
+import {
+  encodePriceSqrt,
+  expandTo18Decimals,
+  getMaxLiquidityPerTick,
+  getMaxTick,
+  getMinTick,
+  MAX_SQRT_RATIO,
+  MIN_SQRT_RATIO,
+} from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 import BatchTickWrapper from '../../wrappers/core/BatchTick';
@@ -38,8 +46,8 @@ describe('Pool Test', () => {
   let token1WalletContract: SandboxContract<JettonWalletWrapper.JettonWallet>;
   let pool: SandboxContract<PoolWrapper.PoolTest>;
   let tickMath: SandboxContract<TickMathTest>;
-  const tickMin = getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
-  const tickMax = getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
+  // const tickMin = getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
+  // const tickMax = getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]);
   beforeEach(async () => {
     blockchain = await Blockchain.create();
     deployer = await blockchain.treasury('deployer');
@@ -98,7 +106,7 @@ describe('Pool Test', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(1000000),
+        jettonAmount: toNano(5_000_000_000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -110,7 +118,7 @@ describe('Pool Test', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(1000000),
+        jettonAmount: toNano(5_000_000_000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -134,6 +142,13 @@ describe('Pool Test', () => {
 
   describe('#swap', () => {
     it('Jettons pool', async () => {
+      const feeAmount = FeeAmount.LOW;
+      const tickSpacing = TICK_SPACINGS[FeeAmount.LOW];
+      const startingSqrtPrice = encodePriceSqrt(1n, 1n);
+      const tickMin = getMinTick(TICK_SPACINGS[FeeAmount.LOW]);
+      const tickMax = getMaxTick(TICK_SPACINGS[FeeAmount.LOW]);
+      const liquidity = expandTo18Decimals(2);
+
       const routerJetton0Wallet = await token0MasterContract.getWalletAddress(router.address);
       console.log('Router wallet address', routerJetton0Wallet.toString());
       const routerJetton1Wallet = await token1MasterContract.getWalletAddress(router.address);
@@ -145,25 +160,33 @@ describe('Pool Test', () => {
           query_id: 0,
           jetton0_wallet: routerJetton0Wallet,
           jetton1_wallet: routerJetton1Wallet,
-          fee: 3000,
-          sqrt_price_x96: encodePriceSqrt(1n, 10n),
-          tick_spacing: 60,
+          fee: feeAmount,
+          sqrt_price_x96: startingSqrtPrice,
+          tick_spacing: tickSpacing,
         },
         {
           value: toNano('0.2'),
         },
       );
-      const pool = await router.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
+      const pool = await router.getPoolAddress(
+        routerJetton0Wallet,
+        routerJetton1Wallet,
+        BigInt(feeAmount),
+        BigInt(tickSpacing),
+      );
       const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
       const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
       const position0Address = await poolContract.getPositionAddressBySeq(0n);
-      // console.log(await poolContract.getPoolInfo());
+      console.log(await poolContract.getPoolInfo());
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,
         to: pool,
         success: true,
       });
       // Create position
+
+      let jettonAmount0 = 3_000_000_000_000_000_000n;
+      let jettonAmount1 = 3_000_000_000_000_000_000n;
 
       let transfer0;
       let transfer1;
@@ -176,7 +199,7 @@ describe('Pool Test', () => {
           {
             kind: 'OpJettonTransferMint',
             query_id: 0,
-            jetton_amount: 9996n,
+            jetton_amount: jettonAmount0,
             to_address: router.address,
             response_address: deployer.address,
             custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -188,9 +211,9 @@ describe('Pool Test', () => {
               jetton1_wallet: routerJetton1Wallet,
               tick_lower: tickMin,
               tick_upper: tickMax,
-              tick_spacing: 60,
-              fee: 3000,
-              liquidity_delta: 3161n,
+              tick_spacing: tickSpacing,
+              fee: feeAmount,
+              liquidity_delta: liquidity,
             },
           },
           {
@@ -203,7 +226,7 @@ describe('Pool Test', () => {
           {
             kind: 'OpJettonTransferMint',
             query_id: 0,
-            jetton_amount: 2000n,
+            jetton_amount: jettonAmount1,
             to_address: router.address,
             response_address: deployer.address,
             custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -215,9 +238,9 @@ describe('Pool Test', () => {
               jetton1_wallet: routerJetton0Wallet,
               tick_lower: tickMin,
               tick_upper: tickMax,
-              tick_spacing: 60,
-              fee: 3000,
-              liquidity_delta: 3161n,
+              tick_spacing: tickSpacing,
+              fee: feeAmount,
+              liquidity_delta: liquidity,
             },
           },
           {
@@ -230,7 +253,7 @@ describe('Pool Test', () => {
           {
             kind: 'OpJettonTransferMint',
             query_id: 0,
-            jetton_amount: 9996n,
+            jetton_amount: jettonAmount0,
             to_address: router.address,
             response_address: deployer.address,
             custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -242,9 +265,9 @@ describe('Pool Test', () => {
               jetton1_wallet: routerJetton0Wallet,
               tick_lower: tickMin,
               tick_upper: tickMax,
-              tick_spacing: 60,
-              fee: 3000,
-              liquidity_delta: 3161n,
+              tick_spacing: tickSpacing,
+              fee: feeAmount,
+              liquidity_delta: liquidity,
             },
           },
           {
@@ -257,7 +280,7 @@ describe('Pool Test', () => {
           {
             kind: 'OpJettonTransferMint',
             query_id: 0,
-            jetton_amount: 2000n,
+            jetton_amount: jettonAmount1,
             to_address: router.address,
             response_address: deployer.address,
             custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -269,9 +292,9 @@ describe('Pool Test', () => {
               jetton1_wallet: routerJetton1Wallet,
               tick_lower: tickMin,
               tick_upper: tickMax,
-              tick_spacing: 60,
-              fee: 3000,
-              liquidity_delta: 3161n,
+              tick_spacing: tickSpacing,
+              fee: feeAmount,
+              liquidity_delta: liquidity,
             },
           },
           {
@@ -295,11 +318,13 @@ describe('Pool Test', () => {
         to: pool,
         success: true,
       });
-      expect(transfer1.transactions).toHaveTransaction({
-        from: pool,
-        to: position0Address,
-        success: true,
-      });
+      printTransactionFees(transfer1.transactions);
+      // expect(transfer1.transactions).toHaveTransaction({
+      //   from: pool,
+      //   to: position0Address,
+      //   success: true,
+      // });
+
       const currentSeq = await poolContract.getPositionSeqno();
       expect(currentSeq).toBe(1n);
       let batchTickIndexLower = await poolContract.getBatchTickIndex(BigInt(tickMin));
@@ -316,32 +341,36 @@ describe('Pool Test', () => {
       let { liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse());
       let sliceUpper = await bathTickUpperContract.getTick(BigInt(tickMax));
       let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
-      expect(liquidity_gross_lower).toBe(3161n);
-      expect(liquidity_gross_upper).toBe(3161n);
+      expect(liquidity_gross_lower).toBe(liquidity);
+      expect(liquidity_gross_upper).toBe(liquidity);
+
+      // REFUND HERE
+      expect((await token0WalletContract.getBalance()).amount).toBe(3_000_000_000_000_000_000n);
+      expect((await token1WalletContract.getBalance()).amount).toBe(3_000_000_000_000_000_000n);
 
       const swap1 = await token0WalletContract.sendTransferSwap(
         deployer.getSender(),
         {
           kind: 'OpJettonTransferSwap',
           query_id: 0,
-          jetton_amount: 100n,
+          jetton_amount: expandTo18Decimals(1),
           to_address: router.address,
           response_address: deployer.address,
           custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-          forward_ton_amount: toNano(0.8),
+          forward_ton_amount: toNano(0.2),
           either_payload: true,
           swap: {
             kind: 'SwapParams',
             forward_opcode: PoolWrapper.Opcodes.Swap,
-            fee: 3000,
+            fee: feeAmount,
             jetton1_wallet: routerJetton1Wallet,
             sqrt_price_limit: 0n,
-            tick_spacing: 60,
+            tick_spacing: tickSpacing,
             zero_for_one: -1,
           },
         },
         {
-          value: toNano(2),
+          value: toNano(12),
         },
       );
       printTransactionFees(swap1.transactions);

@@ -41,11 +41,11 @@
       liquidity_delta,
       fee_growth_inside_0_x128,
       fee_growth_inside_1_x128);
-    storage::liquidity = liquidity;
-    storage::fee_growth_inside0_last_x128 = fee_growth_inside_0_last_x128;
-    storage::fee_growth_inside1_last_x128 = fee_growth_inside_1_last_x128;
-    storage::token_owed0 = tokens_owed_0;
-    storage::token_owed1 = tokens_owed_1;
+    storage::liquidity += liquidity;
+    storage::fee_growth_inside0_last_x128 += fee_growth_inside_0_last_x128;
+    storage::fee_growth_inside1_last_x128 += fee_growth_inside_1_last_x128;
+    storage::token_owed0 += tokens_owed_0;
+    storage::token_owed1 += tokens_owed_1;
     save_data();
     return ();
   }

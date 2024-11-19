@@ -189,6 +189,7 @@ global cell batch_tick_code;
         sqrt_price_x96,
         liquidity_delta
       );
+      liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
     }
 
     if(tick_upper < tick){
@@ -213,7 +214,6 @@ global cell batch_tick_code;
 
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
-    ~dump(remaining_gas);
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
     (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()
@@ -252,7 +252,7 @@ global cell batch_tick_code;
     int sqrt_price_limit_x96 = in_msg_body~load_uint(160);
     slice response_address = in_msg_body~load_msg_addr();
     int current_batch_index = calculate_batch_tick_index(tick, tick_spacing);
-    slice batch_tick_address = get_batch_tick_address(current_batch_index, tick_spacing, my_address(), batch_tick_code);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(current_batch_index, tick_spacing, my_address(), batch_tick_code);
     builder msg = begin_cell()
                     .store_uint(op::internal_swap, 32)
                     .store_uint(query_id, 64)
@@ -271,7 +271,7 @@ global cell batch_tick_code;
                         .store_uint(sqrt_price_x96, 160)
                         .store_slice(response_address)
                         .end_cell());
-    send_simple_message(0, batch_tick_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    send_message_with_stateinit(0, batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
     return ();
   }
 

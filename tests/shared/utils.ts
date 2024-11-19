@@ -38,3 +38,21 @@ export function pseudoRandomBigNumberOnUint256() {
 
 export const getMinTick = (tickSpacing: number) => Math.ceil(-887272 / tickSpacing) * tickSpacing;
 export const getMaxTick = (tickSpacing: number) => Math.floor(887272 / tickSpacing) * tickSpacing;
+
+export const getMaxLiquidityPerTick = (tickSpacing: number) =>
+  (2n ** 128n - 1n) / (BigInt(getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / BigInt(tickSpacing) + 1n);
+
+export const MIN_SQRT_RATIO = 4295128739n;
+export const MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342n;
+
+export enum FeeAmount {
+  LOW = 500,
+  MEDIUM = 3000,
+  HIGH = 10000,
+}
+
+export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
+  [FeeAmount.LOW]: 10,
+  [FeeAmount.MEDIUM]: 60,
+  [FeeAmount.HIGH]: 200,
+};
