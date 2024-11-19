@@ -6,7 +6,7 @@ import {
   SandboxContract,
   TreasuryContract,
 } from '@ton/sandbox';
-import { beginCell, Cell, toNano } from '@ton/core';
+import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import RouterWrapper from '../../wrappers/core/Router';
@@ -146,30 +146,27 @@ describe('Router Test', () => {
 
   it('Send op:mint', async () => {
     const routerJetton0Wallet = await token0MasterContract.getWalletAddress(routerContract.address);
-    console.log('Router address:', routerContract.address.toString());
-    console.log('Router wallet address', routerJetton0Wallet.toString());
-    console.log('Router admin:', await routerContract.getAdminAddress());
-    console.log('Start transfer');
-    let tx = await token0WalletContract.sendTransfer(
+    const routerJetton1Wallet = await token1MasterContract.getWalletAddress(routerContract.address);
+    let tx = await token0WalletContract.sendTransferMint(
       deployer.getSender(),
       {
-        kind: 'OpJettonTransfer',
-        forward_opcode: PoolWrapper.Opcodes.Mint,
-        jetton1_wallet: routerJetton0Wallet,
-        fwd_amount: toNano(0.3),
-        jetton_amount: toNano(1000),
-        response_address: deployer.address,
+        kind: 'OpJettonTransferMint',
         query_id: 0,
+        jetton_amount: 9996n,
         to_address: routerContract.address,
+        response_address: deployer.address,
+        custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+        forward_ton_amount: toNano(0.8),
+        either_payload: true,
         mint: {
           kind: 'MintParams',
+          forward_opcode: PoolWrapper.Opcodes.Mint,
+          jetton1_wallet: routerJetton1Wallet,
+          tick_lower: 100,
+          tick_upper: 3000,
+          tick_spacing: 60,
           fee: 3000,
-          liquidity_delta: 0n,
-          recipient: deployer.address,
-          sqrt_price_x96: 100n,
-          tick_lower: 1000,
-          tick_upper: 2000,
-          tick_spacing: 300,
+          liquidity_delta: 3161n,
         },
       },
       {

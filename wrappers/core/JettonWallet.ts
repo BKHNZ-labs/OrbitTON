@@ -12,7 +12,12 @@ import {
 import { ValueOps } from '../@types';
 import PoolWrapper from './Pool';
 import { JETTON_WALLET_BOC } from '../helpers';
-import { OpJettonTransfer, storeOpJettonTransfer } from '../../tlb/jetton/transfer';
+import {
+  OpJettonTransferMint,
+  OpJettonTransferSwap,
+  storeOpJettonTransferMint,
+  storeOpJettonTransferSwap,
+} from '../../tlb/jetton/transfer';
 
 namespace JettonWalletWrapper {
   export enum JettonOpCodes {
@@ -65,9 +70,19 @@ namespace JettonWalletWrapper {
       });
     }
 
-    async sendTransfer(provider: ContractProvider, via: Sender, data: OpJettonTransfer, opts: ValueOps) {
+    async sendTransferMint(provider: ContractProvider, via: Sender, data: OpJettonTransferMint, opts: ValueOps) {
       const body = beginCell();
-      storeOpJettonTransfer(data)(body);
+      storeOpJettonTransferMint(data)(body);
+      await provider.internal(via, {
+        value: opts.value,
+        sendMode: SendMode.PAY_GAS_SEPARATELY,
+        body: body.endCell(),
+      });
+    }
+
+    async sendTransferSwap(provider: ContractProvider, via: Sender, data: OpJettonTransferSwap, opts: ValueOps) {
+      const body = beginCell();
+      storeOpJettonTransferSwap(data)(body);
       await provider.internal(via, {
         value: opts.value,
         sendMode: SendMode.PAY_GAS_SEPARATELY,

@@ -6,7 +6,7 @@ mint#_  forward_opcode: uint32
         tick_spacing: int24
         liquidity_delta: int128 = MintParams;
 
-op_jetton_transfer#0f8a7ea5
+op_jetton_transfer_mint#0f8a7ea5
         query_id: uint64
         jetton_amount: Grams
         to_address: MsgAddress
@@ -14,4 +14,22 @@ op_jetton_transfer#0f8a7ea5
         custom_payload: Cell
         forward_ton_amount: Grams
         either_payload: Bool
-        mint: ^MintParams = OpJettonTransfer;
+        mint: ^MintParams = OpJettonTransferMint;
+
+swap#_  forward_opcode: uint32
+        jetton1_wallet: MsgAddress
+        fee: uint24
+        tick_spacing: int24
+        zero_for_one: int2
+        sqrt_price_limit: uint160 = SwapParams;
+
+op_jetton_transfer_swap#0f8a7ea5
+        query_id: uint64
+        jetton_amount: Grams
+        to_address: MsgAddress
+        response_address: MsgAddress
+        custom_payload: Cell
+        forward_ton_amount: Grams
+        either_payload: Bool
+        swap: ^SwapParams = OpJettonTransferSwap;
+

@@ -64,12 +64,24 @@
       send_message_with_stateinit(0, pool_address, state_init, mint_msg.end_cell(), CARRY_REMAINING_GAS);
     }
 
-    if (forward_opcode == op::swap) {
-
+    if (forward_opcode == op::swap) {;
+      int fee = ref_ds~load_uint(24);
+      int tick_spacing = ref_ds~load_int(24);
+      int zero_for_one = ref_ds~load_int(2);
+      int sqrt_price_limit = ref_ds~load_uint(160);
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton1_wallet, fee, tick_spacing);
+      builder msg = begin_cell()
+                    .store_uint(op::swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_int(jetton_amount, 256)
+                    .store_int(zero_for_one, 2)
+                    .store_uint(sqrt_price_limit, 160)
+                    .store_slice(from_user);
+      send_simple_message(0, pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      return ();
     }
 
     if (forward_opcode == op::burn) {
-
     }
     return ();  
   }
@@ -86,15 +98,16 @@
     int tick_spacing = ds~load_int(24);
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
+    int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
       body0 = body0.store_uint(exit_code, 32); ;; append exit code
-      send_simple_message(0, token0_address, body0.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     if (token1_amount > 0) {
       var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
       body1 = body1.store_uint(exit_code, 32); ;; append exit code
-      send_simple_message(0, token1_address, body1.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     return ();
   }

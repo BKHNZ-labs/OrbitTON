@@ -1,5 +1,5 @@
 const int exit::refund = 0;
 const int exist::finish_swap = 1;
 
-const GAS::REFUND = 100000000;
+const GAS::REFUND = 200000000;
 const GAS::CB_ADD_LIQUIDITY = 100000000;

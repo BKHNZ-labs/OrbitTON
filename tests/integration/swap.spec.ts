@@ -132,7 +132,7 @@ describe('Pool Test', () => {
     console.log(router.address);
   });
 
-  describe('#mint', () => {
+  describe('#swap', () => {
     it('Jettons pool', async () => {
       const routerJetton0Wallet = await token0MasterContract.getWalletAddress(router.address);
       console.log('Router wallet address', routerJetton0Wallet.toString());
@@ -150,7 +150,7 @@ describe('Pool Test', () => {
           tick_spacing: 60,
         },
         {
-          value: toNano('0.1'),
+          value: toNano('0.2'),
         },
       );
       const pool = await router.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
@@ -159,6 +159,7 @@ describe('Pool Test', () => {
       const position0Address = await poolContract.getPositionAddressBySeq(0n);
       // console.log(await poolContract.getPoolInfo());
 
+      printTransactionFees(createPool.transactions);
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,
         to: pool,
@@ -188,7 +189,7 @@ describe('Pool Test', () => {
           },
         },
         {
-          value: toNano(1),
+          value: toNano(1.2),
         },
       );
 
@@ -215,20 +216,23 @@ describe('Pool Test', () => {
           },
         },
         {
-          value: toNano(1),
+          value: toNano(1.2),
         },
       );
 
+      printTransactionFees(transfer0.transactions);
       expect(transfer0.transactions).toHaveTransaction({
         from: pool,
         to: lpAccount,
         success: true,
       });
+      printTransactionFees(transfer1.transactions);
       expect(transfer1.transactions).toHaveTransaction({
         from: pool,
         to: lpAccount,
         success: true,
       });
+      console.log('Hey');
       expect(transfer1.transactions).toHaveTransaction({
         from: lpAccount,
         to: pool,
@@ -257,6 +261,33 @@ describe('Pool Test', () => {
       let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
       expect(liquidity_gross_lower).toBe(3161n);
       expect(liquidity_gross_upper).toBe(3161n);
+
+      const swap1 = await token0WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: 100n,
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton1Wallet,
+            sqrt_price_limit: 0n,
+            tick_spacing: 60,
+            zero_for_one: -1,
+          },
+        },
+        {
+          value: toNano(2),
+        },
+      );
+      printTransactionFees(swap1.transactions);
     });
   });
 });

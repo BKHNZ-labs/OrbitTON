@@ -207,12 +207,15 @@ global cell batch_tick_code;
 
     if((refund_amount0 > 0) | (refund_amount1 > 0)){
       ;; refunds to user
+      ~dump(null());
       builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, jetton0_wallet, refund_amount0, jetton1_wallet, refund_amount1, fee, tick_spacing);
       send_simple_message(GAS::REFUND, router_address, refund_body.end_cell(), NORMAL);
     }
+    ~dump(null());
 
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
+    ~dump(remaining_gas);
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
     (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()

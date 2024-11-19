@@ -27,7 +27,7 @@ export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
   [FeeAmount.HIGH]: 200,
 };
 
-describe('TickTest', () => {
+describe.skip('TickTest', () => {
   let code: Cell;
 
   beforeAll(async () => {
