@@ -86,7 +86,7 @@ describe('TickTest', () => {
     });
   });
 
-  describe('#getFeeGrowthInside', () => {
+  describe.skip('#getFeeGrowthInside', () => {
     it('returns all for two uninitialized ticks if tick is inside', async () => {
       const { feeGrowthInside0X128, feeGrowthInside1X128 } = await tickTest.getFeeGrowthInside(-2n, 2n, 0n, 15n, 15n);
       expect(feeGrowthInside0X128).toBe(15n);

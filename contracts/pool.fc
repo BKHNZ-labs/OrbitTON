@@ -14,14 +14,12 @@
 #include "pool/router-utils.fc";
 #include "pool/errors.fc";
 #include "pool/constants.fc";
+#include "pool/structs.fc";
 #include "batch_tick/constants.fc";
 #include "batch_tick/opcodes.fc";
 #include "batch_tick/utils.fc";
 #include "position/utils.fc";
 #include "position/opcodes.fc";
-
-
-
 
 global slice router_address; ;; 267
 global slice jetton0_wallet; ;; 267
@@ -216,7 +214,7 @@ global cell batch_tick_code;
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
-    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, my_address() , batch_tick_code);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()
         .store_uint(op::update_tick_lower, 32)
         .store_uint(query_id, 64)
@@ -247,11 +245,50 @@ global cell batch_tick_code;
   }
 
   if(op == op::swap){
-
+    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    int amount_specified = in_msg_body~load_int(256);
+    int zero_for_one = in_msg_body~load_int(2);
+    int sqrt_price_limit_x96 = in_msg_body~load_uint(160);
+    slice response_address = in_msg_body~load_msg_addr();
+    int current_batch_index = calculate_batch_tick_index(tick, tick_spacing);
+    slice batch_tick_address = get_batch_tick_address(current_batch_index, tick_spacing, my_address(), batch_tick_code);
+    builder msg = begin_cell()
+                    .store_uint(op::internal_swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(begin_cell()
+                        .store_int(amount_specified, 256)
+                        .store_uint(protocol_fee, 8)
+                        .store_uint(sqrt_price_limit_x96, 160)
+                        .store_uint(fee_growth_global0_x128, 256)
+                        .store_uint(fee_growth_global1_x128, 256)
+                      .end_cell())
+                    .store_ref(begin_cell()
+                        .store_uint(liquidity, 128)
+                        .store_int(tick, 24)
+                        .store_uint(fee, 24)
+                        .store_int(zero_for_one, 2)
+                        .store_uint(sqrt_price_x96, 160)
+                        .store_slice(response_address)
+                        .end_cell());
+    send_simple_message(0, batch_tick_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    return ();
   }
 
   if (op == op::cb_swap) {
-    (int r_batch_index, int r_tick, int r_sqrt_price_x96, int r_liquidity, int r_fee_growth_global0_x128, int r_fee_growth_global1_x128, int r_amount0, int r_amount1, slice response_address) = unpack_cb_swap(in_msg_body);
+    slice ds = in_msg_body~load_ref().begin_parse();
+    (
+      int r_batch_index, 
+      int r_tick, 
+      int r_sqrt_price_x96, 
+      int r_liquidity, 
+      int r_fee_growth_global0_x128, 
+      int r_fee_growth_global1_x128, 
+      int r_zero_for_one, 
+      int r_protocol_fee,  
+      int r_amount0, 
+      int r_amount1, 
+      slice response_address
+    ) = unpack_cb_swap(ds);
     slice batch_tick_address = get_batch_tick_address(r_batch_index, tick_spacing, my_address(), batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
     tick = r_tick;
@@ -259,7 +296,12 @@ global cell batch_tick_code;
     liquidity = r_liquidity;
     fee_growth_global0_x128 = r_fee_growth_global0_x128;
     fee_growth_global1_x128 = r_fee_growth_global1_x128;
-    cell msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,jetton0_wallet, r_amount0, jetton1_wallet, r_amount1, fee, tick_spacing);
+    if (r_zero_for_one) {
+      collected_protocol_fee0 += r_protocol_fee;
+    } else {
+      collected_protocol_fee1 += r_protocol_fee;
+    }
+    builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,jetton0_wallet, r_amount0, jetton1_wallet, r_amount1, fee, tick_spacing);
     send_simple_message(0, router_address, msg.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return ();
