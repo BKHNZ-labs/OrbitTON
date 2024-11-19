@@ -5,7 +5,6 @@ import JettonMinterWrapper from '../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../wrappers/core/JettonWallet';
 import { createPairAddress, isContractDeployed, isToken0 } from './helpers';
 import RouterWrapper from '../wrappers/core/Router';
-import { encodePriceSqrt } from '../tests/shared/utils';
 import PoolWrapper from '../wrappers/core/Pool';
 
 export async function run(provider: NetworkProvider, args: string[]) {
@@ -73,6 +72,10 @@ export async function run(provider: NetworkProvider, args: string[]) {
     },
   );
 
+  const lpAccount = await pool.getLpAccountAddress(userAddress, BigInt(tickMin), BigInt(tickMax));
+  await provider.waitForDeploy(lpAccount, 100, 5000);
+  ui.write(`LP account address: ${lpAccount.toString()}`);  
+
   await jettonWallet1Contract.sendTransferMint(
     provider.sender(),
     {
@@ -103,7 +106,8 @@ export async function run(provider: NetworkProvider, args: string[]) {
   let afterPositionSeq = await pool.getPositionSeqno();
   let attempts = 1;
   while (beforePositionSeq === afterPositionSeq) {
-    await sleep(1000);
+    ui.setActionPrompt(`Attempt ${attempts}`);
+    await sleep(2000);
     afterPositionSeq = await pool.getPositionSeqno();
     attempts++;
   }
