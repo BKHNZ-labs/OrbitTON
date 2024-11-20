@@ -190,10 +190,10 @@ describe('Pool Test', () => {
 
       let transfer0;
       let transfer1;
-      if (
+      let isSwap =
         BigInt(`0x${beginCell().storeAddress(routerJetton0Wallet).endCell().hash().toString('hex')}`) <
-        BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`)
-      ) {
+        BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`);
+      if (isSwap) {
         transfer0 = await token0WalletContract.sendTransferMint(
           deployer.getSender(),
           {
@@ -319,11 +319,11 @@ describe('Pool Test', () => {
         success: true,
       });
       printTransactionFees(transfer1.transactions);
-      // expect(transfer1.transactions).toHaveTransaction({
-      //   from: pool,
-      //   to: position0Address,
-      //   success: true,
-      // });
+      expect(transfer1.transactions).toHaveTransaction({
+        from: pool,
+        to: position0Address,
+        success: true,
+      });
 
       const currentSeq = await poolContract.getPositionSeqno();
       expect(currentSeq).toBe(1n);
@@ -343,11 +343,20 @@ describe('Pool Test', () => {
       let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
       expect(liquidity_gross_lower).toBe(liquidity);
       expect(liquidity_gross_upper).toBe(liquidity);
+      let poolInfoBefore = await poolContract.getPoolInfo();
 
       // REFUND HERE
       expect((await token0WalletContract.getBalance()).amount).toBe(3_000_000_000_000_000_000n);
       expect((await token1WalletContract.getBalance()).amount).toBe(3_000_000_000_000_000_000n);
 
+      let token1BeforeBalance = await token1WalletContract.getBalance();
+      let token0BeforeBalance = await token0WalletContract.getBalance();
+      let router0BeforeBalance = await blockchain
+        .openContract(JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton0Wallet))
+        .getBalance();
+      let router1BeforeBalance = await blockchain
+        .openContract(JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton1Wallet))
+        .getBalance();
       const swap1 = await token0WalletContract.sendTransferSwap(
         deployer.getSender(),
         {
@@ -357,7 +366,7 @@ describe('Pool Test', () => {
           to_address: router.address,
           response_address: deployer.address,
           custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-          forward_ton_amount: toNano(0.2),
+          forward_ton_amount: toNano(0.4),
           either_payload: true,
           swap: {
             kind: 'SwapParams',
@@ -366,14 +375,36 @@ describe('Pool Test', () => {
             jetton1_wallet: routerJetton1Wallet,
             sqrt_price_limit: 0n,
             tick_spacing: tickSpacing,
-            zero_for_one: -1,
+            zero_for_one: isSwap ? 0 : -1,
           },
         },
         {
-          value: toNano(12),
+          value: toNano(1.2),
         },
       );
       printTransactionFees(swap1.transactions);
+      let token1AfterBalance = await token1WalletContract.getBalance();
+      let token0AfterBalance = await token0WalletContract.getBalance();
+      let router0AfterBalance = await blockchain
+        .openContract(JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton0Wallet))
+        .getBalance();
+      let router1AfterBalance = await blockchain
+        .openContract(JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton1Wallet))
+        .getBalance();
+      let poolInfoAfter = await poolContract.getPoolInfo();
+
+      console.log({
+        token0BeforeBalance: token0BeforeBalance.amount.toString(),
+        token0AfterBalance: token0AfterBalance.amount.toString(),
+        token1BeforeBalance: token1BeforeBalance.amount.toString(),
+        token1AfterBalance: token1AfterBalance.amount.toString(),
+        router0BeforeBalance: router0BeforeBalance.amount.toString(),
+        router0AfterBalance: router0AfterBalance.amount.toString(),
+        router1BeforeBalance: router1BeforeBalance.amount.toString(),
+        router1AfterBalance: router1AfterBalance.amount.toString(),
+        poolInfoBefore: poolInfoBefore,
+        poolInfoAfter: poolInfoAfter,
+      });
     });
   });
 });

@@ -53,13 +53,12 @@ int calculate_batch_tick_index(int tick, int tick_spacing){
   if (zero_for_one) {
     return ticks.idict_get_prev?(24, tick_index);
   }
-  return ticks.idict_get_prev?(24, tick_index);
+  return ticks.idict_get_next?(24, tick_index);
 }
 
 ;; return tick_next, batch_index_next, is_jump
-(int, int, int) batch_tick::recalculate_next_tick(int next_tick, int tick_spacing, int existed, int zero_for_one) {
-  int current_live_in_batch_index = calculate_batch_tick_index(next_tick, tick_spacing);
-  ~dump(current_live_in_batch_index);
+(int, int, int) batch_tick::recalculate_next_tick(int next_tick, int current_batch_index, int tick_spacing, int existed, int zero_for_one) {
+  int current_live_in_batch_index = existed ? calculate_batch_tick_index(next_tick, tick_spacing) : current_batch_index;
   int max_batch_index = calculate_batch_tick_index(tick_math::MAX_TICK, tick_spacing);
   int min_batch_index = calculate_batch_tick_index(tick_math::MIN_TICK,tick_spacing);
   
@@ -76,7 +75,7 @@ int calculate_batch_tick_index(int tick, int tick_spacing){
   }
 
   if ((zero_for_one != -1) & (existed != -1)) {
-    return (0, current_live_in_batch_index + 1, 1);
+    return (0, current_live_in_batch_index + 1, -1);
   }
 
   return (next_tick, current_live_in_batch_index, 0);
