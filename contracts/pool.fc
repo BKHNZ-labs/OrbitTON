@@ -189,9 +189,6 @@ global cell batch_tick_code;
         sqrt_price_x96,
         liquidity_delta
       );
-      liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
-      ~dump(-800);
-      ~dump(liquidity);
     }
 
     if(tick_upper < tick){
@@ -318,7 +315,9 @@ global cell batch_tick_code;
     (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int fee_growth_inside_0X128, int fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
     slice batch_tick_address = get_batch_tick_address(batch_tick_index, tick_spacing, my_address(),batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
-    ;; liquidity = liquidity.liquidity_math::add_delta(liquidity_delta); ?? wrong here
+    if ((tick >  tick_lower) & (tick < tick_upper)) {
+      liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
+    }
     if(flipped_lower){
       tick_bitmap~tick_bitmap::flip_tick(tick_lower, tick_spacing);
     }
