@@ -385,14 +385,20 @@
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
       int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+      ~dump(state::sqrt_price_x96);
       ~dump(step::amount_in);
-      ~dump(step::fee_amount);
       ~dump(step::amount_out);
+      ~dump(step::fee_amount);
       ~dump(304);
       ~dump(null());
 
-      state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
-      state::amount_calculated = state::amount_calculated - step::amount_out;
+      ;; state::amount_calculated
+      state::amount_specified_remaining -= (step::amount_in + step::fee_amount); ;; 100
+      state::amount_calculated = step::amount_out;
+      ~dump(state::amount_specified_remaining);
+      ~dump(state::amount_calculated);
+      ~dump(305);
+      ~dump(null());
 
       if (cache::fee_protocol > 0) {
         int delta = step::fee_amount / cache::fee_protocol;

@@ -373,7 +373,7 @@ describe('Pool Test', () => {
             forward_opcode: PoolWrapper.Opcodes.Swap,
             fee: feeAmount,
             jetton1_wallet: routerJetton1Wallet,
-            sqrt_price_limit: 0n,
+            sqrt_price_limit: 4295128739n,
             tick_spacing: tickSpacing,
             zero_for_one: isSwap ? 0 : -1,
           },

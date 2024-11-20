@@ -9,6 +9,8 @@
     int amount_remaining, ;; int256
     int fee_pips ;; uint24
 ) {
+    ~dump(sqrt_ratio_current_x96);
+    ~dump(sqrt_ratio_target_x96);
     (int sqrt_ratio_next_x96, int amount_in, int amount_out, int fee_amount) = (0, 0, 0, 0);
 
     int zero_for_one = sqrt_ratio_current_x96 >= sqrt_ratio_target_x96;
