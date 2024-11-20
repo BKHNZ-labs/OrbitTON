@@ -1,7 +1,8 @@
-cell pack_position_code(int position_id, slice pool_address) inline {
+cell pack_position_code(int tick_lower, int tick_upper, slice owner, slice pool_address) inline {
   return begin_cell()
           .store_ref(begin_cell()
-              .store_uint(position_id, 256)
+              .store_int(tick_lower, 24)
+              .store_int(tick_upper, 24)
               .store_uint(0, 128)
               .store_uint(0, 256)
               .store_uint(0, 256)
@@ -9,16 +10,17 @@ cell pack_position_code(int position_id, slice pool_address) inline {
           .store_ref(begin_cell()
               .store_uint(0, 128)
               .store_uint(0, 128)
+              .store_slice(owner)
               .store_slice(pool_address)
               .end_cell())
         .end_cell();
 }
 
-cell calculate_position_state_init(int position_id, slice pool_address,  cell position_code) inline {
+cell calculate_position_state_init(int tick_lower, int tick_upper, slice owner, slice pool_address,  cell position_code) inline {
   return begin_cell()
     .store_uint(0, 2)
     .store_dict(position_code)
-    .store_dict(pack_position_code(position_id, pool_address))
+    .store_dict(pack_position_code(tick_lower, tick_upper, owner, pool_address))
     .store_uint(0, 1)
   .end_cell();
 }
@@ -30,12 +32,7 @@ slice calculate_position_address(cell state_init) inline {
   .end_cell().begin_parse();
 }
 
-(cell, slice) get_position_state_init_and_address(int position_id, slice pool_address, cell position_code) inline {
-  cell state_init = calculate_position_state_init(position_id, pool_address, position_code);
+(cell, slice) get_position_state_init_and_address(int tick_lower, int tick_upper, slice owner, slice pool_address, cell position_code) inline {
+  cell state_init = calculate_position_state_init(tick_lower, tick_upper, owner, pool_address, position_code);
   return (state_init, calculate_position_address(state_init));
-}
-
-slice get_position_address(int position_id, slice pool_address, cell position_code) inline {
-  cell state_init = calculate_position_state_init(position_id, pool_address, position_code);
-  return calculate_position_address(state_init);
 }
