@@ -235,16 +235,6 @@ global cell batch_tick_code;
   }
 
   if(op == op::burn){
-    (int tick_lower, int tick_upper, int liquidity_delta) = (in_msg_body~load_int(24), in_msg_body~load_int(24), );
-    (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, sender_address, my_address(), position_code);
-    builder burn_body = begin_cell()
-                          .store_uint(op::burn_position, 32)
-                          .store_uint(query_id, 64)
-                          .store_int(liquidity_delta, 128)
-                          .store_uint(fee_growth_global0_x128, 256)
-                          .store_uint(fee_growth_global1_x128, 256);
-
-
   }
 
   if(op == op::cb_burn){
