@@ -6,7 +6,7 @@ export async function run(provider: NetworkProvider) {
   const token0MasterContract = provider.open(
     JettonMinterWrapper.JettonMinter.createFromConfig({
       adminAddress: provider.sender().address!,
-      content: beginCell().storeBuffer(Buffer.from('Token0')).endCell(),
+      content: beginCell().storeBuffer(Buffer.from('Token1')).endCell(),
     }),
   );
 

@@ -6,4 +6,5 @@ const op::swap = "op::swap"c;
 const op::cb_swap = "op::cb_swap"c;
 const op::burn = "op::burn"c;
 const op::cb_burn = "op::cb_burn"c;
+const op::cb_mint_position = "op::cb_mint_position"c;
 

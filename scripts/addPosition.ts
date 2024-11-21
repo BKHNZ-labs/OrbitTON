@@ -43,7 +43,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
 
   const pool = provider.open(PoolWrapper.PoolTest.createFromAddress(poolAddress));
   const poolInfo = await pool.getPoolInfo();
-  const beforePositionSeq = await pool.getPositionSeqno();
+  // const beforePositionSeq = await pool.getPositionSeqno();
 
   await jettonWallet0Contract.sendTransferMint(
     provider.sender(),
@@ -74,7 +74,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
 
   const lpAccount = await pool.getLpAccountAddress(userAddress, BigInt(tickMin), BigInt(tickMax));
   await provider.waitForDeploy(lpAccount, 100, 5000);
-  ui.write(`LP account address: ${lpAccount.toString()}`);  
+  ui.write(`LP account address: ${lpAccount.toString()}`);
 
   await jettonWallet1Contract.sendTransferMint(
     provider.sender(),
@@ -103,15 +103,15 @@ export async function run(provider: NetworkProvider, args: string[]) {
     },
   );
 
-  let afterPositionSeq = await pool.getPositionSeqno();
-  let attempts = 1;
-  while (beforePositionSeq === afterPositionSeq) {
-    ui.setActionPrompt(`Attempt ${attempts}`);
-    await sleep(2000);
-    afterPositionSeq = await pool.getPositionSeqno();
-    attempts++;
-  }
+  // let afterPositionSeq = await pool.getPositionSeqno();
+  // let attempts = 1;
+  // while (beforePositionSeq === afterPositionSeq) {
+  //   ui.setActionPrompt(`Attempt ${attempts}`);
+  //   await sleep(2000);
+  //   afterPositionSeq = await pool.getPositionSeqno();
+  //   attempts++;
+  // }
 
-  ui.clearActionPrompt();
+  // ui.clearActionPrompt();
   ui.write(`Position added successfully!`);
 }

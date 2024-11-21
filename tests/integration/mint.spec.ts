@@ -305,6 +305,7 @@ describe('Pool Test', () => {
         to: position0Address,
         success: true,
       });
+      printTransactionFees(transfer1.transactions);
 
       let batchTickIndexLower = await poolContract.getBatchTickIndex(BigInt(tickMin));
       let batchTickLowerAddress = await poolContract.getBatchTickAddress(batchTickIndexLower);
