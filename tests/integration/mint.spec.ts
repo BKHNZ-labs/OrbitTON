@@ -52,10 +52,10 @@ describe('Pool Test', () => {
         poolCode: poolCode,
       }),
     );
-    tickMath = blockchain.openContract(TickMathTest.createFromData(tickMathCode, beginCell().endCell()));
-    await tickMath.sendDeploy(deployer.getSender(), toNano('0.05'));
-    const sqrtPrice = encodePriceSqrt(1n, 10n);
-    const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
+    // tickMath = blockchain.openContract(TickMathTest.createFromData(tickMathCode, beginCell().endCell()));
+    // await tickMath.sendDeploy(deployer.getSender(), toNano('0.05'));
+    // const sqrtPrice = encodePriceSqrt(1n, 10n);
+    // const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
 
     token0MasterContract = blockchain.openContract(
       JettonMinterWrapper.JettonMinter.createFromConfig({
