@@ -308,9 +308,39 @@
       fee_growth_global1_x128 = state::fee_growth_global_x128;
     }
 
-    (int amount0, int amount1) = (amount_specified - state::amount_specified_remaining, state::amount_calculated);
+    (int amount0, int amount1) =  (amount_specified - state::amount_specified_remaining, state::amount_calculated);
 
-    builder msg = begin_cell()
+    if (zero_for_one) {
+      if (amount1 < 0) {
+        amount1 = 0 - amount1;
+      }
+      amount0 = amount_specified - amount0;
+      
+      builder msg = begin_cell()
+                      .store_uint(op::cb_swap, 32)
+                      .store_uint(query_id, 64)
+                      .store_ref(
+                        pack_cb_swap(
+                          storage::batch_index,
+                          tick,
+                          sqrt_price_x96,
+                          liquidity,
+                          fee_growth_global0_x128,
+                          fee_growth_global1_x128,
+                          zero_for_one,
+                          state::protocol_fee,
+                          amount0,
+                          amount1,
+                          response_address)
+                      );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    } else {
+      if (amount0 < 0) {
+        amount0 = 0 - amount0;
+      }
+      amount1 = amount_specified - amount1;
+      
+      builder msg = begin_cell()
                     .store_uint(op::cb_swap, 32)
                     .store_uint(query_id, 64)
                     .store_ref(
@@ -327,7 +357,9 @@
                         amount1,
                         response_address)
                     );
-    send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+
     save_data();
     return ();
   }
