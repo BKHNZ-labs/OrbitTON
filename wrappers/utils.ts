@@ -1,5 +1,6 @@
 import bn from 'bignumber.js';
 import Decimal from 'decimal.js';
+
 // returns the sqrt price as a 64x96
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 });
 export function encodePriceSqrt(reserve1: bigint, reserve0: bigint): bigint {
