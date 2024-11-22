@@ -378,3 +378,8 @@ int get_position_seqno() method_id {
   load_data();
   return (fee, tick_spacing, tick, sqrt_price_x96, liquidity);
 }
+
+(int, int) get_fee_growth_global() method_id {
+  load_data();
+  return (fee_growth_global0_x128, fee_growth_global1_x128);
+}
