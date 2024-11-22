@@ -12,6 +12,7 @@
 #include "libraries/tick.fc";
 #include "libraries/tick_math.fc";
 #include "libraries/swap_math.fc";
+#include "libraries/tick_bitmap.fc";
 #include "pool/opcodes.fc";
 #include "pool/structs.fc";
 
@@ -198,6 +199,7 @@
     );
     ~strdump("zero_for_one");
     ~dump(zero_for_one);
+    int exact_input = amount_specified > 0;
     ;; init cache
     int cache::liquidity_start = liquidity; ;; u128
     int cache::fee_protocol = zero_for_one ? (fee_protocol % 16) : (fee_protocol >> 4); ;; u8
@@ -212,17 +214,20 @@
     int state::liquidity = cache::liquidity_start; ;; u128
     
     int current_batch_index = calculate_batch_tick_index(state::tick, storage::tick_spacing);
-    while ((state::amount_specified_remaining != 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
       ;; init step
       int step::sqrt_price_start_x96 = state::sqrt_price_x96;
       int step::amount_in = 0;
       int step::amount_out = 0;
       int step::fee_amount = 0;
       
+      int last_tick_on_word = tick_bitmap::calculate_last_index_from_that_word(state::tick, storage::tick_spacing, zero_for_one);
       (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
       ~strdump("state::tick");
       ~dump(state::tick);
       ~strdump("step::next_tick");
+      ~dump(step::next_tick);
+      step::next_tick = ((step::existed != -1) | (step::next_tick > last_tick_on_word)) ? last_tick_on_word : step::next_tick;
       ~dump(step::next_tick);
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
@@ -257,11 +262,19 @@
       }
 
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
+      ~strdump("step::sqrt_price_next_x96");
+      ~dump(step::sqrt_price_next_x96);
+      ~dump(step::next_tick);
       int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
 
-      state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
-      state::amount_calculated += step::amount_out - step::amount_out;
+      if (exact_input) {
+        state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+        state::amount_calculated += step::amount_out;
+      } else {
+        state::amount_specified_remaining += step::amount_out;
+        state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+      }
 
       if (cache::fee_protocol > 0) {
         int delta = step::fee_amount / cache::fee_protocol;
@@ -319,12 +332,14 @@
       fee_growth_global1_x128 = state::fee_growth_global_x128;
     }
 
-    (int amount0, int amount1) =  (amount_specified - state::amount_specified_remaining, state::amount_calculated);
+    (int amount0, int amount1) =  zero_for_one == exact_input ? (amount_specified - state::amount_specified_remaining, state::amount_calculated) : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
     ~strdump("amount0");
     ~dump(amount0);
     ~strdump("amount1");
     ~dump(amount1);
     ~dump(state::amount_specified_remaining);
+    ~strdump("state::amount_calculated");
+    ~dump(state::amount_calculated);
     if (zero_for_one) {
       if (amount1 < 0) {
         amount1 = 0 - amount1;
@@ -395,7 +410,9 @@
       int step::amount_out = 0;
       int step::fee_amount = 0;
       
+      int last_tick_on_word = tick_bitmap::calculate_last_index_from_that_word(state::tick, storage::tick_spacing, zero_for_one);
       (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
+      step::next_tick = ((step::existed != -1) | (step::next_tick > last_tick_on_word)) ? last_tick_on_word : step::next_tick;
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
       (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
@@ -433,10 +450,13 @@
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
      
 
-      ;; state::amount_calculated
-      state::amount_specified_remaining -= (step::amount_in + step::fee_amount); ;; 100
-      state::amount_calculated = state::amount_calculated - step::amount_out;
-    
+      if (exact_input) {
+        state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+        state::amount_calculated += step::amount_out;
+      } else {
+        state::amount_specified_remaining += step::amount_out;
+        state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+      }
 
       if (cache::fee_protocol > 0) {
         int delta = step::fee_amount / cache::fee_protocol;
@@ -492,8 +512,7 @@
     ;; chưa transfer token => amount_specified - state::amount_specified_remaining
     ;; đã transfer => 0 - state::amount_specified_remaining
 
-    (int amount0, int amount1) =  (amount_specified - state::amount_specified_remaining, state::amount_calculated);
-  
+    (int amount0, int amount1) =  zero_for_one == exact_input ? (amount_specified - state::amount_specified_remaining, state::amount_calculated) : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
 
     if (zero_for_one) {
       if (amount1 < 0) {

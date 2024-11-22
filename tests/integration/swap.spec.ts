@@ -117,9 +117,7 @@ describe('OrbiTonPool', () => {
     },
   ];
 
-  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
-    (_, index) => index == 1,
-  );
+  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut);
 
   const TEST_POOLS = [
     {
@@ -332,7 +330,7 @@ describe('OrbiTonPool', () => {
         },
       ],
     },
-  ].filter((cur, index) => index == 1);
+  ];
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
@@ -782,18 +780,32 @@ describe('OrbiTonPool', () => {
             const poolBalance0Delta = router0AfterBalance.amount - poolBalance0!.amount;
             const poolBalance1Delta = router1AfterBalance.amount - poolBalance1!.amount;
             const executionPrice = new Decimal(poolBalance1Delta.toString()).div(poolBalance0Delta.toString()).mul(-1);
+
+            console.log({
+              amount0Before: poolBalance0!.amount.toString(),
+              amount0Delta: (router0AfterBalance.amount - poolBalance0!.amount).toString(),
+              amount1Before: poolBalance1!.amount.toString(),
+              amount1Delta: (router1AfterBalance.amount - poolBalance1!.amount).toString(),
+              executionPrice: Number(executionPrice.toString()).toFixed(4).toString(),
+              feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
+              feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
+              poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
+              poolPriceAfter: formatPrice(poolInfoAfter.sqrtPriceX96),
+              tickAfter: Number(poolInfoAfter.tick),
+              tickBefore: Number(poolInfoBefore.tick),
+            });
             expect({
               amount0Before: poolBalance0!.amount.toString(),
               amount0Delta: (router0AfterBalance.amount - poolBalance0!.amount).toString(),
               amount1Before: poolBalance1!.amount.toString(),
-              executionPrice,
               amount1Delta: (router1AfterBalance.amount - poolBalance1!.amount).toString(),
-              tickBefore: Number(poolInfoBefore.tick),
+              executionPrice: Number(executionPrice.toString()).toFixed(4).toString(),
               feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
               feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
-              tickAfter: Number(poolInfoAfter.tick),
               poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
               poolPriceAfter: formatPrice(poolInfoAfter.sqrtPriceX96),
+              tickAfter: Number(poolInfoAfter.tick),
+              tickBefore: Number(poolInfoBefore.tick),
             }).toMatchSnapshot();
           });
         }

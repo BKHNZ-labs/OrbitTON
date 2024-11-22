@@ -61,3 +61,19 @@ int get_by_key(cell self, int key) {
   int next = initialized ? (compressed + 1 + (bit_math::lsb(masked) - bit_pos)) * tick_spacing : (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
   return (next, initialized);
 }
+
+int tick_bitmap::calculate_last_index_from_that_word(int tick, int tick_spacing, int lte) {
+  int compressed = tick / tick_spacing;
+  if ((tick < 0) & (tick % tick_spacing != 0)) {
+    compressed -= 1;
+  }
+  if (lte) {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed);
+    int next = (compressed - bit_pos) * tick_spacing;
+    return next;
+  } else {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed + 1);
+    int next = (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
+    return next;
+  }
+}
