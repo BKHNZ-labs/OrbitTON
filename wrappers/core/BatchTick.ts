@@ -11,7 +11,7 @@ import {
   Sender,
   SendMode,
 } from '@ton/core';
-import { crc32, ValueOps } from '..';
+import { crc32, ValueOps } from '../crc32';
 
 namespace BatchTickWrapper {
   export const Opcodes = {

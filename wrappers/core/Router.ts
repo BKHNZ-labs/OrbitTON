@@ -1,5 +1,5 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
-import { crc32, ValueOps } from '..';
+import { crc32, ValueOps } from '../crc32';
 import { OpCreatePool, storeOpCreatePool } from '../../tlb/router/create_pool';
 
 namespace RouterWrapper {

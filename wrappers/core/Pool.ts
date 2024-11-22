@@ -9,7 +9,7 @@ import {
   Sender,
   SendMode,
 } from '@ton/core';
-import { crc32, ValueOps } from '..';
+import { crc32, ValueOps } from '../crc32';
 import { InMsgBody, storeInMsgBody } from '../../tlb/pool/messages';
 
 namespace PoolWrapper {
