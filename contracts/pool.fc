@@ -331,6 +331,32 @@ global cell batch_tick_code;
     return();
   }
 
+  if (op == op::cb_mint_position) {
+    slice first_ref = in_msg_body~load_ref().begin_parse();
+    (int tick_lower, int tick_upper, int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
+    slice second_ref = in_msg_body~load_ref().begin_parse();
+    (int tokens_owed_0, int tokens_owed_1, slice owner_address) = (second_ref~load_uint(128), second_ref~load_uint(128), second_ref~load_msg_addr());
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), position_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
+    send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
+    builder msg = begin_cell()
+                  .store_slice(sender_address)
+                  .store_ref(begin_cell()
+                      .store_int(tick_lower, 24)
+                      .store_int(tick_upper, 24)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_inside_0_last_x128, 256)
+                      .store_uint(fee_growth_inside_1_last_x128, 256)
+                      .end_cell())
+                  .store_ref(begin_cell()
+                      .store_uint(tokens_owed_0, 128)
+                      .store_uint(tokens_owed_1, 128)
+                      .store_slice(owner_address)
+                      .end_cell());
+    emit_log_simple(0, msg.end_cell(), query_id);
+    return ();
+  }
+
   
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }

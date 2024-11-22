@@ -47,7 +47,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
   console.log(await isContractDeployed(provider, lpAccount, ui));
 
   const poolInfo = await pool.getPoolInfo();
-  const beforePositionSeq = await pool.getPositionSeqno();
+  const beforePositionSeq = await pool.getPositionAddress(-887220n, 887220n, userAddress);
   console.log('beforePositionSeq: ', beforePositionSeq);
 
   ui.clearActionPrompt();
