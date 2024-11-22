@@ -1,7 +1,8 @@
 import { SendMode } from '@ton/core';
 import { Maybe } from '@ton/core/dist/utils/maybe';
+import PoolWrapper from '../build/wrappers/core/Pool';
 
-export * from "./core";
+export * from './core';
 
 const TABLE = new Int32Array([
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832,
