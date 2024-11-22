@@ -196,7 +196,8 @@
       second_ref~load_uint(160),
       second_ref~load_msg_addr()
     );
-
+    ~strdump("zero_for_one");
+    ~dump(zero_for_one);
     ;; init cache
     int cache::liquidity_start = liquidity; ;; u128
     int cache::fee_protocol = zero_for_one ? (fee_protocol % 16) : (fee_protocol >> 4); ;; u8
@@ -219,6 +220,10 @@
       int step::fee_amount = 0;
       
       (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
+      ~strdump("state::tick");
+      ~dump(state::tick);
+      ~strdump("step::next_tick");
+      ~dump(step::next_tick);
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
       (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
@@ -283,10 +288,14 @@
           state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
         }
         state::tick = zero_for_one ? step::next_tick - 1 : step::next_tick;
+        ~strdump("state::tick_update_1");
+        ~dump(state::tick);
       }
 
       if (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
         state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+         ~strdump("state::tick_update_2");
+        ~dump(state::tick);
       }
     }
 
@@ -294,6 +303,8 @@
     if (state::tick != tick) {
       sqrt_price_x96 = state::sqrt_price_x96;
       tick = state::tick;
+      ~strdump("state::tick_update_3");
+      ~dump(state::tick);
     } else {
       sqrt_price_x96 = state::sqrt_price_x96;
     }
@@ -307,7 +318,8 @@
     } else {
       fee_growth_global1_x128 = state::fee_growth_global_x128;
     }
-
+    ~strdump("amount_specified");
+    ~dump(amount_specified);
     (int amount0, int amount1) =  (amount_specified - state::amount_specified_remaining, state::amount_calculated);
 
     if (zero_for_one) {
@@ -374,8 +386,6 @@
     int exact_input = amount_specified > 0;
     int current_batch_index = storage::batch_index;
     while ((state::amount_specified_remaining != 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
-      ~dump(303);
-      ~dump(state::amount_specified_remaining);
       ;; init step
       int step::sqrt_price_start_x96 = state::sqrt_price_x96;
       int step::amount_in = 0;
@@ -418,20 +428,12 @@
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
       int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
-      ~dump(state::sqrt_price_x96);
-      ~dump(step::amount_in);
-      ~dump(step::amount_out);
-      ~dump(step::fee_amount);
-      ~dump(304);
-      ~dump(null());
+     
 
       ;; state::amount_calculated
       state::amount_specified_remaining -= (step::amount_in + step::fee_amount); ;; 100
       state::amount_calculated = state::amount_calculated - step::amount_out;
-      ~dump(state::amount_specified_remaining);
-      ~dump(state::amount_calculated);
-      ~dump(305);
-      ~dump(null());
+    
 
       if (cache::fee_protocol > 0) {
         int delta = step::fee_amount / cache::fee_protocol;
@@ -488,11 +490,7 @@
     ;; đã transfer => 0 - state::amount_specified_remaining
 
     (int amount0, int amount1) =  (amount_specified - state::amount_specified_remaining, state::amount_calculated);
-    ~dump(200);
-    ~dump(amount_specified);
-    ~dump(state::amount_specified_remaining);
-    ~dump(amount0);
-    ~dump(amount1);
+  
 
     if (zero_for_one) {
       if (amount1 < 0) {

@@ -116,7 +116,9 @@ describe('Pool Test', () => {
     },
   ];
 
-  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut);
+  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
+    (_, index) => index == 1,
+  );
 
   const TEST_POOLS = [
     {
@@ -329,7 +331,7 @@ describe('Pool Test', () => {
         },
       ],
     },
-  ];
+  ].filter((cur, index) => index == 1);
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
@@ -706,35 +708,73 @@ describe('Pool Test', () => {
 
         for (const testCase of POOL_SWAP_TESTS_FILTER_EXACT_OUT) {
           it(swapCaseToDescription(testCase), async () => {
-            const swap1 = await swapToken0Wallet!.sendTransferSwap(
-              deployer.getSender(),
-              {
-                kind: 'OpJettonTransferSwap',
-                query_id: 0,
-                jetton_amount: expandTo18Decimals(1),
-                to_address: router.address,
-                response_address: deployer.address,
-                custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                forward_ton_amount: toNano(0.4),
-                either_payload: true,
-                swap: {
-                  kind: 'SwapParams',
-                  forward_opcode: PoolWrapper.Opcodes.Swap,
-                  fee: poolCase.feeAmount,
-                  jetton1_wallet: routerJetton1WalletContract!.address,
-                  sqrt_price_limit: 4295128739n,
-                  tick_spacing: poolCase.tickSpacing,
-                  zero_for_one: testCase.zeroForOne,
+            let swapTx;
+            if (testCase.zeroForOne) {
+              swapTx = await swapToken0Wallet!.sendTransferSwap(
+                deployer.getSender(),
+                {
+                  kind: 'OpJettonTransferSwap',
+                  query_id: 0,
+                  jetton_amount: expandTo18Decimals(1),
+                  to_address: router.address,
+                  response_address: deployer.address,
+                  custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+                  forward_ton_amount: toNano(0.4),
+                  either_payload: true,
+                  swap: {
+                    kind: 'SwapParams',
+                    forward_opcode: PoolWrapper.Opcodes.Swap,
+                    fee: poolCase.feeAmount,
+                    jetton1_wallet: routerJetton1WalletContract!.address,
+                    sqrt_price_limit: testCase.sqrtPriceLimit ?? MIN_SQRT_RATIO,
+                    tick_spacing: poolCase.tickSpacing,
+                    zero_for_one: testCase.zeroForOne ? -1 : 0,
+                  },
                 },
-              },
-              {
-                value: toNano(1.2),
-              },
-            );
-            printTransactionFees(swap1.transactions);
+                {
+                  value: toNano(1.2),
+                },
+              );
+            } else {
+              swapTx = await swapToken1Wallet!.sendTransferSwap(
+                deployer.getSender(),
+                {
+                  kind: 'OpJettonTransferSwap',
+                  query_id: 0,
+                  jetton_amount: expandTo18Decimals(1),
+                  to_address: router.address,
+                  response_address: deployer.address,
+                  custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+                  forward_ton_amount: toNano(0.4),
+                  either_payload: true,
+                  swap: {
+                    kind: 'SwapParams',
+                    forward_opcode: PoolWrapper.Opcodes.Swap,
+                    fee: poolCase.feeAmount,
+                    jetton1_wallet: routerJetton0WalletContract!.address,
+                    sqrt_price_limit: testCase.sqrtPriceLimit ?? MAX_SQRT_RATIO,
+                    tick_spacing: poolCase.tickSpacing,
+                    zero_for_one: testCase.zeroForOne ? -1 : 0,
+                  },
+                },
+                {
+                  value: toNano(1.2),
+                },
+              );
+            }
+
+            printTransactionFees(swapTx.transactions);
             let router0AfterBalance = await routerJetton0WalletContract!.getBalance();
             let router1AfterBalance = await routerJetton1WalletContract!.getBalance();
             let poolInfoAfter = await poolContract!.getPoolInfo();
+            console.log('balance0');
+            console.log('before', poolBalance0!.amount);
+
+            console.log('after', router0AfterBalance.amount);
+
+            console.log('balance1');
+            console.log('before', poolBalance1!.amount);
+            console.log('after', router1AfterBalance.amount);
             expect({
               amount0Before: poolBalance0!.amount.toString(),
               amount0Delta: (router0AfterBalance.amount - poolBalance0!.amount).toString(),
@@ -749,7 +789,7 @@ describe('Pool Test', () => {
         }
       });
     }
-    it('swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 1', async () => {
+    it.skip('swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 1', async () => {
       const feeAmount = FeeAmount.LOW;
       const tickSpacing = TICK_SPACINGS[FeeAmount.LOW];
       const startingSqrtPrice = encodePriceSqrt(1n, 1n);

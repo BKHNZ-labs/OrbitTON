@@ -301,7 +301,7 @@ global cell batch_tick_code;
     } else {
       collected_protocol_fee1 += r_protocol_fee;
     }
-    ~dump(-101);
+    ~dump(op::cb_swap);
     ~dump(r_amount0);
     ~dump(r_amount1);
     builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,jetton0_wallet, r_amount0, jetton1_wallet, r_amount1, fee, tick_spacing);
