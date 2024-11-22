@@ -15,6 +15,7 @@ export function encodePriceSqrt(reserve1: bigint, reserve0: bigint): bigint {
 
 export const MaxUint128 = BigInt(bn(2).pow(128).minus(1).toString());
 export const MaxUint256: bigint = BigInt(bn(2).pow(256).minus(1).toString());
+export const MaxCoins = BigInt(bn(2).pow(120).minus(1).toString());
 
 export const Q128 = BigInt(2) ** BigInt(128);
 

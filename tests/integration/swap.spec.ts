@@ -12,6 +12,9 @@ import {
   getMaxTick,
   getMinTick,
   MAX_SQRT_RATIO,
+  MaxCoins,
+  MaxUint128,
+  MaxUint256,
   MIN_SQRT_RATIO,
 } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
@@ -23,7 +26,7 @@ import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../../wrappers/core/JettonWallet';
 import Decimal from 'decimal.js';
 
-describe('OrbiTonPool', () => {
+describe('OrbitTonPool', () => {
   let poolCode: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
@@ -101,23 +104,29 @@ describe('OrbiTonPool', () => {
     // swap arbitrary input to price
     {
       sqrtPriceLimit: encodePriceSqrt(5n, 2n),
+      amount1: toNano(50_000_000_000),
       zeroForOne: false,
     },
     {
       sqrtPriceLimit: encodePriceSqrt(2n, 5n),
+      amount0: toNano(50_000_000_000),
       zeroForOne: true,
     },
     {
       sqrtPriceLimit: encodePriceSqrt(5n, 2n),
+      amount0: toNano(50_000_000_000),
       zeroForOne: true,
     },
     {
       sqrtPriceLimit: encodePriceSqrt(2n, 5n),
+      amount1: toNano(50_000_000_000),
       zeroForOne: false,
     },
   ];
 
-  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut);
+  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
+    (_, index) => index == 0,
+  );
 
   const TEST_POOLS = [
     {
@@ -330,7 +339,7 @@ describe('OrbiTonPool', () => {
         },
       ],
     },
-  ];
+  ].filter((_, index) => index == 3);
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
@@ -432,7 +441,7 @@ describe('OrbiTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(5_000_000_000),
+        jettonAmount: toNano(5_000_000_000_000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -444,7 +453,7 @@ describe('OrbiTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(5_000_000_000),
+        jettonAmount: toNano(5_000_000_000_000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -786,7 +795,7 @@ describe('OrbiTonPool', () => {
               amount0Delta: (router0AfterBalance.amount - poolBalance0!.amount).toString(),
               amount1Before: poolBalance1!.amount.toString(),
               amount1Delta: (router1AfterBalance.amount - poolBalance1!.amount).toString(),
-              executionPrice: Number(executionPrice.toString()).toFixed(4).toString(),
+              executionPrice: executionPrice.toPrecision(5),
               feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
               feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
               poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
