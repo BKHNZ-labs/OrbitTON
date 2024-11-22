@@ -37,6 +37,8 @@ export async function run(provider: NetworkProvider, args: string[]) {
   console.log('jettonWallet0: ', jettonWallet0);
   console.log('jettonWallet1: ', jettonWallet1);
 
+  // console.log('jettonWallet0: ', await jettonMinter0.);
+
   const routerJetton0Wallet = await jettonMinter0.getWalletAddress(routerAddress);
   const routerJetton1Wallet = await jettonMinter1.getWalletAddress(routerAddress);
 
