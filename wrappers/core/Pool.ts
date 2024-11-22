@@ -164,19 +164,27 @@ namespace PoolWrapper {
       return result.stack.readAddress();
     }
 
-    async getPositionAddressBySeq(provider: ContractProvider, seq: bigint): Promise<Address> {
-      const result = await provider.get('get_position_address_by_seq', [
+    async getPositionAddress(
+      provider: ContractProvider,
+      tick_lower: bigint,
+      tick_upper: bigint,
+      owner: Address,
+    ): Promise<Address> {
+      const result = await provider.get('get_calculate_position_address', [
         {
           type: 'int',
-          value: seq,
+          value: tick_lower,
+        },
+        {
+          type: 'int',
+          value: tick_upper,
+        },
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(owner).endCell(),
         },
       ]);
       return result.stack.readAddress();
-    }
-
-    async getPositionSeqno(provider: ContractProvider): Promise<bigint> {
-      const result = await provider.get('get_position_seqno', []);
-      return result.stack.readBigNumber();
     }
 
     async getPoolInfo(provider: ContractProvider) {

@@ -27,7 +27,7 @@ global slice jetton1_wallet; ;; 267
 global int fee; ;; 24 - uint
 global int protocol_fee; ;; 8 - uint
 global int sqrt_price_x96; ;; 160 - uint
-global int max_liquidity_per_tick; ;; 128 - uint
+
 
 global int tick_spacing; ;; 24
 global int tick; ;; 24
@@ -37,7 +37,7 @@ global int collected_protocol_fee0; ;; 128 - uint
 global int collected_protocol_fee1; ;; 128 - uint
 global int liquidity; ;; 128 - uint
 
-global int position_seqno; ;; 256 - uint
+global int max_liquidity_per_tick; ;; 128 - uint
 global cell tick_bitmap; 
 global cell position_code;
 global cell lp_account_code;
@@ -64,7 +64,6 @@ global cell batch_tick_code;
   liquidity = second_cell~load_uint(128);
 
   slice third_cell = ds~load_ref().begin_parse();
-  position_seqno = third_cell~load_uint(256);
   max_liquidity_per_tick = third_cell~load_uint(128);
   cell tick_bitmap_cell = third_cell~load_ref();
   slice tick_bitmap_cs = tick_bitmap_cell.begin_parse();
@@ -101,7 +100,6 @@ global cell batch_tick_code;
           .end_cell())
       .store_ref(
       begin_cell()
-          .store_uint(position_seqno, 256)
           .store_uint(max_liquidity_per_tick, 128)
           .store_ref(bitmap_cell)
           .store_ref(position_code)
@@ -213,7 +211,6 @@ global cell batch_tick_code;
 
     ;; send batch tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
-    ~dump(remaining_gas);
     int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
     (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
     builder send_batch_tick_body = begin_cell()
@@ -238,7 +235,6 @@ global cell batch_tick_code;
   }
 
   if(op == op::burn){
-
   }
 
   if(op == op::cb_burn){
@@ -321,19 +317,44 @@ global cell batch_tick_code;
       tick_bitmap~tick_bitmap::flip_tick(tick_upper, tick_spacing);
     }
 
-    (cell state_init, slice position_address) = get_position_state_init_and_address(position_seqno, my_address(),  position_code);
-    position_seqno += 1;
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(),  position_code);
+
     builder mint_body = begin_cell()
                           .store_uint(op::mint_position, 32)
                           .store_uint(query_id, 64)
                           .store_int(liquidity_delta, 128)
                           .store_uint(fee_growth_inside_0X128, 256)
-                          .store_uint(fee_growth_inside_1X128, 256)
-                          .store_slice(owner_address);
+                          .store_uint(fee_growth_inside_1X128, 256);
 
     send_message_with_stateinit(0, position_address, state_init, mint_body.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return();
+  }
+
+  if (op == op::cb_mint_position) {
+    slice first_ref = in_msg_body~load_ref().begin_parse();
+    (int tick_lower, int tick_upper, int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
+    slice second_ref = in_msg_body~load_ref().begin_parse();
+    (int tokens_owed_0, int tokens_owed_1, slice owner_address) = (second_ref~load_uint(128), second_ref~load_uint(128), second_ref~load_msg_addr());
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), position_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
+    send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
+    builder msg = begin_cell()
+                  .store_slice(sender_address)
+                  .store_ref(begin_cell()
+                      .store_int(tick_lower, 24)
+                      .store_int(tick_upper, 24)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_inside_0_last_x128, 256)
+                      .store_uint(fee_growth_inside_1_last_x128, 256)
+                      .end_cell())
+                  .store_ref(begin_cell()
+                      .store_uint(tokens_owed_0, 128)
+                      .store_uint(tokens_owed_1, 128)
+                      .store_slice(owner_address)
+                      .end_cell());
+    emit_log_simple(0, msg.end_cell(), query_id);
+    return ();
   }
 
   
@@ -360,14 +381,10 @@ slice get_calculate_batch_tick_address(int batch_tick_index) method_id {
   return get_batch_tick_address(batch_tick_index, tick_spacing, my_address(), batch_tick_code);
 }
 
-slice get_position_address_by_seq(int seq) method_id {
+slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner) method_id {
   load_data();
-  return get_position_address(seq, my_address(), position_code);
-}
-
-int get_position_seqno() method_id {
-  load_data();
-  return position_seqno;
+  (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner, my_address(), position_code);
+  return position_address;
 }
 
 (int, int, int, int, int) get_pool_info() method_id {
