@@ -235,14 +235,22 @@
       }
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
-      (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
+      (int tick_next, int batch_index_next, int maybe_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
+      int calculated_batch_tick_next = calculate_batch_tick_index(tick_next, storage::tick_spacing);
+      int is_jump = maybe_jump & (calculated_batch_tick_next == batch_index_next);
+      (_, int step::tick_next_existed) = storage::ticks.idict_get?(24, tick_next);
+      ~strdump("tick_next");
+      ~dump(tick_next);
+      ~strdump("is_jump");
+      ~dump(is_jump);
 
       if (is_jump) {
         (cell state_init, slice next_batch_tick_address) = get_batch_tick_state_init_and_address(batch_index_next,
         storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
         cell cache = batch_tick::pack_cache(cache::liquidity_start, cache::fee_protocol);
         cell state = batch_tick::pack_state(state::amount_specified_remaining, state::amount_calculated, state::sqrt_price_x96, state::tick, state::fee_growth_global_x128, state::protocol_fee, state::liquidity);
-
+        ~strdump("internal_swap:state::liquidity");
+        ~dump(state::liquidity);
         cell packed_data = batch_tick::pack_cross_swap(
                       current_batch_index,
                       zero_for_one,
@@ -291,7 +299,7 @@
       }
 
       if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
-        if (step::existed == -1) {
+        if (step::tick_next_existed == -1) {
           int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : fee_growth_global0_x128;
           int cross_fee_growth_global_1_x128 = zero_for_one ? fee_growth_global1_x128 : state::fee_growth_global_x128;
           int liquidity_net = storage::ticks~tick::cross(
@@ -407,7 +415,8 @@
     (int state::amount_specified_remaining, int state::amount_calculated, int state::sqrt_price_x96, int state::tick, int state::fee_growth_global_x128, int state::protocol_fee, int state::liquidity) = batch_tick::unpack_state(state.begin_parse());
     int exact_input = amount_specified > 0;
     int current_batch_index = storage::batch_index;
-    while ((state::amount_specified_remaining != 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+    ~strdump("op:engineer");
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
       ;; init step
       int step::sqrt_price_start_x96 = state::sqrt_price_x96;
       int step::amount_in = 0;
@@ -416,6 +425,9 @@
       
       int last_tick_on_word = tick_bitmap::calculate_last_index_from_that_word(state::tick, storage::tick_spacing, zero_for_one);
       (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
+      ~strdump("step::next_tick");
+      ~dump(step::next_tick);
+
       if (step::existed != -1){
         step::next_tick = last_tick_on_word;
       } elseif(step::next_tick > last_tick_on_word)  {
@@ -423,35 +435,10 @@
       }
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
-      (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
-
-      if (is_jump) {
-        (cell state_init, slice next_batch_tick_address) = get_batch_tick_state_init_and_address(batch_index_next,
-        storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
-        cell cache = batch_tick::pack_cache(cache::liquidity_start, cache::fee_protocol);
-        cell state = batch_tick::pack_state(state::amount_specified_remaining, state::amount_calculated, state::sqrt_price_x96, state::tick, state::fee_growth_global_x128, state::protocol_fee, state::liquidity);
-
-        cell packed_data = batch_tick::pack_cross_swap(
-                      current_batch_index,
-                      zero_for_one,
-                      amount_specified,
-                      liquidity,
-                      tick,
-                      sqrt_price_x96,
-                      sqrt_price_limit_x96,
-                      fee,
-                      fee_growth_global0_x128,
-                      fee_growth_global1_x128,
-                      cache,
-                      state,
-                      response_address);
-        builder msg = begin_cell()
-                        .store_uint(op::cross_swap, 32)
-                        .store_uint(query_id, 64)
-                        .store_ref(packed_data);
-        send_message_with_stateinit(0, next_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
-        return ();
-      }
+      (int tick_next, int batch_index_next, int maybe_jump) = batch_tick::recalculate_next_tick(step::existed ? step::next_tick : state::tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
+      int calculated_batch_tick_next = calculate_batch_tick_index(tick_next, storage::tick_spacing);
+      int is_jump = maybe_jump & (calculated_batch_tick_next == batch_index_next);
+      (_, int step::tick_next_existed) = storage::ticks.idict_get?(24, tick_next);
       ~strdump("cross_swap_1");
 
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
@@ -459,7 +446,14 @@
 
       int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
       ~strdump("cross_swap_2");
+      ~dump(state::sqrt_price_x96);
+      ~dump(sqrt_price_target_x96);
+      ~dump(state::liquidity);
+      ~dump(state::amount_specified_remaining);
+      ~dump(fee);
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+      ~dump(step::amount_in);
+      ~dump(step::fee_amount);
       ~strdump("cross_swap_3");
 
       if (exact_input) {
@@ -469,7 +463,8 @@
         state::amount_specified_remaining += step::amount_out;
         state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
       }
-       ~strdump("cross_swap_4");
+      ~dump(state::amount_specified_remaining);
+      ~strdump("cross_swap_4");
       if (cache::fee_protocol > 0) {
         int delta = step::fee_amount / cache::fee_protocol;
         step::fee_amount -= delta;
@@ -483,7 +478,9 @@
           ~dump(step::sqrt_price_next_x96);
           ~dump(state::sqrt_price_x96);
       if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
-        if (step::existed == -1) {
+        ~strdump("step::tick_next_existed");
+        ~dump(step::tick_next_existed);
+        if (step::tick_next_existed == -1) {
          ~strdump("cross_swap_6_1");
 
           int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : fee_growth_global0_x128;
@@ -501,10 +498,11 @@
           if (zero_for_one) {
             liquidity_net = 0 - liquidity_net;
           }
-         ~strdump("cross_swap_6_4");
-
+          ~strdump("cross_swap_6_4");
+          ~dump(state::liquidity );
+          ~dump(liquidity_net);
           state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
-         ~strdump("cross_swap_6_5");
+          ~strdump("cross_swap_6_5");
 
         }
         state::tick = zero_for_one ? step::next_tick - 1 : step::next_tick;

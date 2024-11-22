@@ -190,9 +190,11 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
         int fee_growth_outside_1_x128, 
         int initialized
     ) = info_raw.unpack_tick();
-
+    ~strdump("tick::cross_1");
     fee_growth_outside_0_x128 = fee_growth_global_0_x128 - fee_growth_outside_0_x128;
     fee_growth_outside_1_x128 = fee_growth_global_1_x128 - fee_growth_outside_1_x128;
+    ~strdump("tick::cross_2");
     tick_map~idict_set(24,tick,pack_tick(liquidity_gross, liquidity_net, fee_growth_outside_0_x128,fee_growth_outside_1_x128, initialized).begin_parse());
+    ~strdump("tick::cross_3");
     return (tick_map, (liquidity_net));
 }

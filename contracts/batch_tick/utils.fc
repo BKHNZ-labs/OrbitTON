@@ -71,11 +71,11 @@ int calculate_batch_tick_index(int tick, int tick_spacing){
   }
 
   if (zero_for_one & (existed != -1)) {
-    return (0, current_live_in_batch_index - 1, -1);
+    return (next_tick, current_live_in_batch_index - 1, -1);
   }
 
   if ((zero_for_one != -1) & (existed != -1)) {
-    return (0, current_live_in_batch_index + 1, -1);
+    return (next_tick, current_live_in_batch_index + 1, -1);
   }
 
   return (next_tick, current_live_in_batch_index, 0);

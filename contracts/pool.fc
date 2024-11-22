@@ -194,7 +194,10 @@ global cell batch_tick_code;
     if(tick_upper < tick){
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
-   
+    ~dump(amount0);
+    ~dump(amount1);
+    ~dump(jetton_0_amount);
+    ~dump(jetton_1_amount);
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
       builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, jetton0_wallet, jetton_0_amount, jetton1_wallet, jetton_1_amount, fee, tick_spacing); 

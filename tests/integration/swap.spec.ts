@@ -339,8 +339,8 @@ describe('OrbitTonPool', () => {
         },
       ],
     },
-  ].filter((_, index) => index == 3);
-
+  ].filter((_, index) => index == 5);
+  console.log(TEST_POOLS);
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
     if ('exactOut' in testCase) {
@@ -529,14 +529,15 @@ describe('OrbitTonPool', () => {
           });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = 3_000_000_000_000_000_000n;
-            let jettonAmount1 = 3_000_000_000_000_000_000n;
+            let jettonAmount0 = toNano(300_000_000_000);
+            let jettonAmount1 = toNano(300_000_000_000);
 
             let transfer0;
             let transfer1;
             let isSwap =
               BigInt(`0x${beginCell().storeAddress(routerJetton0Wallet).endCell().hash().toString('hex')}`) <
               BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`);
+
             if (isSwap) {
               transfer0 = await token0WalletContract.sendTransferMint(
                 deployer.getSender(),
@@ -547,7 +548,7 @@ describe('OrbitTonPool', () => {
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                  forward_ton_amount: toNano(0.8),
+                  forward_ton_amount: toNano(1),
                   either_payload: true,
                   mint: {
                     kind: 'MintParams',
@@ -561,7 +562,7 @@ describe('OrbitTonPool', () => {
                   },
                 },
                 {
-                  value: toNano(1.2),
+                  value: toNano(1.6),
                 },
               );
 
@@ -574,7 +575,7 @@ describe('OrbitTonPool', () => {
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                  forward_ton_amount: toNano(0.8),
+                  forward_ton_amount: toNano(1.2),
                   either_payload: true,
                   mint: {
                     kind: 'MintParams',
@@ -588,7 +589,7 @@ describe('OrbitTonPool', () => {
                   },
                 },
                 {
-                  value: toNano(1.2),
+                  value: toNano(1.6),
                 },
               );
               routerJetton0WalletContract = blockchain.openContract(
@@ -662,6 +663,9 @@ describe('OrbitTonPool', () => {
               swapToken0Wallet = token1WalletContract;
               swapToken1Wallet = token0WalletContract;
             }
+            console.log('createPosition');
+            printTransactionFees(transfer1.transactions);
+
             // const lpAccount = await poolContract.getLpAccountAddress(
             //   deployer.address,
             //   BigInt(position.tickLower),
@@ -736,7 +740,7 @@ describe('OrbitTonPool', () => {
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                  forward_ton_amount: toNano(0.4),
+                  forward_ton_amount: toNano(1.2),
                   either_payload: true,
                   swap: {
                     kind: 'SwapParams',
@@ -749,7 +753,7 @@ describe('OrbitTonPool', () => {
                   },
                 },
                 {
-                  value: toNano(1.2),
+                  value: toNano(1.6),
                 },
               );
             } else {
