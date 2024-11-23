@@ -42,9 +42,9 @@ export const crc32 = (source: Uint8Array | string, previous?: number) => {
 };
 
 // called directly
-if (require.main === module) {
-  console.log('0x' + crc32(process.argv[2]).toString(16));
-}
+// if (require.main === module) {
+//   console.log('0x' + crc32(process.argv[2]).toString(16));
+// }
 
 export type ValueOps = {
   value: bigint | string;

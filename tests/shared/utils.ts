@@ -15,6 +15,7 @@ export function encodePriceSqrt(reserve1: bigint, reserve0: bigint): bigint {
 
 export const MaxUint128 = BigInt(bn(2).pow(128).minus(1).toString());
 export const MaxUint256: bigint = BigInt(bn(2).pow(256).minus(1).toString());
+export const MaxCoins = BigInt(bn(2).pow(120).minus(1).toString());
 
 export const Q128 = BigInt(2) ** BigInt(128);
 
@@ -38,3 +39,29 @@ export function pseudoRandomBigNumberOnUint256() {
 
 export const getMinTick = (tickSpacing: number) => Math.ceil(-887272 / tickSpacing) * tickSpacing;
 export const getMaxTick = (tickSpacing: number) => Math.floor(887272 / tickSpacing) * tickSpacing;
+
+export const getMaxLiquidityPerTick = (tickSpacing: number) =>
+  (2n ** 128n - 1n) / (BigInt(getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / BigInt(tickSpacing) + 1n);
+
+export const MIN_SQRT_RATIO = 4295128739n;
+export const MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342n;
+
+export enum FeeAmount {
+  LOW = 500,
+  MEDIUM = 3000,
+  HIGH = 10000,
+}
+
+export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
+  [FeeAmount.LOW]: 10,
+  [FeeAmount.MEDIUM]: 60,
+  [FeeAmount.HIGH]: 200,
+};
+
+export function formatPrice(price: bigint): string {
+  return new Decimal(price.toString()).dividedBy(new Decimal(2).pow(96)).pow(2).toPrecision(5);
+}
+
+export function formatTokenAmount(num: bigint): string {
+  return new Decimal(num.toString()).dividedBy(new Decimal(10).pow(18)).toPrecision(5);
+}

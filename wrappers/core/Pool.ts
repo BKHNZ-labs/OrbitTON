@@ -217,6 +217,14 @@ namespace PoolWrapper {
       const liquidity = result.stack.readBigNumber();
       return { fee, tickSpacing, tick, sqrtPriceX96, liquidity };
     }
+
+    async getFeeGrowthGlobal(provider: ContractProvider) {
+      const result = await provider.get('get_fee_growth_global', []);
+      const feeGrowthGlobal0X128 = result.stack.readBigNumber();
+      const feeGrowthGlobal1X128 = result.stack.readBigNumber();
+
+      return { feeGrowthGlobal0X128, feeGrowthGlobal1X128 };
+    }
   }
 }
 

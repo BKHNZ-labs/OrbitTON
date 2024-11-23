@@ -8,7 +8,8 @@
     int liquidity, ;; uint128
     int amount_remaining, ;; int256
     int fee_pips ;; uint24
-) {
+) inline_ref {
+    
     (int sqrt_ratio_next_x96, int amount_in, int amount_out, int fee_amount) = (0, 0, 0, 0);
 
     int zero_for_one = sqrt_ratio_current_x96 >= sqrt_ratio_target_x96;
@@ -16,8 +17,6 @@
 
     if (exact_in) { ;; check if `exact_in` is true
         int amount_remaining_less_fee = full_math::mul_div(amount_remaining, 1000000 - fee_pips, 1000000); ;; cast int256 -> uint256: amount_remaining
-        ~dump(101);
-        ~dump(sqrt_ratio_target_x96);
         amount_in = zero_for_one
                 ? sqrt_price_math::get_amount0_delta(sqrt_ratio_target_x96, sqrt_ratio_current_x96, liquidity, -1)
                 : sqrt_price_math::get_amount1_delta(sqrt_ratio_current_x96, sqrt_ratio_target_x96, liquidity, -1);

@@ -3,7 +3,7 @@
 const int error::liquidity_math::LS = 0x1002;
 const int error::liquidity_math::LA = 0x1003;
 
-int liquidity_math::add_delta(int x, int y) {
+int liquidity_math::add_delta(int x, int y) inline_ref {
     int z = 0;
     if (y < 0) {
         throw_unless(error::liquidity_math::LS, (z = x - (- y)) < x);
