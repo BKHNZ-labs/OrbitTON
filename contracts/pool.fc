@@ -361,6 +361,11 @@ global cell batch_tick_code;
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
 
+(int, int) get_fees_growth_global() method_id {
+  load_data();
+  return (fee_growth_global0_x128, fee_growth_global1_x128);
+}
+
 (int, int) get_collected_fees() method_id {
   load_data();
   return (collected_protocol_fee0, collected_protocol_fee1);

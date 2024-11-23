@@ -120,6 +120,14 @@ namespace PoolWrapper {
       return data;
     }
 
+    async getFeesGrowthGlobal(provider: ContractProvider): Promise<bigint[]> {
+      const result = await provider.get('get_fees_growth_global', []);
+      const tuple = result.stack;
+      const feeGrowth0Global = tuple.readBigNumber();
+      const feeGrowth1Global = tuple.readBigNumber();
+      return [feeGrowth0Global, feeGrowth1Global];
+    }
+
     async getLpAccountAddress(
       provider: ContractProvider,
       user: Address,
