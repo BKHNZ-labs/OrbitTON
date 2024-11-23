@@ -1,7 +1,7 @@
 #include "./common.fc";
 #include "./bit_math.fc";
 
-int get_by_key(cell self, int key) {
+int get_by_key(cell self, int key) inline_ref {
   (slice data, int existed) = self.idict_get?(16, key);
   if (existed == -1) {
     return data~load_uint(256);
@@ -12,7 +12,7 @@ int get_by_key(cell self, int key) {
 ;;; @param tick The tick for which to compute the position
 ;;; @return word_pos The key in the mapping containing the word in which the bit is stored
 ;;; @return bit_pos The bit position in the word where the flag is stored
-(int, int) tick_bitmap::position(int tick) {
+(int, int) tick_bitmap::position(int tick) inline_ref {
   throw_unless(error::overflow, (tick < max::int24) & (tick > min::int24));
   int word_pos = tick >> 8;
   int bit_pos = tick % 256;
@@ -23,7 +23,7 @@ int get_by_key(cell self, int key) {
 ;;; @param self The mapping in which to flip the tick
 ;;; @param tick The tick to flip
 ;;; @param tick_spacing The spacing between usable ticks
-(cell, ()) ~tick_bitmap::flip_tick(cell self, int tick, int tick_spacing) {
+(cell, ()) ~tick_bitmap::flip_tick(cell self, int tick, int tick_spacing) inline_ref {
   throw_unless(error::not_equal, tick % tick_spacing == 0);
   (int word_pos, int bit_pos) = tick_bitmap::position(tick / tick_spacing);
   int mask = 1 << bit_pos;
@@ -41,7 +41,7 @@ int get_by_key(cell self, int key) {
 ;;; @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
 ;;; @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
 ;;; @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
-(int, int) tick_bitmap::next_initialized_tick_within_one_word(cell self, int tick, int tick_spacing, int lte) {
+(int, int) tick_bitmap::next_initialized_tick_within_one_word(cell self, int tick, int tick_spacing, int lte) inline_ref {
   int compressed = tick / tick_spacing;
   if ((tick < 0) & (tick % tick_spacing != 0)) {
     compressed -= 1;
@@ -62,7 +62,7 @@ int get_by_key(cell self, int key) {
   return (next, initialized);
 }
 
-int tick_bitmap::calculate_last_index_from_that_word(int tick, int tick_spacing, int lte) {
+int tick_bitmap::calculate_last_index_from_that_word(int tick, int tick_spacing, int lte) inline_ref {
   int compressed = tick / tick_spacing;
   if ((tick < 0) & (tick % tick_spacing != 0)) {
     compressed -= 1;

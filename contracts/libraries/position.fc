@@ -5,7 +5,7 @@
 
 const int error::position::NP = 0x2000;
 
-int position::key(slice owner, int tick_lower, int tick_upper) {
+int position::key(slice owner, int tick_lower, int tick_upper) inline_ref {
     int key = begin_cell()
         .store_slice(owner)
         .store_int(tick_lower, 24)
@@ -14,17 +14,17 @@ int position::key(slice owner, int tick_lower, int tick_upper) {
     return key;
 }
 
-slice position::get_position_by_key(cell self, int key) {
+slice position::get_position_by_key(cell self, int key) inline_ref {
     (slice data, int existed) = self.udict_get?(256, key);
     return data~load_ref().begin_parse();
 }
 
-(cell, ()) position::set(cell self, int key, cell data) {
+(cell, ()) position::set(cell self, int key, cell data) inline_ref {
     self~udict_set(256, key, begin_cell().store_ref(data).end_cell().begin_parse());
     return (self, ());
 }
 
-(int, int, int, int, int) position::info(slice data) {
+(int, int, int, int, int) position::info(slice data) inline_ref {
     int liquidity = data~load_int(128);
     int fee_growth_inside_0_last_x128 = data~load_uint(256);
     int fee_growth_inside_1_last_x128 = data~load_uint(256);
@@ -45,7 +45,7 @@ slice position::get_position_by_key(cell self, int key) {
 ;; @param tick_lower The lower tick boundary of the position
 ;; @param tick_upper The upper tick boundary of the position
 ;; @return position The position info struct of the given owners' position
-(int, int, int, int, int) position::get(cell self, slice owner, int tick_lower, int tick_upper) {
+(int, int, int, int, int) position::get(cell self, slice owner, int tick_lower, int tick_upper) inline_ref {
     int key = position::key(owner, tick_lower, tick_upper);
     slice data = position::get_position_by_key(self, key);
     return position::info(data);
@@ -57,7 +57,7 @@ slice position::get_position_by_key(cell self, int key) {
 ;; @param fee_growth_inside_0_x128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
 ;; @param fee_growth_inside_1_x128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
 ;; NOTE: @return The updated position -> need to set this in the mapping 
-cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x128, int fee_growth_inside_1_x128) {
+cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x128, int fee_growth_inside_1_x128) inline_ref {
     (
         int liquidity, 
         int fee_growth_inside_0_last_x128, 
@@ -106,6 +106,7 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
     int liquidity_delta,
     int fee_growth_inside_0_x128,
     int fee_growth_inside_1_x128) 
+    inline_ref
 {
     int liquidity_next = 0;
     if (liquidity_delta == 0) {

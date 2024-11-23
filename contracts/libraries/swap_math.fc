@@ -8,7 +8,7 @@
     int liquidity, ;; uint128
     int amount_remaining, ;; int256
     int fee_pips ;; uint24
-) {
+) inline_ref {
     
     (int sqrt_ratio_next_x96, int amount_in, int amount_out, int fee_amount) = (0, 0, 0, 0);
 

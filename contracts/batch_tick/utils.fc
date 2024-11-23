@@ -1,6 +1,6 @@
 #include "../libraries/tick.fc";
 
-cell pack_batch_tick_code(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline {
+cell pack_batch_tick_code(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline_ref {
   return begin_cell()
     .store_int(batch_index, 16)
     .store_int(tick_spacing, 24)
@@ -10,7 +10,7 @@ cell pack_batch_tick_code(int batch_index, int tick_spacing, slice pool_address,
   .end_cell();
 }
 
-cell calculate_batch_tick_state_init(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline {
+cell calculate_batch_tick_state_init(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline_ref {
   return begin_cell()
     .store_uint(0, 2)
     .store_dict(batch_tick_code)
@@ -19,24 +19,24 @@ cell calculate_batch_tick_state_init(int batch_index, int tick_spacing, slice po
   .end_cell();
 }
 
-slice calculate_batch_tick_address(cell state_init) inline {
+slice calculate_batch_tick_address(cell state_init) inline_ref {
   return begin_cell().store_uint(4, 3)
     .store_int(WORKCHAIN, 8)
     .store_uint(cell_hash(state_init), 256)
   .end_cell().begin_parse();
 }
 
-(cell, slice) get_batch_tick_state_init_and_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline {
+(cell, slice) get_batch_tick_state_init_and_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline_ref {
   cell state_init = calculate_batch_tick_state_init(batch_index, tick_spacing, pool_address, new_dict(), batch_tick_code);
   return (state_init, calculate_batch_tick_address(state_init));
 }
 
-slice get_batch_tick_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline {
+slice get_batch_tick_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline_ref {
   cell state_init = calculate_batch_tick_state_init(batch_index, tick_spacing, pool_address, new_dict(), batch_tick_code);
   return calculate_batch_tick_address(state_init);
 }
 
-int calculate_batch_tick_index(int tick, int tick_spacing){
+int calculate_batch_tick_index(int tick, int tick_spacing) inline {
   if(constants::batch_index_range * tick_spacing > tick_math::MAX_TICK){
     if(tick < 0){
       return -1;
@@ -49,7 +49,7 @@ int calculate_batch_tick_index(int tick, int tick_spacing){
   return tick / (constants::batch_index_range * tick_spacing);
 }
 
-(int, slice, int) batch_tick::find_next_tick(cell ticks, int tick_index, int zero_for_one) {
+(int, slice, int) batch_tick::find_next_tick(cell ticks, int tick_index, int zero_for_one) inline_ref {
   if (zero_for_one) {
     return ticks.idict_get_prev?(24, tick_index);
   }
@@ -57,7 +57,7 @@ int calculate_batch_tick_index(int tick, int tick_spacing){
 }
 
 ;; return tick_next, batch_index_next, is_jump
-(int, int, int) batch_tick::recalculate_next_tick(int next_tick, int current_batch_index, int tick_spacing, int existed, int zero_for_one) {
+(int, int, int) batch_tick::recalculate_next_tick(int next_tick, int current_batch_index, int tick_spacing, int existed, int zero_for_one) inline_ref {
   int current_live_in_batch_index = calculate_batch_tick_index(next_tick, tick_spacing);
   int max_batch_index = calculate_batch_tick_index(tick_math::MAX_TICK, tick_spacing);
   int min_batch_index = calculate_batch_tick_index(tick_math::MIN_TICK,tick_spacing);

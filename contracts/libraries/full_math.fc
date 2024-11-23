@@ -1,16 +1,16 @@
 #include "../imports/stdlib.fc";
 
-int full_math::mul_div(int a, int b, int denominator) {
+int full_math::mul_div(int a, int b, int denominator) inline_ref {
   (int q, int r) = muldivmod(a, b, denominator);
   return q;
 }
 
-int full_math::mul_mod(int a, int b, int denominator) {
+int full_math::mul_mod(int a, int b, int denominator) inline_ref {
   (int q, int r) = muldivmod(a, b, denominator);
   return r;
 }
 
-int full_math::mul_div_rounding_up(int a, int b, int denominator) {
+int full_math::mul_div_rounding_up(int a, int b, int denominator) inline_ref {
   (int q, int r) = muldivmodc(a, b, denominator);
   return q;
 }

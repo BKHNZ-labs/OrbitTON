@@ -7,7 +7,7 @@ const int error::bit_math::must_positive = 0x2000;
 ;; x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
 ;; @param x the value for which to compute the most significant bit, must be greater than 0
 ;; @return r the index of the most significant bit
-int bit_math::msb(int x){
+int bit_math::msb(int x) inline_ref {
     throw_unless(error::bit_math::must_positive, x > 0);
     int r = 0;
     if (x >= 0x100000000000000000000000000000000) {
@@ -49,7 +49,7 @@ int bit_math::msb(int x){
 ;; (x & 2**leastSignificantBit(x)) != 0 and (x & (2**(leastSignificantBit(x)) - 1)) == 0)
 ;; @param x the value for which to compute the least significant bit, must be greater than 0
 ;; @return r the index of the least significant bit
-int bit_math::lsb(int x){
+int bit_math::lsb(int x) inline_ref {
     throw_unless(error::bit_math::must_positive, x > 0);
 
     int r = 255;

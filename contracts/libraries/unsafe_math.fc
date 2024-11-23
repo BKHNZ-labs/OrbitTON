@@ -1,9 +1,9 @@
 #include "../imports/stdlib.fc";
 
-int unsafe_math::div_rounding_up(int x, int y) {
+int unsafe_math::div_rounding_up(int x, int y) inline_ref {
   return divc(x, y);
 }
 
-int unsafe_math::mod_rounding_up(int x, int y) {
+int unsafe_math::mod_rounding_up(int x, int y) inline_ref {
   return modc(x, y);
 }

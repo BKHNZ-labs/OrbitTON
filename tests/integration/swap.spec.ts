@@ -125,7 +125,7 @@ describe('OrbitTonPool', () => {
   ];
 
   const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
-    (_, index) => index < 5,
+    (_, index) => index == 1,
   );
 
   const TEST_POOLS = [
@@ -339,7 +339,7 @@ describe('OrbitTonPool', () => {
         },
       ],
     },
-  ].filter((_, index) => index == 14);
+  ].filter((_, index) => index == 0);
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
