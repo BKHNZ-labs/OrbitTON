@@ -161,7 +161,11 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
         }
         initialized = -1;
     }
+
     liquidity_net = upper ? liquidity_net - liquidity_delta : liquidity_net + liquidity_delta;
+    ~strdump("[DO] tick::update");
+    ~dump(tick);
+    ~dump(liquidity_net);
     cell new_tick = pack_tick(liquidity_gross_after, liquidity_net, fee_growth_outside_0_x128, fee_growth_outside_1_x128, initialized);
     tick_map~idict_set(24, tick, new_tick.begin_parse());
    
