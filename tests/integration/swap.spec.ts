@@ -125,7 +125,7 @@ describe('OrbitTonPool', () => {
   ];
 
   const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
-    (_, index) => index == 1,
+    (_, index) => index < 5,
   );
 
   const TEST_POOLS = [
@@ -335,7 +335,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals(1),
+          liquidity: 72247893771157503n,
         },
       ],
     },
@@ -441,7 +441,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: BigInt('36796311322104302062438284732106019258'),
+        jettonAmount: BigInt('1329227995784915872903807060280344575'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -453,7 +453,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: BigInt('36796311322104302062438284732106019258'),
+        jettonAmount: BigInt('1329227995784915872903807060280344575'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -529,8 +529,8 @@ describe('OrbitTonPool', () => {
           });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = BigInt('46796311322104302062438284732106019258');
-            let jettonAmount1 = BigInt('46796311322104302062438284732106019258');
+            let jettonAmount0 = BigInt('1329227995784915872903807060280344575');
+            let jettonAmount1 = BigInt('1329227995784915872903807060280344575');
 
             let transfer0;
             let transfer1;
