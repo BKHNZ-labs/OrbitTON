@@ -107,6 +107,19 @@ namespace PoolWrapper {
       });
     }
 
+    async getJettonsWallet(provider: ContractProvider): Promise<Address[]> {
+      const result = await provider.get('get_jettons_wallet', []);
+      const tuple = result.stack;
+      let data: any[] = [];
+      while (tuple.remaining > 0) {
+        const item = tuple.pop();
+        if (item.type === 'slice') {
+          data = [...data, item.cell.beginParse().loadAddress()];
+        }
+      }
+      return data;
+    }
+
     async getCollectedFees(provider: ContractProvider): Promise<bigint[]> {
       const result = await provider.get('get_collected_fees', []);
       const tuple = result.stack;
