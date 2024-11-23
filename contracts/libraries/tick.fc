@@ -187,6 +187,9 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing){
     int fee_growth_global_1_x128
 ){
     (slice info_raw, _) = tick_map.idict_get?(24, tick);
+    ~strdump("info_raw");
+    ~dump(tick);
+    ~dump(info_raw);
     (
         int liquidity_gross, 
         int liquidity_net, 

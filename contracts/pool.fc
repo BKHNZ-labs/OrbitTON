@@ -180,20 +180,17 @@ global cell batch_tick_code;
     int amount1 = 0;
     if(tick < tick_lower){
       amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
-    } 
-    
-    if(tick < tick_upper) {
+    } elseif (tick < tick_upper) {
       amount0 = sqrt_price_math::get_amount0_delta_special(sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
       amount1 = sqrt_price_math::get_amount1_delta_special(
         tick_math::get_sqrt_ratio_at_tick(tick_lower),
         sqrt_price_x96,
         liquidity_delta
       );
-    }
-
-    if(tick_upper < tick){
+    } elseif (tick_upper < tick){
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
+    ~strdump("op::cb_add_liquidity");
     ~dump(amount0);
     ~dump(amount1);
     ~dump(jetton_0_amount);

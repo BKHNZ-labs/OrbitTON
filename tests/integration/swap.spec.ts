@@ -125,7 +125,7 @@ describe('OrbitTonPool', () => {
   ];
 
   const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut).filter(
-    (_, index) => index == 0,
+    (_, index) => index == 1,
   );
 
   const TEST_POOLS = [
@@ -335,12 +335,12 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals(2),
+          liquidity: expandTo18Decimals(1),
         },
       ],
     },
-  ].filter((_, index) => index == 5);
-  console.log(TEST_POOLS);
+  ].filter((_, index) => index == 14);
+
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
     if ('exactOut' in testCase) {
@@ -441,7 +441,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(5_000_000_000_000),
+        jettonAmount: BigInt('36796311322104302062438284732106019258'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -453,7 +453,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: toNano(5_000_000_000_000),
+        jettonAmount: BigInt('36796311322104302062438284732106019258'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -529,8 +529,8 @@ describe('OrbitTonPool', () => {
           });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = toNano(300_000_000_000);
-            let jettonAmount1 = toNano(300_000_000_000);
+            let jettonAmount0 = BigInt('46796311322104302062438284732106019258');
+            let jettonAmount1 = BigInt('46796311322104302062438284732106019258');
 
             let transfer0;
             let transfer1;
@@ -740,7 +740,7 @@ describe('OrbitTonPool', () => {
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                  forward_ton_amount: toNano(1.2),
+                  forward_ton_amount: toNano(2.0),
                   either_payload: true,
                   swap: {
                     kind: 'SwapParams',
@@ -753,7 +753,7 @@ describe('OrbitTonPool', () => {
                   },
                 },
                 {
-                  value: toNano(1.6),
+                  value: toNano(2.5),
                 },
               );
             } else {
@@ -766,7 +766,7 @@ describe('OrbitTonPool', () => {
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                  forward_ton_amount: toNano(0.4),
+                  forward_ton_amount: toNano(2.0),
                   either_payload: true,
                   swap: {
                     kind: 'SwapParams',
@@ -779,7 +779,7 @@ describe('OrbitTonPool', () => {
                   },
                 },
                 {
-                  value: toNano(1.2),
+                  value: toNano(2.5),
                 },
               );
             }
