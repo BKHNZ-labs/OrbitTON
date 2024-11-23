@@ -16,6 +16,9 @@
 #include "pool/opcodes.fc";
 #include "pool/structs.fc";
 
+int gas_consumed() asm "GASCONSUMED";
+
+
 (int, slice, int) batch_tick::find_next_tick(cell ticks, int tick_index, int zero_for_one, int cache_tick_existed) inline_ref {
   if (cache_tick_existed != -1) {
     int batch_tick_index = calculate_batch_tick_index(tick_index, storage::tick_spacing);
@@ -29,7 +32,7 @@
   return ticks.idict_get_next?(24, tick_index);
 }
 
-int is_tick_next_existed(int tick_next, int cache_tick_existed) {
+int is_tick_next_existed(int tick_next, int cache_tick_existed) inline_ref {
   if (cache_tick_existed != -1) {
     int batch_tick_index = calculate_batch_tick_index(tick_next, storage::tick_spacing);
     if (batch_tick_index == storage::batch_index) {
@@ -239,9 +242,9 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
     int state::protocol_fee = 0; ;; u128
     int state::liquidity = cache::liquidity_start; ;; u128
     
-    int current_batch_index = calculate_batch_tick_index(state::tick, storage::tick_spacing);
+    int current_batch_index = storage::batch_index;
     int i = 0;
-    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96) & i < 2) {
       i += 1;
       ~strdump("i");
       ~dump(i);
@@ -250,15 +253,16 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
       int step::amount_in = 0;
       int step::amount_out = 0;
       int step::fee_amount = 0;
-      
+      int tick_bitmap::calculate_last_index_from_that_word_meter = gas_consumed();
       int last_tick_on_word = tick_bitmap::calculate_last_index_from_that_word(state::tick, storage::tick_spacing, zero_for_one);
+      ~strdump("tick_bitmap::calculate_last_index_from_that_word");
+      ~dump(gas_consumed() - tick_bitmap::calculate_last_index_from_that_word_meter);
+      int batch_tick::find_next_tick_meter = gas_consumed();
       (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one, cache::tick_existed);
+      ~strdump("batch_tick::find_next_tick");
+      ~dump(gas_consumed()- batch_tick::find_next_tick_meter);
       cache::tick_existed = step::existed;
-      ~strdump("state::tick");
-      ~dump(state::tick);
-      ~strdump("step::next_tick");
-      ~dump(step::next_tick);
-      
+      int next_tick_meter = gas_consumed();
       if (step::existed != -1){
         step::next_tick = last_tick_on_word;
       } elseif (step::next_tick < last_tick_on_word & (zero_for_one == -1)) {
@@ -266,18 +270,14 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
       } elseif (step::next_tick > last_tick_on_word & (zero_for_one != -1))  {
           step::next_tick = last_tick_on_word;
       }
-      
+      ~strdump("step::next_tick");
+      next_tick_meter = gas_consumed() - next_tick_meter;
+      ~dump(next_tick_meter);
       int move_up_on_tick = zero_for_one ? 0 : -1;
 
       (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::next_tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
       
       int step::tick_next_existed = is_tick_next_existed(tick_next, cache::tick_existed);
-      
-      ~strdump("tick_next");
-      ~dump(tick_next);
-      ~strdump("is_jump");
-      ~dump(is_jump);
-
       if (is_jump) {
         (cell state_init, slice next_batch_tick_address) = get_batch_tick_state_init_and_address(batch_index_next,
         storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
@@ -306,14 +306,15 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
         send_message_with_stateinit(0, next_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
         return ();
       }
-
+      int tick_math::get_sqrt_ratio_at_tick_meter = gas_consumed();
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
-      ~strdump("step::sqrt_price_next_x96");
-      ~dump(step::sqrt_price_next_x96);
-      ~dump(step::next_tick);
       int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
-      (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+      ~dump(gas_consumed() - tick_math::get_sqrt_ratio_at_tick_meter);
+      int compute_swap_meter = gas_consumed();
 
+      (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+      ~strdump("swap_math::compute_swap_step");
+      ~dump(gas_consumed() - compute_swap_meter);
       if (exact_input) {
         state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
         state::amount_calculated += step::amount_out;
@@ -347,14 +348,11 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
           state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
         }
         state::tick = zero_for_one ? step::next_tick - 1 : step::next_tick;
-        ~strdump("state::tick_update_1");
-        ~dump(state::tick);
+       
       }
 
       if (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
         state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
-         ~strdump("state::tick_update_2");
-        ~dump(state::tick);
       }
     }
 
@@ -362,8 +360,6 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
     if (state::tick != tick) {
       sqrt_price_x96 = state::sqrt_price_x96;
       tick = state::tick;
-      ~strdump("state::tick_update_3");
-      ~dump(state::tick);
     } else {
       sqrt_price_x96 = state::sqrt_price_x96;
     }
@@ -379,13 +375,6 @@ int is_tick_next_existed(int tick_next, int cache_tick_existed) {
     }
 
     (int amount0, int amount1) =  zero_for_one == exact_input ? (amount_specified - state::amount_specified_remaining, state::amount_calculated) : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
-    ~strdump("amount0");
-    ~dump(amount0);
-    ~strdump("amount1");
-    ~dump(amount1);
-    ~dump(state::amount_specified_remaining);
-    ~strdump("state::amount_calculated");
-    ~dump(state::amount_calculated);
     if (zero_for_one) {
       if (amount1 < 0) {
         amount1 = 0 - amount1;

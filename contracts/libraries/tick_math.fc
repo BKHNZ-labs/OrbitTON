@@ -82,7 +82,7 @@ int tick_math::get_sqrt_ratio_at_tick(int tick) inline_ref {
     return sqrtPriceX96;
 }
 
-int tick_math::get_tick_at_sqrt_ratio(int sqrtPriceX96){
+int tick_math::get_tick_at_sqrt_ratio(int sqrtPriceX96) inline_ref {
     throw_unless(error::tick_math::R, (sqrtPriceX96 >= tick_math::MIN_SQRT_RATIO) & (sqrtPriceX96 < tick_math::MAX_SQRT_RATIO));
     int ratio = sqrtPriceX96 << 32;
     int r = ratio;
