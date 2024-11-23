@@ -1,6 +1,6 @@
 {
   "name": "orbiton-contracts",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "main": "build/wrappers/index.js",
   "files": [
     "build"

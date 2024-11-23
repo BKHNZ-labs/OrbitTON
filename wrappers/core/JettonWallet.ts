@@ -99,6 +99,14 @@ namespace JettonWalletWrapper {
       const [amount] = [stack.readBigNumber()];
       return { amount };
     }
+
+    async getWalletData(provider: ContractProvider) {
+      const result = await provider.get('get_wallet_data', []);
+      const balance = result.stack.readBigNumber();
+      const owner = result.stack.readAddress();
+      const jettonMasterAddress = result.stack.readAddress();
+      return { balance, owner, jettonMasterAddress };
+    }
   }
 }
 
