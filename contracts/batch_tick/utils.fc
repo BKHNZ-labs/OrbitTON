@@ -49,13 +49,6 @@ int calculate_batch_tick_index(int tick, int tick_spacing) inline {
   return tick / (constants::batch_index_range * tick_spacing);
 }
 
-(int, slice, int) batch_tick::find_next_tick(cell ticks, int tick_index, int zero_for_one) inline_ref {
-  if (zero_for_one) {
-    return ticks.idict_get_prev?(24, tick_index);
-  }
-  return ticks.idict_get_next?(24, tick_index);
-}
-
 ;; return tick_next, batch_index_next, is_jump
 (int, int, int) batch_tick::recalculate_next_tick(int next_tick, int current_batch_index, int tick_spacing, int existed, int zero_for_one) inline_ref {
   int current_live_in_batch_index = calculate_batch_tick_index(next_tick, tick_spacing);
