@@ -13,6 +13,7 @@
     "test": "yarn blueprint build --all && jest --verbose"
   },
   "devDependencies": {
+    "@orbs-network/ton-access": "^2.3.3",
     "@ton-community/tlb-codegen": "^1.1.0",
     "@ton/blueprint": "^0.24.0",
     "@ton/core": "~0",
