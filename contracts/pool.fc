@@ -15,100 +15,12 @@
 #include "pool/errors.fc";
 #include "pool/constants.fc";
 #include "pool/structs.fc";
+#include "pool/storage.fc";
 #include "batch_tick/constants.fc";
 #include "batch_tick/opcodes.fc";
 #include "batch_tick/utils.fc";
 #include "position/utils.fc";
 #include "position/opcodes.fc";
-
-global slice router_address; ;; 267
-global slice jetton0_wallet; ;; 267
-global slice jetton1_wallet; ;; 267
-global int fee; ;; 24 - uint
-global int protocol_fee; ;; 8 - uint
-global int sqrt_price_x96; ;; 160 - uint
-
-
-global int tick_spacing; ;; 24
-global int tick; ;; 24
-global int fee_growth_global0_x128; ;; 256 - uint
-global int fee_growth_global1_x128; ;; 256 - uint
-global int collected_protocol_fee0; ;; 128 - uint
-global int collected_protocol_fee1; ;; 128 - uint
-global int liquidity; ;; 128 - uint
-
-global int max_liquidity_per_tick; ;; 128 - uint
-global cell tick_bitmap; 
-global cell position_code;
-global cell lp_account_code;
-global cell batch_tick_code;
-
-;; load_data populates storage variables using stored data
-() load_data() impure {
-  var ds = get_data().begin_parse();
-  slice first_cell = ds~load_ref().begin_parse();
-  router_address = first_cell~load_msg_addr();
-  jetton0_wallet = first_cell~load_msg_addr();
-  jetton1_wallet = first_cell~load_msg_addr();
-  fee = first_cell~load_uint(24);
-  protocol_fee = first_cell~load_uint(8);
-  sqrt_price_x96 = first_cell~load_uint(160);
-
-  slice second_cell = ds~load_ref().begin_parse();
-  tick_spacing = second_cell~load_int(24);
-  tick = second_cell~load_int(24);
-  fee_growth_global0_x128 = second_cell~load_uint(256);
-  fee_growth_global1_x128 = second_cell~load_uint(256);
-  collected_protocol_fee0 = second_cell~load_uint(128);
-  collected_protocol_fee1 = second_cell~load_uint(128);
-  liquidity = second_cell~load_uint(128);
-
-  slice third_cell = ds~load_ref().begin_parse();
-  max_liquidity_per_tick = third_cell~load_uint(128);
-  cell tick_bitmap_cell = third_cell~load_ref();
-  slice tick_bitmap_cs = tick_bitmap_cell.begin_parse();
-  tick_bitmap = tick_bitmap_cs~load_dict();
-  position_code = third_cell~load_ref();
-  lp_account_code = third_cell~load_ref();
-  batch_tick_code = third_cell~load_ref();
-  ds.end_parse();
-}
-
-;; save_data stores storage variables as a cell into persistent storage
-() save_data() impure inline_ref {
-  cell bitmap_cell = begin_cell().store_dict(tick_bitmap).end_cell();
-  set_data(
-    begin_cell()
-      .store_ref(
-      begin_cell()
-          .store_slice(router_address)
-          .store_slice(jetton0_wallet)
-          .store_slice(jetton1_wallet)
-          .store_uint(fee, 24)
-          .store_uint(protocol_fee, 8)
-          .store_uint(sqrt_price_x96, 160)
-          .end_cell())
-      .store_ref(
-      begin_cell()
-          .store_int(tick_spacing, 24)
-          .store_int(tick, 24)
-          .store_uint(fee_growth_global0_x128, 256)
-          .store_uint(fee_growth_global1_x128, 256)
-          .store_uint(collected_protocol_fee0, 128)
-          .store_uint(collected_protocol_fee1, 128)
-          .store_uint(liquidity, 128)
-          .end_cell())
-      .store_ref(
-      begin_cell()
-          .store_uint(max_liquidity_per_tick, 128)
-          .store_ref(bitmap_cell)
-          .store_ref(position_code)
-          .store_ref(lp_account_code)
-          .store_ref(batch_tick_code)
-          .end_cell())
-        .end_cell()
-  );
-}
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure { 
@@ -130,33 +42,33 @@ global cell batch_tick_code;
   int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
   
   if (op == op::initialize) {
-    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
     (int relative_sqrt_price_x96, slice response_address) = (in_msg_body~load_uint(160), in_msg_body~load_msg_addr());
     ;; make sure it is first time
-    if ((tick == 0) & (sqrt_price_x96 == 0) & (max_liquidity_per_tick == 0)) {
+    if ((storage::tick == 0) & (storage::sqrt_price_x96 == 0) & (storage::max_liquidity_per_tick == 0)) {
       int relative_tick = tick_math::get_tick_at_sqrt_ratio(relative_sqrt_price_x96);
-      tick = relative_tick;
-      sqrt_price_x96 = relative_sqrt_price_x96;
-      max_liquidity_per_tick = tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+      storage::tick = relative_tick;
+      storage::sqrt_price_x96 = relative_sqrt_price_x96;
+      storage::max_liquidity_per_tick = storage::tick::tick_spacing_to_max_liquidity_per_tick(storage::tick_spacing);
       builder body = begin_cell()
             .store_uint(op::cb_create_pool, 32)
             .store_uint(query_id, 64)
-            .store_slice(jetton0_wallet) ;; jetton 1
-            .store_slice(jetton1_wallet) ;; jetton 0
-            .store_uint(fee, 24)
-            .store_int(tick_spacing, 24)
+            .store_slice(storage::jetton0_wallet) ;; jetton 1
+            .store_slice(storage::jetton1_wallet) ;; jetton 0
+            .store_uint(storage::fee, 24)
+            .store_int(storage::tick_spacing, 24)
             .store_slice(response_address);
-      send_simple_message(0, router_address, body.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(0, storage::router_address, body.end_cell(), CARRY_REMAINING_GAS);
       save_data();
     }
     return ();
   }
 
   if(op == op::mint){
-    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
     slice body = in_msg_body~load_ref().begin_parse();
     (int jetton_amount_0, int jetton_amount_1,  int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128),  body~load_msg_addr());
-    cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, lp_account_code);
+    cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, storage::lp_account_code);
     slice to_lp_account_address = calculate_lp_account_address(state_init);
     builder body = begin_cell()
             .store_uint(op::add_liquidity, 32)
@@ -172,31 +84,27 @@ global cell batch_tick_code;
   if(op == op::cb_add_liquidity){
     slice body = in_msg_body~load_ref().begin_parse();
     (int jetton_0_amount, int jetton_1_amount, int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128), body~load_msg_addr());
-    slice lp_account = calculate_user_lp_account_address(recipient, my_address(), tick_lower,tick_upper,lp_account_code);
+    slice lp_account = calculate_user_lp_account_address(recipient, my_address(), tick_lower,tick_upper,storage::lp_account_code);
     throw_unless(error::unauthorized, compare_address(sender_address, lp_account));
     int amount0 = 0;
     int amount1 = 0;
-    if(tick < tick_lower){
+    if(storage::tick < tick_lower){
       amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
-    } elseif (tick < tick_upper) {
-      amount0 = sqrt_price_math::get_amount0_delta_special(sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    } elseif (storage::tick < tick_upper) {
+      amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
       amount1 = sqrt_price_math::get_amount1_delta_special(
         tick_math::get_sqrt_ratio_at_tick(tick_lower),
-        sqrt_price_x96,
+        storage::sqrt_price_x96,
         liquidity_delta
       );
-    } elseif (tick_upper < tick){
+    } elseif (tick_upper < storage::tick){
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
-    ~strdump("op::cb_add_liquidity");
-    ~dump(amount0);
-    ~dump(amount1);
-    ~dump(jetton_0_amount);
-    ~dump(jetton_1_amount);
+
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
-      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, jetton0_wallet, jetton_0_amount, jetton1_wallet, jetton_1_amount, fee, tick_spacing); 
-      send_simple_message(0, router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
+      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, storage::jetton0_wallet, jetton_0_amount, storage::jetton1_wallet, jetton_1_amount, storage::fee, storage::tick_spacing); 
+      send_simple_message(0, storage::router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
       return ();
     } 
   
@@ -205,25 +113,25 @@ global cell batch_tick_code;
 
     if((refund_amount0 > 0) | (refund_amount1 > 0)){
       ;; refunds to user
-      builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, jetton0_wallet, refund_amount0, jetton1_wallet, refund_amount1, fee, tick_spacing);
-      send_simple_message(GAS::REFUND, router_address, refund_body.end_cell(), NORMAL);
+      builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, storage::jetton0_wallet, refund_amount0, storage::jetton1_wallet, refund_amount1, storage::fee, storage::tick_spacing);
+      send_simple_message(GAS::REFUND, storage::router_address, refund_body.end_cell(), NORMAL);
     }
 
-    ;; send batch tick
+    ;; send batch storage::tick
     int remaining_gas = msg_value - GAS::REFUND - GAS::CB_ADD_LIQUIDITY;
-    int batch_tick_index = calculate_batch_tick_index(tick_lower, tick_spacing);
-    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, tick_spacing, my_address() , batch_tick_code);
+    int batch_tick_index = calculate_batch_tick_index(tick_lower, storage::tick_spacing);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(batch_tick_index, storage::tick_spacing, my_address() , storage::batch_tick_code);
     builder send_batch_tick_body = begin_cell()
         .store_uint(op::update_tick_lower, 32)
         .store_uint(query_id, 64)
         .store_int(tick_lower, 24)
         .store_int(tick_upper, 24)
-        .store_int(tick, 24)
+        .store_int(storage::tick, 24)
         .store_uint(liquidity_delta, 128)
-        .store_uint(fee_growth_global0_x128, 256)
-        .store_uint(fee_growth_global1_x128, 256)
+        .store_uint(storage::storage::fee_growth_global0_x128, 256)
+        .store_uint(storage::storage::fee_growth_global1_x128, 256)
         .store_int(0, 2)
-        .store_uint(max_liquidity_per_tick, 128)
+        .store_uint(storage::max_liquidity_per_tick, 128)
         .store_ref(
       begin_cell()
             .store_slice(recipient)
@@ -242,29 +150,29 @@ global cell batch_tick_code;
   }
 
   if(op == op::swap){
-    throw_unless(error::unauthorized, compare_address(sender_address, router_address));
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
     int amount_specified = in_msg_body~load_int(256);
     int zero_for_one = in_msg_body~load_int(2);
     int sqrt_price_limit_x96 = in_msg_body~load_uint(160);
     slice response_address = in_msg_body~load_msg_addr();
-    int current_batch_index = calculate_batch_tick_index(tick, tick_spacing);
-    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(current_batch_index, tick_spacing, my_address(), batch_tick_code);
+    int current_batch_index = calculate_batch_tick_index(storage::tick, storage::tick_spacing);
+    (cell state_init, slice batch_tick_address) = get_batch_tick_state_init_and_address(current_batch_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
     builder msg = begin_cell()
                     .store_uint(op::internal_swap, 32)
                     .store_uint(query_id, 64)
                     .store_ref(begin_cell()
                         .store_int(amount_specified, 256)
-                        .store_uint(protocol_fee, 8)
+                        .store_uint(protocol_storage::fee, 8)
                         .store_uint(sqrt_price_limit_x96, 160)
-                        .store_uint(fee_growth_global0_x128, 256)
-                        .store_uint(fee_growth_global1_x128, 256)
+                        .store_uint(storage::storage::fee_growth_global0_x128, 256)
+                        .store_uint(storage::storage::fee_growth_global1_x128, 256)
                       .end_cell())
                     .store_ref(begin_cell()
-                        .store_uint(liquidity, 128)
-                        .store_int(tick, 24)
-                        .store_uint(fee, 24)
+                        .store_uint(storage::liquidity, 128)
+                        .store_int(storage::tick, 24)
+                        .store_uint(storage::fee, 24)
                         .store_int(zero_for_one, 2)
-                        .store_uint(sqrt_price_x96, 160)
+                        .store_uint(storage::sqrt_price_x96, 160)
                         .store_slice(response_address)
                         .end_cell());
     send_message_with_stateinit(0, batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
@@ -278,58 +186,58 @@ global cell batch_tick_code;
       int r_tick, 
       int r_sqrt_price_x96, 
       int r_liquidity, 
-      int r_fee_growth_global0_x128, 
-      int r_fee_growth_global1_x128, 
+      int r_storage::storage::fee_growth_global0_x128, 
+      int r_storage::storage::fee_growth_global1_x128, 
       int r_zero_for_one, 
-      int r_protocol_fee,  
+      int r_protocol_storage::fee,  
       int r_amount0, 
       int r_amount1, 
       slice response_address
     ) = unpack_cb_swap(ds);
-    slice batch_tick_address = get_batch_tick_address(r_batch_index, tick_spacing, my_address(), batch_tick_code);
+    slice batch_tick_address = get_batch_tick_address(r_batch_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
-    tick = r_tick;
-    sqrt_price_x96 = r_sqrt_price_x96;
-    liquidity = r_liquidity;
-    fee_growth_global0_x128 = r_fee_growth_global0_x128;
-    fee_growth_global1_x128 = r_fee_growth_global1_x128;
+    storage::tick = r_tick;
+    storage::sqrt_price_x96 = r_sqrt_price_x96;
+    storage::liquidity = r_liquidity;
+    storage::storage::fee_growth_global0_x128 = r_storage::storage::fee_growth_global0_x128;
+    storage::storage::fee_growth_global1_x128 = r_storage::storage::fee_growth_global1_x128;
     if (r_zero_for_one) {
-      collected_protocol_fee0 += r_protocol_fee;
+      collected_protocol_storage::fee0 += r_protocol_storage::fee;
     } else {
-      collected_protocol_fee1 += r_protocol_fee;
+      collected_protocol_storage::fee1 += r_protocol_storage::fee;
     }
     ~dump(op::cb_swap);
     ~dump(r_amount0);
     ~dump(r_amount1);
-    builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,jetton0_wallet, r_amount0, jetton1_wallet, r_amount1, fee, tick_spacing);
-    send_simple_message(0, router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, r_amount0, storage::jetton1_wallet, r_amount1, storage::fee, storage::tick_spacing);
+    send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return ();
   }
 
-  if(op == op::cb_update_fee_growth_inside){
+  if(op == op::cb_update_storage::fee_growth_inside){
     slice body = in_msg_body~load_ref().begin_parse();
-    (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int fee_growth_inside_0X128, int fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
-    slice batch_tick_address = get_batch_tick_address(batch_tick_index, tick_spacing, my_address(),batch_tick_code);
+    (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int storage::fee_growth_inside_0X128, int storage::fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
+    slice batch_tick_address = get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(),storage::batch_tick_code);
     throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
-    if ((tick >  tick_lower) & (tick < tick_upper)) {
-      liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
+    if ((storage::tick >  tick_lower) & (storage::tick < tick_upper)) {
+      storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
     }
     if(flipped_lower){
-      tick_bitmap~tick_bitmap::flip_tick(tick_lower, tick_spacing);
+      storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_lower, storage::tick_spacing);
     }
     if(flipped_upper){
-      tick_bitmap~tick_bitmap::flip_tick(tick_upper, tick_spacing);
+      storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_upper, storage::tick_spacing);
     }
 
-    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(),  position_code);
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(),  storage::position_code);
 
     builder mint_body = begin_cell()
                           .store_uint(op::mint_position, 32)
                           .store_uint(query_id, 64)
                           .store_int(liquidity_delta, 128)
-                          .store_uint(fee_growth_inside_0X128, 256)
-                          .store_uint(fee_growth_inside_1X128, 256);
+                          .store_uint(storage::fee_growth_inside_0X128, 256)
+                          .store_uint(storage::fee_growth_inside_1X128, 256);
 
     send_message_with_stateinit(0, position_address, state_init, mint_body.end_cell(), CARRY_REMAINING_GAS);
     save_data();
@@ -338,10 +246,10 @@ global cell batch_tick_code;
 
   if (op == op::cb_mint_position) {
     slice first_ref = in_msg_body~load_ref().begin_parse();
-    (int tick_lower, int tick_upper, int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
+    (int tick_lower, int tick_upper, int storage::liquidity, int storage::fee_growth_inside_0_last_x128, int storage::fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
     slice second_ref = in_msg_body~load_ref().begin_parse();
     (int tokens_owed_0, int tokens_owed_1, slice owner_address) = (second_ref~load_uint(128), second_ref~load_uint(128), second_ref~load_msg_addr());
-    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), position_code);
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), storage::position_code);
     throw_unless(error::unauthorized, compare_address(sender_address, position_address));
     send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
     builder msg = begin_cell()
@@ -349,9 +257,9 @@ global cell batch_tick_code;
                   .store_ref(begin_cell()
                       .store_int(tick_lower, 24)
                       .store_int(tick_upper, 24)
-                      .store_uint(liquidity, 128)
-                      .store_uint(fee_growth_inside_0_last_x128, 256)
-                      .store_uint(fee_growth_inside_1_last_x128, 256)
+                      .store_uint(storage::liquidity, 128)
+                      .store_uint(storage::fee_growth_inside_0_last_x128, 256)
+                      .store_uint(storage::fee_growth_inside_1_last_x128, 256)
                       .end_cell())
                   .store_ref(begin_cell()
                       .store_uint(tokens_owed_0, 128)
@@ -368,46 +276,46 @@ global cell batch_tick_code;
 
 (slice, slice) get_jettons_wallet() method_id {
   load_data();
-  return (jetton0_wallet, jetton1_wallet);
+  return (storage::jetton0_wallet, storage::jetton1_wallet);
 }
 
-(int, int) get_fees_growth_global() method_id {
+(int, int) get_storage::fees_growth_global() method_id {
   load_data();
-  return (fee_growth_global0_x128, fee_growth_global1_x128);
+  return (storage::storage::fee_growth_global0_x128, storage::storage::fee_growth_global1_x128);
 }
 
-(int, int) get_collected_fees() method_id {
+(int, int) get_collected_storage::fees() method_id {
   load_data();
-  return (collected_protocol_fee0, collected_protocol_fee1);
+  return (collected_protocol_storage::fee0, collected_protocol_storage::fee1);
 }
 
 slice get_lp_account_address(slice user_address, int tick_lower, int tick_upper) method_id {
   load_data();
-  return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, lp_account_code);
+  return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, storage::lp_account_code);
 }
 
-int get_batch_tick_index(int tick) method_id {
+int get_batch_tick_index(int storage::tick) method_id {
   load_data();
-  return calculate_batch_tick_index(tick, tick_spacing);
+  return calculate_batch_tick_index(storage::tick, storage::tick_spacing);
 }
 
 slice get_calculate_batch_tick_address(int batch_tick_index) method_id {
   load_data();
-  return get_batch_tick_address(batch_tick_index, tick_spacing, my_address(), batch_tick_code);
+  return get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
 }
 
 slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner) method_id {
   load_data();
-  (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner, my_address(), position_code);
+  (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner, my_address(), storage::position_code);
   return position_address;
 }
 
 (int, int, int, int, int) get_pool_info() method_id {
   load_data();
-  return (fee, tick_spacing, tick, sqrt_price_x96, liquidity);
+  return (storage::fee, storage::tick_spacing, storage::tick, storage::sqrt_price_x96, storage::liquidity);
 }
 
-(int, int) get_fee_growth_global() method_id {
+(int, int) get_storage::fee_growth_global() method_id {
   load_data();
-  return (fee_growth_global0_x128, fee_growth_global1_x128);
+  return (storage::storage::fee_growth_global0_x128, storage::storage::fee_growth_global1_x128);
 }

@@ -26,12 +26,10 @@ cell pack_pool_data(slice jetton_0_wallet, slice jetton_1_wallet, int fee, int t
           .store_uint(0, 128)    
           .end_cell())
         .store_ref(begin_cell()
-          .store_uint(0, 256)    
           .store_uint(0, 128)
-          .store_ref(begin_cell().store_dict(new_dict()).end_cell())
+          .store_dict(new_dict())
           .store_ref(position_code)    
           .store_ref(lp_account_code)    
-          .store_ref(batch_tick_code)    
           .end_cell())
     .end_cell();
 }

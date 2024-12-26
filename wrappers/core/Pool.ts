@@ -78,10 +78,9 @@ namespace PoolWrapper {
           beginCell()
             .storeUint(0n, 256)
             .storeUint(initMsg.maxLiquidity ?? 0, 128)
-            .storeRef(beginCell().storeDict(Dictionary.empty()).endCell())
+            .storeDict(Dictionary.empty())
             .storeRef(initMsg.positionCode)
             .storeRef(initMsg.lpAccountCode)
-            .storeRef(initMsg.batchTickCode)
             .endCell(),
         )
         .endCell();

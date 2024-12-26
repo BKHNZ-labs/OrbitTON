@@ -2,9 +2,9 @@ global int storage::is_locked;
 global int storage::pool_seqno;
 global slice storage::admin_address;
 global cell storage::pool_code;
-global cell storage::batch_tick_code;
-global cell storage::position_code;
-global cell storage::lp_account_code;
+global cell storage::storage::batch_tick_code;
+global cell storage::storage::position_code;
+global cell storage::storage::lp_account_code;
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {
@@ -14,9 +14,9 @@ global cell storage::lp_account_code;
   storage::admin_address = ds~load_msg_addr();
   slice code_storage = ds~load_ref().begin_parse();
   storage::pool_code = code_storage~load_ref();
-  storage::batch_tick_code = code_storage~load_ref();
-  storage::position_code = code_storage~load_ref();
-  storage::lp_account_code = code_storage~load_ref();
+  storage::storage::batch_tick_code = code_storage~load_ref();
+  storage::storage::position_code = code_storage~load_ref();
+  storage::storage::lp_account_code = code_storage~load_ref();
   ds.end_parse();
 }
 
@@ -30,9 +30,9 @@ global cell storage::lp_account_code;
       .store_ref(
       begin_cell()
               .store_ref(storage::pool_code)
-              .store_ref(storage::batch_tick_code)
-              .store_ref(storage::position_code)
-              .store_ref(storage::lp_account_code)
+              .store_ref(storage::storage::batch_tick_code)
+              .store_ref(storage::storage::position_code)
+              .store_ref(storage::storage::lp_account_code)
         .end_cell())
     .end_cell()
   );

@@ -1,17 +1,17 @@
 global int storage::batch_index;
-global int storage::tick_spacing;
+global int storage::storage::tick_spacing;
 global slice storage::pool_address;
 global cell storage::ticks;
-global cell storage::batch_tick_code;
+global cell storage::storage::batch_tick_code;
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {
   var ds = get_data().begin_parse();
   storage::batch_index = ds~load_int(16);
-  storage::tick_spacing = ds~load_int(24);
+  storage::storage::tick_spacing = ds~load_int(24);
   storage::pool_address = ds~load_msg_addr();
   storage::ticks = ds~load_dict();
-  storage::batch_tick_code = ds~load_ref();
+  storage::storage::batch_tick_code = ds~load_ref();
   ds.end_parse();
 }
 
@@ -20,10 +20,10 @@ global cell storage::batch_tick_code;
   set_data(
     begin_cell()
       .store_int(storage::batch_index, 16)
-      .store_int(storage::tick_spacing, 24)
+      .store_int(storage::storage::tick_spacing, 24)
       .store_slice(storage::pool_address)
       .store_dict(storage::ticks)
-      .store_ref(storage::batch_tick_code)
+      .store_ref(storage::storage::batch_tick_code)
     .end_cell()
   );
 }

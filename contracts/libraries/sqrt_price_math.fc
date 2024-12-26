@@ -129,7 +129,7 @@ int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
       sqrt_ratio_a_x96
     );
   }
-  return full_math::mul_div(numerator1, numerator2, sqrt_ratio_b_x96) / sqrt_ratio_a_x96;
+  return full_math::mul_div(numerator1, numerator2, sqrt_ratio_b_x96) ~/ sqrt_ratio_a_x96;
 }
 
 ;;; @notice Gets the amount1 delta between two prices
