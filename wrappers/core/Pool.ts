@@ -31,7 +31,6 @@ namespace PoolWrapper {
     tick: bigint;
     positionCode: Cell;
     lpAccountCode: Cell;
-    batchTickCode: Cell;
     maxLiquidity?: bigint;
   }
 
@@ -76,7 +75,6 @@ namespace PoolWrapper {
         )
         .storeRef(
           beginCell()
-            .storeUint(0n, 256)
             .storeUint(initMsg.maxLiquidity ?? 0, 128)
             .storeDict(Dictionary.empty())
             .storeRef(initMsg.positionCode)

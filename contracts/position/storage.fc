@@ -1,6 +1,6 @@
 global int storage::tick_lower;
 global int storage::tick_upper;
-global int storage::storage::liquidity;
+global int storage::liquidity;
 global int storage::fee_growth_inside0_last_x128;
 global int storage::fee_growth_inside1_last_x128;
 global int storage::token_owed0;
@@ -14,7 +14,7 @@ global slice storage::pool_address;
   slice first_slice = ds~load_ref().begin_parse();
   storage::tick_lower = first_slice~load_int(24);
   storage::tick_upper = first_slice~load_int(24);
-  storage::storage::liquidity = first_slice~load_uint(128);
+  storage::liquidity = first_slice~load_uint(128);
   storage::fee_growth_inside0_last_x128 = first_slice~load_uint(256);
   storage::fee_growth_inside1_last_x128 = first_slice~load_uint(256);
   slice second_slice = ds~load_ref().begin_parse();
@@ -33,7 +33,7 @@ global slice storage::pool_address;
       begin_cell()
           .store_int(storage::tick_lower, 24)
           .store_int(storage::tick_upper, 24)
-          .store_uint(storage::storage::liquidity, 128)
+          .store_uint(storage::liquidity, 128)
           .store_uint(storage::fee_growth_inside0_last_x128, 256)
           .store_uint(storage::fee_growth_inside1_last_x128, 256)
         .end_cell()

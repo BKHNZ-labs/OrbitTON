@@ -16,7 +16,7 @@ describe('Pool Test', () => {
   let poolCode: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
-  let batchTickCode: Cell;
+  // let batchTickCode: Cell;
   let positionCode: Cell;
   let routerCode: Cell;
 
@@ -24,7 +24,7 @@ describe('Pool Test', () => {
     poolCode = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
     tickMathCode = await compile('TickMathTest');
-    batchTickCode = await compile('BatchTick');
+    // batchTickCode = await compile('BatchTick');
     positionCode = await compile('Position');
     routerCode = await compile('Router');
   });
@@ -52,10 +52,6 @@ describe('Pool Test', () => {
         poolCode: poolCode,
       }),
     );
-    // tickMath = blockchain.openContract(TickMathTest.createFromData(tickMathCode, beginCell().endCell()));
-    // await tickMath.sendDeploy(deployer.getSender(), toNano('0.05'));
-    // const sqrtPrice = encodePriceSqrt(1n, 10n);
-    // const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
 
     token0MasterContract = blockchain.openContract(
       JettonMinterWrapper.JettonMinter.createFromConfig({

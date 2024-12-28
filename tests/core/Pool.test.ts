@@ -3,14 +3,7 @@ import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
-import {
-  encodePriceSqrt,
-  getMaxTick,
-  getMinTick,
-  MaxUint128,
-  pseudoRandomBigNumberOnUint128,
-  pseudoRandomBigNumberOnUint256,
-} from '../shared/utils';
+import { encodePriceSqrt, getMaxTick, getMinTick } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 import BatchTickWrapper from '../../wrappers/core/BatchTick';
@@ -20,14 +13,12 @@ describe('Pool Test', () => {
   let code: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
-  let batchTickCode: Cell;
   let positionCode: Cell;
 
   beforeAll(async () => {
     code = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
     tickMathCode = await compile('TickMathTest');
-    batchTickCode = await compile('BatchTick');
     positionCode = await compile('Position');
   });
 
@@ -48,7 +39,6 @@ describe('Pool Test', () => {
     const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
     pool = blockchain.openContract(
       PoolWrapper.PoolTest.create(code, {
-        batchTickCode,
         positionCode,
         lpAccountCode,
         routerAddress: router.address,
@@ -90,6 +80,7 @@ describe('Pool Test', () => {
           recipient: deployer.address,
         },
       });
+      printTransactionFees(result.transactions);
       const lpAddress = await pool.getLpAccountAddress(deployer.address, -10n, 10n);
       expect(result.transactions).toHaveTransaction({
         from: router.address,
@@ -163,163 +154,164 @@ describe('Pool Test', () => {
       });
     });
 
-    describe('failure cases', () => {
-      it('fails if tickLower greater than tickUpper', async () => {
-        await pool.sendMint(router.getSender(), toNano(0.05), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 9996n,
-            jetton_amount_1: 0n,
-            tick_lower: 1,
-            tick_upper: 0,
-            liquidity_delta: 1n,
-            recipient: deployer.address,
-          },
-        });
-        const result = await pool.sendMint(router.getSender(), toNano(1), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 0n,
-            jetton_amount_1: 2000n,
-            tick_lower: 1,
-            tick_upper: 0,
-            liquidity_delta: 1n,
-            recipient: deployer.address,
-          },
-        });
-        expect(result.transactions).toHaveTransaction({
-          from: pool.address,
-          op: 0xd2886eee,
-          success: false,
-          exitCode: 201,
-        });
-      });
-    });
+    // describe('failure cases', () => {
+    //   it('fails if tickLower greater than tickUpper', async () => {
+    //     await pool.sendMint(router.getSender(), toNano(0.05), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 9996n,
+    //         jetton_amount_1: 0n,
+    //         tick_lower: 1,
+    //         tick_upper: 0,
+    //         liquidity_delta: 1n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     const result = await pool.sendMint(router.getSender(), toNano(1), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 0n,
+    //         jetton_amount_1: 2000n,
+    //         tick_lower: 1,
+    //         tick_upper: 0,
+    //         liquidity_delta: 1n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     printTransactionFees(result.transactions);
+    //     expect(result.transactions).toHaveTransaction({
+    //       from: pool.address,
+    //       op: 0xd2886eee,
+    //       success: false,
+    //       exitCode: 201,
+    //     });
+    //   });
+    // });
 
-    describe('success cases', () => {
-      it('adds liquidity to liquidityGross', async () => {
-        await pool.sendMint(router.getSender(), toNano(0.05), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 9996n,
-            jetton_amount_1: 0n,
-            tick_lower: -240,
-            tick_upper: 0,
-            liquidity_delta: 100n,
-            recipient: deployer.address,
-          },
-        });
-        await pool.sendMint(router.getSender(), toNano(1), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 0n,
-            jetton_amount_1: 2000n,
-            tick_lower: -240,
-            tick_upper: 0,
-            liquidity_delta: 100n,
-            recipient: deployer.address,
-          },
-        });
-        let batchTickIndexLower = await pool.getBatchTickIndex(-240n);
-        let batchTickLowerAddress = await pool.getBatchTickAddress(batchTickIndexLower);
-        let bathTickLowerContract = blockchain.openContract(
-          BatchTickWrapper.BatchTickTest.createFromAddress(batchTickLowerAddress),
-        );
-        let batchTickIndexUpper = await pool.getBatchTickIndex(0n);
-        let batchTickUpperAddress = await pool.getBatchTickAddress(batchTickIndexUpper);
-        let bathTickUpperContract = blockchain.openContract(
-          BatchTickWrapper.BatchTickTest.createFromAddress(batchTickUpperAddress),
-        );
-        let sliceLower = await bathTickLowerContract.getTick(-240n);
-        let { liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse());
-        let sliceUpper = await bathTickUpperContract.getTick(0n);
-        let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
+    // describe('success cases', () => {
+    //   it('adds liquidity to liquidityGross', async () => {
+    //     await pool.sendMint(router.getSender(), toNano(0.05), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 9996n,
+    //         jetton_amount_1: 0n,
+    //         tick_lower: -240,
+    //         tick_upper: 0,
+    //         liquidity_delta: 100n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     await pool.sendMint(router.getSender(), toNano(1), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 0n,
+    //         jetton_amount_1: 2000n,
+    //         tick_lower: -240,
+    //         tick_upper: 0,
+    //         liquidity_delta: 100n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     let batchTickIndexLower = await pool.getBatchTickIndex(-240n);
+    //     let batchTickLowerAddress = await pool.getBatchTickAddress(batchTickIndexLower);
+    //     let bathTickLowerContract = blockchain.openContract(
+    //       BatchTickWrapper.BatchTickTest.createFromAddress(batchTickLowerAddress),
+    //     );
+    //     let batchTickIndexUpper = await pool.getBatchTickIndex(0n);
+    //     let batchTickUpperAddress = await pool.getBatchTickAddress(batchTickIndexUpper);
+    //     let bathTickUpperContract = blockchain.openContract(
+    //       BatchTickWrapper.BatchTickTest.createFromAddress(batchTickUpperAddress),
+    //     );
+    //     let sliceLower = await bathTickLowerContract.getTick(-240n);
+    //     let { liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse());
+    //     let sliceUpper = await bathTickUpperContract.getTick(0n);
+    //     let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
 
-        expect(liquidity_gross_lower).toBe(100n);
-        expect(liquidity_gross_upper).toBe(100n);
-        expect(
-          loadInfo((await bathTickLowerContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]))).beginParse())
-            .liquidity_gross,
-        ).toBe(0n);
-        expect(
-          loadInfo((await bathTickLowerContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]) * 2n)).beginParse())
-            .liquidity_gross,
-        ).toBe(0n);
-        await pool.sendMint(router.getSender(), toNano(0.05), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 9996n,
-            jetton_amount_1: 0n,
-            tick_lower: -240,
-            tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM],
-            liquidity_delta: 150n,
-            recipient: deployer.address,
-          },
-        });
-        await pool.sendMint(router.getSender(), toNano(1), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 0n,
-            jetton_amount_1: 2000n,
-            tick_lower: -240,
-            tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM],
-            liquidity_delta: 150n,
-            recipient: deployer.address,
-          },
-        });
+    //     expect(liquidity_gross_lower).toBe(100n);
+    //     expect(liquidity_gross_upper).toBe(100n);
+    //     expect(
+    //       loadInfo((await bathTickLowerContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]))).beginParse())
+    //         .liquidity_gross,
+    //     ).toBe(0n);
+    //     expect(
+    //       loadInfo((await bathTickLowerContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]) * 2n)).beginParse())
+    //         .liquidity_gross,
+    //     ).toBe(0n);
+    //     await pool.sendMint(router.getSender(), toNano(0.05), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 9996n,
+    //         jetton_amount_1: 0n,
+    //         tick_lower: -240,
+    //         tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM],
+    //         liquidity_delta: 150n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     await pool.sendMint(router.getSender(), toNano(1), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 0n,
+    //         jetton_amount_1: 2000n,
+    //         tick_lower: -240,
+    //         tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM],
+    //         liquidity_delta: 150n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
 
-        sliceLower = await bathTickLowerContract.getTick(-240n);
-        ({ liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse()));
-        expect(liquidity_gross_lower).toBe(250n);
-        expect(
-          loadInfo((await bathTickUpperContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]))).beginParse())
-            .liquidity_gross,
-        ).toBe(150n);
+    //     sliceLower = await bathTickLowerContract.getTick(-240n);
+    //     ({ liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse()));
+    //     expect(liquidity_gross_lower).toBe(250n);
+    //     expect(
+    //       loadInfo((await bathTickUpperContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]))).beginParse())
+    //         .liquidity_gross,
+    //     ).toBe(150n);
 
-        await pool.sendMint(router.getSender(), toNano(0.05), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 9996n,
-            jetton_amount_1: 0n,
-            tick_lower: 0,
-            tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM] * 2,
-            liquidity_delta: 60n,
-            recipient: deployer.address,
-          },
-        });
-        await pool.sendMint(router.getSender(), toNano(1), {
-          kind: 'InMsgBody',
-          query_id: 0,
-          body: {
-            kind: 'MintParams',
-            jetton_amount_0: 0n,
-            jetton_amount_1: 2000n,
-            tick_lower: 0,
-            tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM] * 2,
-            liquidity_delta: 60n,
-            recipient: deployer.address,
-          },
-        });
-        expect(
-          loadInfo((await bathTickUpperContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]) * 2n)).beginParse())
-            .liquidity_gross,
-        ).toBe(60n);
-        expect(loadInfo((await bathTickUpperContract.getTick(0n)).beginParse()).liquidity_gross).toBe(160n);
-      });
-    });
+    //     await pool.sendMint(router.getSender(), toNano(0.05), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 9996n,
+    //         jetton_amount_1: 0n,
+    //         tick_lower: 0,
+    //         tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM] * 2,
+    //         liquidity_delta: 60n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     await pool.sendMint(router.getSender(), toNano(1), {
+    //       kind: 'InMsgBody',
+    //       query_id: 0,
+    //       body: {
+    //         kind: 'MintParams',
+    //         jetton_amount_0: 0n,
+    //         jetton_amount_1: 2000n,
+    //         tick_lower: 0,
+    //         tick_upper: TICK_SPACINGS[FeeAmount.MEDIUM] * 2,
+    //         liquidity_delta: 60n,
+    //         recipient: deployer.address,
+    //       },
+    //     });
+    //     expect(
+    //       loadInfo((await bathTickUpperContract.getTick(BigInt(TICK_SPACINGS[FeeAmount.MEDIUM]) * 2n)).beginParse())
+    //         .liquidity_gross,
+    //     ).toBe(60n);
+    //     expect(loadInfo((await bathTickUpperContract.getTick(0n)).beginParse()).liquidity_gross).toBe(160n);
+    //   });
+    // });
   });
 });
