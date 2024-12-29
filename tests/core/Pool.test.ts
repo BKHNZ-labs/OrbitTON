@@ -6,7 +6,6 @@ import PoolWrapper from '../../wrappers/core/Pool';
 import { encodePriceSqrt, getMaxTick, getMinTick } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
-import BatchTickWrapper from '../../wrappers/core/BatchTick';
 import { loadInfo } from '../../tlb/tick';
 
 describe('Pool Test', () => {

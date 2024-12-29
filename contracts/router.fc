@@ -177,13 +177,6 @@
     return ();
   }
 
-  if (op == op::update_batch_tick_code) {
-    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
-    storage::batch_tick_code = in_msg_body~load_ref();
-    save_data();
-    return ();
-  }
-
   if (op == op::update_position_code) {
     throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
     storage::position_code = in_msg_body~load_ref();
@@ -214,11 +207,6 @@ int get_is_locked() method_id {
 cell get_pool_code() method_id {
   load_data();
   return storage::pool_code;
-}
-
-cell get_batch_tick_code() method_id {
-  load_data();
-  return storage::batch_tick_code;
 }
 
 cell get_position_code() method_id {

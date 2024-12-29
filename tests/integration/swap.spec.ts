@@ -12,14 +12,10 @@ import {
   getMaxTick,
   getMinTick,
   MAX_SQRT_RATIO,
-  MaxCoins,
-  MaxUint128,
-  MaxUint256,
   MIN_SQRT_RATIO,
 } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
-import BatchTickWrapper from '../../wrappers/core/BatchTick';
 import { loadInfo } from '../../tlb/tick';
 import RouterWrapper from '../../wrappers/core/Router';
 import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
@@ -30,7 +26,6 @@ describe('OrbitTonPool', () => {
   let poolCode: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
-  let batchTickCode: Cell;
   let positionCode: Cell;
   let routerCode: Cell;
   const DEFAULT_POOL_SWAP_TESTS = [
@@ -368,7 +363,6 @@ describe('OrbitTonPool', () => {
     poolCode = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
     tickMathCode = await compile('TickMathTest');
-    batchTickCode = await compile('BatchTick');
     positionCode = await compile('Position');
     routerCode = await compile('Router');
   });
@@ -389,7 +383,6 @@ describe('OrbitTonPool', () => {
     router = blockchain.openContract(
       RouterWrapper.RouterTest.create(routerCode, {
         adminAddress: deployer.address,
-        batchTickCode: batchTickCode,
         lpAccountCode: lpAccountCode,
         positionCode: positionCode,
         poolCode: poolCode,

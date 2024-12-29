@@ -16,7 +16,6 @@ namespace RouterWrapper {
   export interface InstantiateMsg {
     adminAddress: Address;
     poolCode: Cell;
-    batchTickCode: Cell;
     positionCode: Cell;
     lpAccountCode: Cell;
   }
@@ -46,13 +45,7 @@ namespace RouterWrapper {
         .storeInt(-1, 8)
         .storeUint(0, 64)
         .storeAddress(initMsg.adminAddress)
-        .storeRef(
-          beginCell()
-            .storeRef(initMsg.poolCode)
-            .storeRef(initMsg.batchTickCode)
-            .storeRef(initMsg.positionCode)
-            .storeRef(initMsg.lpAccountCode),
-        )
+        .storeRef(beginCell().storeRef(initMsg.poolCode).storeRef(initMsg.positionCode).storeRef(initMsg.lpAccountCode))
         .endCell();
       const init = { code, data };
       return new RouterTest(contractAddress(RouterTest.workchain, init), init);
