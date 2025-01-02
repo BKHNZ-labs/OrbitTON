@@ -1019,22 +1019,6 @@ describe('OrbitTonPool', () => {
         success: true,
       });
 
-      let batchTickIndexLower = await poolContract.getBatchTickIndex(BigInt(tickMin));
-      let batchTickLowerAddress = await poolContract.getBatchTickAddress(batchTickIndexLower);
-      let bathTickLowerContract = blockchain.openContract(
-        BatchTickWrapper.BatchTickTest.createFromAddress(batchTickLowerAddress),
-      );
-      let batchTickIndexUpper = await poolContract.getBatchTickIndex(BigInt(tickMax));
-      let batchTickUpperAddress = await poolContract.getBatchTickAddress(batchTickIndexUpper);
-      let bathTickUpperContract = blockchain.openContract(
-        BatchTickWrapper.BatchTickTest.createFromAddress(batchTickUpperAddress),
-      );
-      let sliceLower = await bathTickLowerContract.getTick(BigInt(tickMin));
-      let { liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse());
-      let sliceUpper = await bathTickUpperContract.getTick(BigInt(tickMax));
-      let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
-      expect(liquidity_gross_lower).toBe(liquidity);
-      expect(liquidity_gross_upper).toBe(liquidity);
       let poolInfoBefore = await poolContract.getPoolInfo();
 
       // REFUND HERE
