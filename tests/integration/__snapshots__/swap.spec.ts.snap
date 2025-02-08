@@ -3539,3 +3539,16 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 f
   "tickBefore": 0,
 }
 `;
+
+exports[`OrbitTonPool swap tests swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 1 1`] = `
+{
+  "amount0Before": "2000000000000000000",
+  "amount0Delta": "0",
+  "amount1Before": "2000000000000000000",
+  "amount1Delta": "-666444407401233538",
+  "priceAfter": "0.44459",
+  "priceBefore": "1.0000",
+  "tickAfter": -8107n,
+  "tickBefore": 0n,
+}
+`;

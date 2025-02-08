@@ -280,6 +280,10 @@
     (int amount0, int amount1) = zero_for_one == exact_input
             ? (amount_specified - state::amount_specified_remaining, state::amount_calculated)
             : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
+    ~strdump(amount0);
+    ~dump(amount0);
+    ~strdump(amount1);
+    ~dump(amount1);
 
     builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
 
@@ -425,7 +429,7 @@ slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner
   return (storage::fee, storage::tick_spacing, storage::tick, storage::sqrt_price_x96, storage::liquidity);
 }
 
-(int, int) get_storage::fee_growth_global() method_id {
+(int, int) get_fee_growth_global() method_id {
   load_data();
   return (storage::fee_growth_global_0x128, storage::fee_growth_global_1x128);
 }

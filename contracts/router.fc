@@ -70,6 +70,11 @@
       int zero_for_one = ref_ds~load_int(2);
       int sqrt_price_limit = ref_ds~load_uint(160);
       (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton1_wallet, fee, tick_spacing);
+      ~strdump("swap");
+    (_, int token0_parsed) = parse_std_addr(sender_address);
+      ~dump(token0_parsed);
+      ~dump(sender_address);
+      ~dump(jetton1_wallet);
       builder msg = begin_cell()
                     .store_uint(op::swap, 32)
                     .store_uint(query_id, 64)
@@ -96,17 +101,24 @@
     int token1_amount = ds~load_coins();
     int fee = ds~load_uint(24);
     int tick_spacing = ds~load_int(24);
+    ~strdump("payto");
+    (_, int token0_parsed) = parse_std_addr(token0_address);
+    ~dump(token0_parsed);
+    ~dump(token0_address);
+    ~dump(token1_address);
+    ~dump(token0_amount);
+    ~dump(token1_amount);
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
     int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
-      body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      ;;body0 = body0.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     if (token1_amount > 0) {
       var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
-      body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      ;; body1 = body1.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     return ();
