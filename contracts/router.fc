@@ -111,6 +111,8 @@
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
     int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
+    ~dump(gas_value);
+    ~dump(msg_value);
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
       ;;body0 = body0.store_uint(exit_code, 32); ;; append exit code

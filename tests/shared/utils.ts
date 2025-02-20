@@ -1,3 +1,4 @@
+import { BlockchainTransaction } from '@ton/sandbox';
 import bn from 'bignumber.js';
 import Decimal from 'decimal.js';
 // returns the sqrt price as a 64x96
@@ -64,4 +65,13 @@ export function formatPrice(price: bigint): string {
 
 export function formatTokenAmount(num: bigint): string {
   return new Decimal(num.toString()).dividedBy(new Decimal(10).pow(18)).toPrecision(5);
+}
+
+
+export function filterOutSuccessMessages(txs: BlockchainTransaction[]){
+  const allExitCode = txs.map((tx)=>{
+    if (tx.description.type !== 'generic') return undefined;
+    return tx.description.computePhase.type === 'vm' ? tx.description.computePhase.exitCode : 'N/A'
+  })
+  return allExitCode.filter((exitCode)=>exitCode !== 0);
 }
