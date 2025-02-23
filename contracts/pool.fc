@@ -123,6 +123,9 @@
     if(storage::tick < tick_lower){
       amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     } elseif (storage::tick < tick_upper) {
+      ~dump(storage::sqrt_price_x96);
+      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_upper));
+      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_lower));
       amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
       amount1 = sqrt_price_math::get_amount1_delta_special(
         tick_math::get_sqrt_ratio_at_tick(tick_lower),
@@ -133,6 +136,14 @@
     } elseif (tick_upper < storage::tick){
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
+    ~dump(storage::tick);
+    ~strdump("amount1");
+    ~dump(amount1);
+    ~dump(amount0);
+    ~strdump("jettonAmount");
+    ~dump(jetton_0_amount);
+    ~dump(jetton_1_amount);
+    
 
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
@@ -144,6 +155,9 @@
     int refund_amount0 = jetton_0_amount - amount0;
     int refund_amount1 = jetton_1_amount - amount1;
     int remaining_gas = msg_value;
+    ~strdump("refund_amount0");
+    ~dump(refund_amount0);
+    ~dump(refund_amount1);
     if((refund_amount0 > 0) | (refund_amount1 > 0)){
       ;; refunds to user
       builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, storage::jetton0_wallet, refund_amount0, storage::jetton1_wallet, refund_amount1, storage::fee, storage::tick_spacing);
@@ -216,13 +230,11 @@
         }
       }
 
-      ~dump(step::tick_next);
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::tick_next);
       int sqrt_target_price = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
-      ~strdump("step::sqrt_price_next_x96");
+      ~strdump("compute_swap_step");
       ~dump(state::sqrt_price_x96);
       ~dump(sqrt_target_price);
-      ~dump(sqrt_price_limit_x96);
       ~dump(state::liquidity);
       ~dump(state::amount_specified_remaining);
       ~dump(storage::fee);
@@ -230,10 +242,11 @@
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_target_price, state::liquidity, state::amount_specified_remaining, storage::fee);
       ~strdump("step::fee_amount");
       ~dump(step::fee_amount);
+      ~dump(step::amount_out);
 
       if(exact_input){
         state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
-        state::amount_calculated += step::amount_out;
+        state::amount_calculated -= step::amount_out;
       } else {
         state::amount_specified_remaining += step::amount_out;
         state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;

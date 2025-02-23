@@ -334,7 +334,7 @@ describe('OrbitTonPool', () => {
       ],
     },
   ]
-  .slice(5, 6);
+  .slice(8, 9);
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
@@ -434,7 +434,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals(300),
+        jettonAmount: expandTo18Decimals(300000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -446,7 +446,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals(300),
+        jettonAmount: expandTo18Decimals(300000),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -522,8 +522,8 @@ describe('OrbitTonPool', () => {
           });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = expandTo18Decimals(30000);
-            let jettonAmount1 = expandTo18Decimals(30000);
+            let jettonAmount0 = expandTo18Decimals(50000);
+            let jettonAmount1 = expandTo18Decimals(50000);
 
             let transfer0;
             let transfer1;
