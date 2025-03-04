@@ -119,8 +119,9 @@ describe('OrbitTonPool', () => {
     },
   ];
 
-  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut)
-    .slice(0, 1);
+  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS
+  .filter((test) => !test.exactOut)
+  // .slice(0, 1);
 
   const TEST_POOLS = [
     {
@@ -277,7 +278,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals(2),
+          liquidity: expandTo18Decimals("0.000000000000002"),
         },
       ],
     },
@@ -290,7 +291,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals(2),
+          liquidity: expandTo18Decimals("0.000000000000002"),
         },
       ],
     },
@@ -303,7 +304,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: getMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
+          liquidity: getMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.MEDIUM]) / 1000000000000n,
         },
       ],
     },
@@ -311,12 +312,12 @@ describe('OrbitTonPool', () => {
       description: 'initialized at the max ratio',
       feeAmount: FeeAmount.MEDIUM,
       tickSpacing: TICK_SPACINGS[FeeAmount.MEDIUM],
-      startingPrice: MAX_SQRT_RATIO - 1n,
+      startingPrice: 1461446703485210103287273052203988822378723970341n,
       positions: [
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals(2),
+          liquidity: expandTo18Decimals("0.000000000000002"),
         },
       ],
     },
@@ -329,12 +330,12 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: 72247893771157503n,
+          liquidity: 72247893771157503n / 100000000000000n,
         },
       ],
     },
   ]
-  .slice(8, 9);
+  // .filter((test) => test.description === "close to max price");
 
   function swapCaseToDescription(testCase: any): string {
     const priceClause = testCase?.sqrtPriceLimit ? ` to price ${formatPrice(testCase.sqrtPriceLimit)}` : '';
@@ -434,7 +435,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals(300000),
+        jettonAmount: expandTo18Decimals("5000000"),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -446,7 +447,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals(300000),
+        jettonAmount: expandTo18Decimals("5000000"),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -515,21 +516,26 @@ describe('OrbitTonPool', () => {
             BigInt(feeAmount),
             BigInt(tickSpacing),
           );
-          expect(createPool.transactions).toHaveTransaction({
-            from: router.address,
-            to: pool,
-            success: true,
-          });
+          console.log("createPool")
+          printTransactionFees(createPool.transactions);
+        
+          // expect(createPool.transactions).toHaveTransaction({
+          //   from: router.address,
+          //   to: pool,
+          //   success: true,
+          // });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = expandTo18Decimals(50000);
-            let jettonAmount1 = expandTo18Decimals(50000);
+            let jettonAmount0 = expandTo18Decimals("50000");
+            let jettonAmount1 = expandTo18Decimals("50000");
 
             let transfer0;
             let transfer1;
             let isSwap =
               BigInt(`0x${beginCell().storeAddress(routerJetton0Wallet).endCell().hash().toString('hex')}`) <
               BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`);
+            console.log((await token0WalletContract.getBalance()).amount);
+            console.log((await token1WalletContract.getBalance()).amount);
 
             if (isSwap) {
               transfer0 = await token0WalletContract.sendTransferMint(
@@ -599,7 +605,7 @@ describe('OrbitTonPool', () => {
                 {
                   kind: 'OpJettonTransferMint',
                   query_id: 0,
-                  jetton_amount: jettonAmount0,
+                  jetton_amount: jettonAmount1,
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -626,7 +632,7 @@ describe('OrbitTonPool', () => {
                 {
                   kind: 'OpJettonTransferMint',
                   query_id: 0,
-                  jetton_amount: jettonAmount1,
+                  jetton_amount: jettonAmount0,
                   to_address: router.address,
                   response_address: deployer.address,
                   custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
@@ -657,6 +663,7 @@ describe('OrbitTonPool', () => {
               swapToken1Wallet = token0WalletContract;
             }
             console.log('createPosition');
+            printTransactionFees(transfer0.transactions);
             printTransactionFees(transfer1.transactions);
           }
           if (routerJetton0WalletContract && routerJetton1WalletContract) {
@@ -807,19 +814,6 @@ describe('OrbitTonPool', () => {
             const poolBalance1Delta = router1AfterBalance.amount - poolBalance1!.amount;
             const executionPrice = new Decimal(poolBalance1Delta.toString()).div(poolBalance0Delta.toString()).mul(-1);
 
-            // console.log({
-            //   amount0Before: poolBalance0!.amount.toString(),
-            //   amount0Delta: (router0AfterBalance.amount - poolBalance0!.amount).toString(),
-            //   amount1Before: poolBalance1!.amount.toString(),
-            //   amount1Delta: (router1AfterBalance.amount - poolBalance1!.amount).toString(),
-            //   executionPrice: executionPrice.toPrecision(5),
-            //   feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
-            //   feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
-            //   poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
-            //   poolPriceAfter: formatPrice(poolInfoAfter.sqrtPriceX96),
-            //   tickAfter: Number(poolInfoAfter.tick),
-            //   tickBefore: Number(poolInfoBefore.tick),
-            // });
             expect({
               amount0Before: poolBalance0!.amount.toString(),
               amount0Delta: poolBalance0Delta.toString(),

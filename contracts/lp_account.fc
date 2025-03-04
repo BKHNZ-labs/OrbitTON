@@ -58,6 +58,8 @@ global int amount1;
   int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
   int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
 
+  throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
+
   if(op::add_liquidity){
      (int new_amount0, int new_amount1, int liquidity_delta) = (in_msg_body~load_coins(), in_msg_body~load_coins(), in_msg_body~load_int(128));
         amount0 += new_amount0;

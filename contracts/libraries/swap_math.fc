@@ -50,14 +50,12 @@
     if (zero_for_one) {
         if (max) {
             if (exact_in) {
-                amount_in = amount_in;
                 amount_out = sqrt_price_math::get_amount1_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, 0);
             } else {
                 amount_in = sqrt_price_math::get_amount0_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, -1);
-                amount_out = amount_out;
             }
         } else {
-            amount_in = sqrt_price_math::get_amount0_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, -1);
+            amount_in = sqrt_price_math::get_amount0_delta(sqrt_ratio_current_x96,sqrt_ratio_next_x96, liquidity, -1);
             amount_out = sqrt_price_math::get_amount1_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, 0);
         }
     } else {

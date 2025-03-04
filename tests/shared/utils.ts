@@ -20,7 +20,7 @@ export const MaxCoins = BigInt(bn(2).pow(120).minus(1).toString());
 
 export const Q128 = BigInt(2) ** BigInt(128);
 
-export function expandTo18Decimals(n: number): bigint {
+export function expandTo18Decimals(n: number | string): bigint {
   return BigInt(bn(n).multipliedBy(bn(10).pow(18)).toString());
 }
 

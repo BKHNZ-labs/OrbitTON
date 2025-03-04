@@ -120,6 +120,9 @@ int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
   if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
     (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
   }
+  ~strdump("sqrtPrice");
+  ~dump(sqrt_ratio_a_x96);
+  ~dump(sqrt_ratio_b_x96);
   int numerator1 = liquidity << fixed_point_96::resolution;
   int numerator2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
   throw_unless(error::unexpected_error, sqrt_ratio_a_x96 > 0);

@@ -222,9 +222,6 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing) inline_ref {
     int fee_growth_global_1_x128
 ) inline_ref {
     (slice info_raw, _) = tick_map.idict_get?(24, tick);
-    ~strdump("info_raw");
-    ~dump(tick);
-    ~dump(info_raw);
     (
         int liquidity_gross, 
         int liquidity_net, 
@@ -240,14 +237,15 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing) inline_ref {
 
 (int, int) tick::next_tick_initialized(cell ticks, int tick, int zero_for_one){
     if(zero_for_one){
-        (int key, _, int existed) = ticks.idict_get_prev?(24, tick);
+        (int key, _, int existed) = ticks.idict_get_preveq?(24, tick);
         if (existed) {
             return (key, existed);
         }
-    }
-    (int key, _, int existed) = ticks.idict_get_next?(24, tick);
-    if (existed) {
-        return (key, existed);
+    } else {
+      (int key, _, int existed) = ticks.idict_get_next?(24, tick);
+      if (existed) {
+          return (key, existed);
+      }
     }
     return (0, 0);
 }

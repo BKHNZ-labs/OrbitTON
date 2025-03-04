@@ -48,17 +48,35 @@
       storage::tick = relative_tick;
       storage::sqrt_price_x96 = relative_sqrt_price_x96;
       storage::max_liquidity_per_tick = tick::tick_spacing_to_max_liquidity_per_tick(storage::tick_spacing);
+      ~dump(op::initialize);
+      ~dump(my_address().slice_hash());
+      ~dump(storage::tick);
+      ~dump(storage::sqrt_price_x96);
       builder body = begin_cell()
             .store_uint(op::cb_create_pool, 32)
             .store_uint(query_id, 64)
-            .store_slice(storage::jetton0_wallet) ;; jetton 1
-            .store_slice(storage::jetton1_wallet) ;; jetton 0
-            .store_uint(storage::fee, 24)
-            .store_int(storage::tick_spacing, 24)
-            .store_slice(response_address);
+            .store_ref(
+                  begin_cell()
+                    .store_slice(storage::jetton0_wallet) ;; jetton 1
+                    .store_slice(storage::jetton1_wallet) ;; jetton 0
+
+                    .store_slice(response_address)
+                    .end_cell()
+            )
+             .store_ref(
+                  begin_cell()
+                    .store_uint(storage::fee, 24)
+                    .store_int(storage::tick_spacing, 24)
+                    .store_int(storage::tick, 24)
+                    .store_uint(storage::sqrt_price_x96, 160)
+                    .end_cell()
+
+            );
+
       send_simple_message(0, storage::router_address, body.end_cell(), CARRY_REMAINING_GAS);
       save_data();
     }
+
     return ();
   }
 
@@ -87,6 +105,9 @@
     ;; _updatePosition
     int flipped_lower = 0;
     int flipped_upper = 0;
+    ~strdump("cb_add_liquidity");
+    ~dump(my_address().slice_hash());
+    ~dump(storage::tick);
     if(liquidity_delta != 0){
       flipped_lower = storage::ticks~tick::update(
         tick_lower,
@@ -123,9 +144,6 @@
     if(storage::tick < tick_lower){
       amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     } elseif (storage::tick < tick_upper) {
-      ~dump(storage::sqrt_price_x96);
-      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_upper));
-      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_lower));
       amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
       amount1 = sqrt_price_math::get_amount1_delta_special(
         tick_math::get_sqrt_ratio_at_tick(tick_lower),
@@ -133,18 +151,9 @@
         liquidity_delta
       );
       storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
-    } elseif (tick_upper < storage::tick){
+    } else {
       amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
     }
-    ~dump(storage::tick);
-    ~strdump("amount1");
-    ~dump(amount1);
-    ~dump(amount0);
-    ~strdump("jettonAmount");
-    ~dump(jetton_0_amount);
-    ~dump(jetton_1_amount);
-    
-
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
       builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, storage::jetton0_wallet, jetton_0_amount, storage::jetton1_wallet, jetton_1_amount, storage::fee, storage::tick_spacing); 
@@ -155,9 +164,7 @@
     int refund_amount0 = jetton_0_amount - amount0;
     int refund_amount1 = jetton_1_amount - amount1;
     int remaining_gas = msg_value;
-    ~strdump("refund_amount0");
-    ~dump(refund_amount0);
-    ~dump(refund_amount1);
+
     if((refund_amount0 > 0) | (refund_amount1 > 0)){
       ;; refunds to user
       builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, storage::jetton0_wallet, refund_amount0, storage::jetton1_wallet, refund_amount1, storage::fee, storage::tick_spacing);
@@ -194,11 +201,6 @@
     int is_unspl = zero_for_one ? 
     (((sqrt_price_limit_x96 < storage::sqrt_price_x96) & (sqrt_price_limit_x96 > tick_math::MIN_SQRT_RATIO)) == -1)
     : (((sqrt_price_limit_x96 > storage::sqrt_price_x96) & (sqrt_price_limit_x96 < tick_math::MAX_SQRT_RATIO)) == -1);
-    ~strdump("is_unspl");
-    ~dump(zero_for_one);
-    ~dump(sqrt_price_limit_x96);
-    ~dump(storage::sqrt_price_x96);
-    ~dump(is_unspl);
     int exact_input = amount_specified > 0;
     throw_unless(error::SPL, is_unspl);
     ;; init cache
@@ -221,20 +223,26 @@
       int step::fee_amount = 0;
       ;; get next tick 
       (int step::tick_next, int step::initialized) = storage::ticks.tick::next_tick_initialized(state::tick, zero_for_one);
-
+      ~strdump("ticknext");
+      ~dump(step::tick_next);
+      ~dump(step::initialized);
+      ~dump(state::tick);
+      ~dump(zero_for_one);
       if(~ step::initialized) {
         if(zero_for_one){
-          step::tick_next = tick_math::MAX_TICK;
-        } else {
           step::tick_next = tick_math::MIN_TICK;
+        } else {
+          step::tick_next = tick_math::MAX_TICK;
         }
       }
+      ~dump(step::tick_next);
 
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::tick_next);
       int sqrt_target_price = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
       ~strdump("compute_swap_step");
       ~dump(state::sqrt_price_x96);
       ~dump(sqrt_target_price);
+      ~dump(sqrt_price_limit_x96);
       ~dump(state::liquidity);
       ~dump(state::amount_specified_remaining);
       ~dump(storage::fee);
@@ -242,7 +250,9 @@
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_target_price, state::liquidity, state::amount_specified_remaining, storage::fee);
       ~strdump("step::fee_amount");
       ~dump(step::fee_amount);
+      ~dump(step::amount_in);
       ~dump(step::amount_out);
+      ~dump(state::sqrt_price_x96);
 
       if(exact_input){
         state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
@@ -274,12 +284,15 @@
             liquidity_net = 0 - liquidity_net;
           }
           state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
+          ~strdump("state::liquidity");
+          ~dump(state::liquidity);
+          ~dump(step::tick_next);
         }
-        state::tick = zero_for_one ? step::tick_next - 1 : step::tick_next;
-      }
-
-      if (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
+        state::tick = zero_for_one ? step::tick_next - 1 : step::tick_next + 1;
+      } elseif (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
         state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+        ~strdump("state::sqrt_price_x96 != step::sqrt_price_start_x96");
+        ~dump(state::tick);
       }
     }
 
@@ -295,6 +308,8 @@
       storage::liquidity = state::liquidity;
     }
 
+    int protocol_fees_token0 = 0;
+    int protocol_fees_token1 = 0;
     ;; update fee growth global and, if necessary, protocol fees
     ;; overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
     if (zero_for_one) {
@@ -302,11 +317,13 @@
       if (state::protocol_fee > 0) {
         storage::collected_protocol_fee0 += state::protocol_fee;
       }
+      protocol_fees_token0 = state::protocol_fee;
     } else {
       storage::fee_growth_global_1x128 = state::fee_growth_global_x128;
       if (state::protocol_fee > 0) {
         storage::collected_protocol_fee1 += state::protocol_fee;
       }
+      protocol_fees_token1 = state::protocol_fee;
     }
 
     (int amount0, int amount1) = zero_for_one == exact_input
@@ -316,91 +333,44 @@
     if (zero_for_one){
       if(amount1 < 0) {
           amount1 = 0 - amount1;
-        }
+      }
       amount0 = amount_specified - amount0; 
 
       builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
-
-    send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       } else {
-      if(amount0 < 0) {
+         if (amount0 < 0) {
           amount0 = 0 - amount0;
-        }
-      amount1 = amount_specified - amount1; 
-    builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
-
-    send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+          }
+          amount1 = amount_specified - amount1; 
+          builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+          send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       }
+    
+    builder msg = begin_cell()
+                  .store_slice(response_address)
+                  .store_slice(response_address)
+                  .store_ref(
+                     begin_cell()
+                      .store_int(amount0, 256)
+                      .store_int(amount1, 256)
+                      .store_uint(state::sqrt_price_x96, 160)
+                      .store_uint(state::liquidity, 128)
+                      .store_int(state::tick, 24)
+                      .end_cell()
+                  )
+                  .store_ref(
+                     begin_cell()
+                      .store_uint(protocol_fees_token0, 160)
+                      .store_uint(protocol_fees_token1, 160)
+                      .end_cell()
+                  );
 
+    emit_log_simple(SWAP_EVENT, msg.end_cell(), query_id);
 
     save_data();
     return ();
   }
-
-  ;; if (op == op::cb_swap) {
-  ;;   slice ds = in_msg_body~load_ref().begin_parse();
-  ;;   (
-  ;;     int r_batch_index, 
-  ;;     int r_tick, 
-  ;;     int r_sqrt_price_x96, 
-  ;;     int r_liquidity, 
-  ;;     int r_storage::storage::fee_growth_global_0x128, 
-  ;;     int r_storage::storage::fee_growth_global_1x128, 
-  ;;     int r_zero_for_one, 
-  ;;     int r_protocol_storage::fee,  
-  ;;     int r_amount0, 
-  ;;     int r_amount1, 
-  ;;     slice response_address
-  ;;   ) = unpack_cb_swap(ds);
-  ;;   slice batch_tick_address = get_batch_tick_address(r_batch_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
-  ;;   throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
-  ;;   storage::tick = r_tick;
-  ;;   storage::sqrt_price_x96 = r_sqrt_price_x96;
-  ;;   storage::liquidity = r_liquidity;
-  ;;   storage::storage::fee_growth_global_0x128 = r_storage::storage::fee_growth_global_0x128;
-  ;;   storage::storage::fee_growth_global_1x128 = r_storage::storage::fee_growth_global_1x128;
-  ;;   if (r_zero_for_one) {
-  ;;     collected_protocol_storage::fee0 += r_protocol_storage::fee;
-  ;;   } else {
-  ;;     collected_protocol_storage::fee1 += r_protocol_storage::fee;
-  ;;   }
-  ;;   ~dump(op::cb_swap);
-  ;;   ~dump(r_amount0);
-  ;;   ~dump(r_amount1);
-  ;;   builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, r_amount0, storage::jetton1_wallet, r_amount1, storage::fee, storage::tick_spacing);
-  ;;   send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
-  ;;   save_data();
-  ;;   return ();
-  ;; }
-
-  ;; if(op == op::cb_update_storage::fee_growth_inside){
-  ;;   slice body = in_msg_body~load_ref().begin_parse();
-  ;;   (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int storage::fee_growth_inside_0X128, int storage::fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
-  ;;   slice batch_tick_address = get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(),storage::batch_tick_code);
-  ;;   throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
-  ;;   if ((storage::tick >  tick_lower) & (storage::tick < tick_upper)) {
-  ;;     storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
-  ;;   }
-  ;;   if(flipped_lower){
-  ;;     storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_lower, storage::tick_spacing);
-  ;;   }
-  ;;   if(flipped_upper){
-  ;;     storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_upper, storage::tick_spacing);
-  ;;   }
-
-  ;;   (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(),  storage::position_code);
-
-  ;;   builder mint_body = begin_cell()
-  ;;                         .store_uint(op::mint_position, 32)
-  ;;                         .store_uint(query_id, 64)
-  ;;                         .store_int(liquidity_delta, 128)
-  ;;                         .store_uint(storage::fee_growth_inside_0X128, 256)
-  ;;                         .store_uint(storage::fee_growth_inside_1X128, 256);
-
-  ;;   send_message_with_stateinit(0, position_address, state_init, mint_body.end_cell(), CARRY_REMAINING_GAS);
-  ;;   save_data();
-  ;;   return();
-  ;; }
 
   if (op == op::cb_mint_position) {
     slice first_ref = in_msg_body~load_ref().begin_parse();
@@ -410,21 +380,18 @@
     (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), storage::position_code);
     throw_unless(error::unauthorized, compare_address(sender_address, position_address));
     send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
+
     builder msg = begin_cell()
-                  .store_slice(sender_address)
-                  .store_ref(begin_cell()
-                      .store_int(tick_lower, 24)
-                      .store_int(tick_upper, 24)
-                      .store_uint(liquidity, 128)
-                      .store_uint(fee_growth_inside_0_last_x128, 256)
-                      .store_uint(fee_growth_inside_1_last_x128, 256)
-                      .end_cell())
-                  .store_ref(begin_cell()
-                      .store_uint(tokens_owed_0, 128)
-                      .store_uint(tokens_owed_1, 128)
-                      .store_slice(owner_address)
-                      .end_cell());
-    emit_log_simple(0, msg.end_cell(), query_id);
+                  .store_slice(owner_address)
+                  .store_slice(owner_address)
+                  .store_int(tick_lower, 24)
+                  .store_int(tick_upper, 24)
+                  .store_uint(liquidity, 128)
+                  .store_uint(tokens_owed_0, 128)
+                  .store_uint(tokens_owed_1, 128);
+
+
+    emit_log_simple(MINT_EVENT, msg.end_cell(), query_id);
     return ();
   }
 

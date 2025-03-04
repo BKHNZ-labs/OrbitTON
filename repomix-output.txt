@@ -1,0 +1,4887 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix. The content has been processed where comments have been removed, empty lines have been removed.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Code comments have been removed from supported file types
+- Empty lines have been removed from all files
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+batch_tick/
+  constants.fc
+  errors.fc
+  opcodes.fc
+  storage.fc
+  structs.fc
+  utils.fc
+common/
+  address.fc
+  errors.fc
+  messages.fc
+  op_codes.fc
+  utils.fc
+imports/
+  stdlib.fc
+libraries/
+  bit_math.fc
+  common.fc
+  full_math.fc
+  liquidity_math.fc
+  position.fc
+  safe_cast.fc
+  sqrt_price_math.fc
+  swap_math.fc
+  tick_bitmap.fc
+  tick_math.fc
+  tick.fc
+  unsafe_cast.fc
+  unsafe_math.fc
+lp_account/
+  opcodes.fc
+pool/
+  constants.fc
+  errors.fc
+  lp_account-utils.fc
+  opcodes.fc
+  params.fc
+  router-utils.fc
+  storage.fc
+  structs.fc
+position/
+  opcodes.fc
+  storage.fc
+  utils.fc
+router/
+  opcodes.fc
+  storage.fc
+  utils.fc
+tests/
+  bit_math_test.fc
+  full_math_test.fc
+  liquidity_math_test.fc
+  position_test.fc
+  sqrt_price_math_test.fc
+  swap_math_test.fc
+  tick_bitmap_test.fc
+  tick_math_test.fc
+  tick_test.fc
+  unsafe_cast_test.fc
+utils/
+  messages.fc
+batch_tick.fc
+lp_account.fc
+pool.fc
+position.fc
+router.fc
+
+================================================================
+Files
+================================================================
+
+================
+File: batch_tick/constants.fc
+================
+const constants::batch_index_range = 32768; ;; max entries of dict
+
+================
+File: batch_tick/errors.fc
+================
+const error::wrong_range_batch_tick = 201;
+const error::wrong_upper = 203;
+
+================
+File: batch_tick/opcodes.fc
+================
+const op::update_tick_lower = "op::update_tick_lower"c;
+const op::update_tick_upper = "op::update_tick_upper"c;
+const op::internal_swap = "op::internal_swap"c;
+const op::cross_swap = "op::cross_swap"c;
+
+================
+File: batch_tick/storage.fc
+================
+global int storage::batch_index;
+global int storage::storage::tick_spacing;
+global slice storage::pool_address;
+global cell storage::ticks;
+global cell storage::storage::batch_tick_code;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  storage::batch_index = ds~load_int(16);
+  storage::storage::tick_spacing = ds~load_int(24);
+  storage::pool_address = ds~load_msg_addr();
+  storage::ticks = ds~load_dict();
+  storage::storage::batch_tick_code = ds~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_int(storage::batch_index, 16)
+      .store_int(storage::storage::tick_spacing, 24)
+      .store_slice(storage::pool_address)
+      .store_dict(storage::ticks)
+      .store_ref(storage::storage::batch_tick_code)
+    .end_cell()
+  );
+}
+
+================
+File: batch_tick/structs.fc
+================
+;; cross_swap
+cell batch_tick::pack_cross_swap(
+  int batch_index,
+  int zero_for_one,
+  int amount_specified,
+  int liquidity,
+  int tick,
+  int sqrt_price_x96,
+  int sqrt_price_limit_x96,
+  int fee,
+  int fee_growth_global0_x128,
+  int fee_growth_global1_x128,
+  cell cache,
+  cell state,
+  slice response_address
+) {
+  return begin_cell()
+          .store_ref(begin_cell()
+            .store_ref(begin_cell()
+                .store_int(batch_index, 16)
+                .store_int(zero_for_one, 2)
+                .store_int(amount_specified, 128)
+                .store_uint(liquidity, 128)
+                .store_int(tick, 24)
+                .store_uint(sqrt_price_x96, 160)
+                .store_uint(sqrt_price_limit_x96, 160)
+                .store_uint(fee, 24)
+              .end_cell())
+            .store_ref(begin_cell()
+                .store_uint(fee_growth_global0_x128, 256)
+                .store_uint(fee_growth_global1_x128, 256)
+                .store_slice(response_address)
+              .end_cell())
+          .end_cell())
+          .store_ref(cache)
+          .store_ref(state)
+        .end_cell();
+}
+
+(int, int, int, int, int, int, int, int, int, int, cell, cell, slice) batch_tick::unpack_cross_swap(slice ds) {
+  slice ds_0 = ds~load_ref().begin_parse();
+  slice ds_0_1 = ds_0~load_ref().begin_parse();
+  slice ds_0_2 = ds_0~load_ref().begin_parse();
+  cell ds_1 = ds~load_ref();
+  cell ds_2 = ds~load_ref();
+
+  return (
+    ds_0_1~load_int(16),
+    ds_0_1~load_int(2),
+    ds_0_1~load_int(128),
+    ds_0_1~load_uint(128),
+    ds_0_1~load_int(24),
+    ds_0_1~load_uint(160),
+    ds_0_1~load_uint(160),
+    ds_0_1~load_uint(24),
+    ds_0_2~load_uint(256),
+    ds_0_2~load_uint(256),
+    ds_1,
+    ds_2,
+    ds_0_2~load_msg_addr()
+  );
+}
+
+;; cache
+cell batch_tick::pack_cache(int liquidity_start, int fee_protocol) {
+  return begin_cell()
+          .store_uint(liquidity_start, 128)
+          .store_uint(fee_protocol, 8)
+        .end_cell();
+}
+
+(int, int) batch_tick::unpack_cache(slice cache) {
+  return (cache~load_uint(128), cache~load_uint(8));
+}
+
+;; state
+cell batch_tick::pack_state(
+  int amount_specified_remaining, 
+  int amount_calculated, 
+  int sqrt_price_x96,
+  int tick,
+  int fee_growth_global_x128,
+  int protocol_fee,
+  int liquidity) {
+  return begin_cell()
+          .store_ref(begin_cell()
+              .store_int(amount_specified_remaining, 256)
+              .store_int(amount_calculated, 256)
+              .store_uint(sqrt_price_x96, 160)
+              .store_int(tick, 24)
+              .end_cell())
+          .store_ref(begin_cell()
+              .store_uint(fee_growth_global_x128, 256)
+              .store_uint(protocol_fee, 128)
+              .store_uint(liquidity, 128)
+              .end_cell())
+          .end_cell();
+}
+
+(int, int, int ,int ,int ,int ,int) batch_tick::unpack_state(slice state) {
+  slice state_0 = state~load_ref().begin_parse();
+  slice state_1 = state~load_ref().begin_parse();
+  return (
+    state_0~load_int(256),
+    state_0~load_int(256),
+    state_0~load_uint(160),
+    state_0~load_int(24),
+    state_1~load_uint(256),
+    state_1~load_uint(128),
+    state_1~load_uint(128)
+  );
+}
+
+================
+File: batch_tick/utils.fc
+================
+#include "../libraries/tick.fc";
+
+cell pack_batch_tick_code(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline_ref {
+  return begin_cell()
+    .store_int(batch_index, 16)
+    .store_int(tick_spacing, 24)
+    .store_slice(pool_address)
+    .store_dict(ticks)
+    .store_ref(batch_tick_code)
+  .end_cell();
+}
+
+cell calculate_batch_tick_state_init(int batch_index, int tick_spacing, slice pool_address, cell ticks, cell batch_tick_code) inline_ref {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(batch_tick_code)
+    .store_dict(pack_batch_tick_code(batch_index, tick_spacing, pool_address, ticks, batch_tick_code))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_batch_tick_address(cell state_init) inline_ref {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_batch_tick_state_init_and_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline_ref {
+  cell state_init = calculate_batch_tick_state_init(batch_index, tick_spacing, pool_address, new_dict(), batch_tick_code);
+  return (state_init, calculate_batch_tick_address(state_init));
+}
+
+slice get_batch_tick_address(int batch_index, int tick_spacing, slice pool_address, cell batch_tick_code) inline_ref {
+  cell state_init = calculate_batch_tick_state_init(batch_index, tick_spacing, pool_address, new_dict(), batch_tick_code);
+  return calculate_batch_tick_address(state_init);
+}
+
+int calculate_batch_tick_index(int tick, int tick_spacing) inline {
+  if(constants::batch_index_range * tick_spacing > tick_math::MAX_TICK){
+    if(tick < 0){
+      return -1;
+    }
+    return 0;
+  }
+  if(tick < 0){
+    return tick / (constants::batch_index_range * tick_spacing);
+  }
+  return tick / (constants::batch_index_range * tick_spacing);
+}
+
+(int, slice, int) batch_tick::find_next_tick(cell ticks, int tick_index, int zero_for_one) inline_ref {
+  if (zero_for_one) {
+    return ticks.idict_get_prev?(24, tick_index);
+  }
+  return ticks.idict_get_next?(24, tick_index);
+}
+
+;; return tick_next, batch_index_next, is_jump
+(int, int, int) batch_tick::recalculate_next_tick(int next_tick, int current_batch_index, int tick_spacing, int existed, int zero_for_one) inline_ref {
+  int current_live_in_batch_index = calculate_batch_tick_index(next_tick, tick_spacing);
+  int max_batch_index = calculate_batch_tick_index(tick_math::MAX_TICK, tick_spacing);
+  int min_batch_index = calculate_batch_tick_index(tick_math::MIN_TICK,tick_spacing);
+  if ((current_live_in_batch_index == max_batch_index) & (existed != -1) & (zero_for_one != -1)) {
+    return (tick_math::MAX_TICK, current_live_in_batch_index, 0);
+  }
+
+  if ((current_live_in_batch_index == min_batch_index) & (existed != -1) & (zero_for_one == -1)) {
+    return (tick_math::MIN_TICK, current_live_in_batch_index, 0);
+  }
+
+  return (next_tick, current_live_in_batch_index, current_batch_index != current_live_in_batch_index);
+}
+
+================
+File: common/address.fc
+================
+;; -1: if same address
+int compare_address(slice first, slice second) {
+    (_, int int_first) = first.parse_std_addr();
+    (_, int int_second) = second.parse_std_addr();
+    return int_first == int_second;
+}
+
+================
+File: common/errors.fc
+================
+const int error::not_enough_gas = 1111;
+const int error:not_enough_amount = 1112;
+const int error::invalid_message = 49;
+const int error::wrong_workchain = 333;
+const int error::unauthorized = 1000;
+
+================
+File: common/messages.fc
+================
+const NORMAL = 0;
+const PAID_EXTERNALLY = 1;
+const IGNORE_ERRORS = 2;
+
+const DESTROY_IF_ZERO = 32;
+const CARRY_REMAINING_GAS = 64;
+const CARRY_ALL_BALANCE = 128;
+
+() send_empty_message(int amount, slice to, int mode) impure inline_ref {
+    cell msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(to)
+        .store_coins(amount)
+        .store_uint(0, 107)
+    .end_cell();
+    send_raw_message(msg, mode);
+}
+
+() send_simple_message(int amount, slice to, cell body, int mode) impure inline_ref {
+    cell msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(to)
+        .store_coins(amount)
+        .store_uint(1, 107)
+        .store_ref(body)
+    .end_cell();
+    send_raw_message(msg, mode);
+}
+
+() send_message_nobounce(int amount, slice to, cell body, int mode) impure inline_ref {
+    cell msg = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(to)
+        .store_coins(amount)
+        .store_uint(1, 107)
+        .store_ref(body)
+    .end_cell();
+    send_raw_message(msg, mode);
+}
+
+() send_message_with_stateinit(int amount, slice to, cell state_init, cell body, int mode) impure inline_ref {
+    cell msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(to)
+        .store_coins(amount)
+        .store_uint(7, 108)
+        .store_ref(state_init)
+        .store_ref(body)
+    .end_cell();
+    send_raw_message(msg, mode);
+}
+
+() emit_log_simple(int event_id, cell data, int query_id) impure inline {
+    var msg = begin_cell()
+    .store_uint (12, 4)         ;; ext_out_msg_info$11 src:MsgAddressInt ()
+    .store_uint (1, 2)          ;; addr_extern$01
+    .store_uint (256, 9)        ;; len:(## 9)
+    .store_uint(event_id, 256); ;; external_address:(bits len)
+
+    if(null?(data)) {
+        msg = msg
+      .store_uint(0, 64 + 32 + 2) ;; created_lt, created_at, init:Maybe, body:Either
+      .store_uint(query_id, 64);
+    } else {
+        msg = msg
+      .store_uint(1, 64 + 32 + 2) ;; created_lt, created_at, init:Maybe, body:Either
+      .store_ref(data);
+    }
+
+    send_raw_message(msg.end_cell(), NORMAL);
+}
+
+================
+File: common/op_codes.fc
+================
+int op::jetton_transfer() asm "0xf8a7ea5 PUSHINT";
+int op::jetton_transfer_notification() asm "0x7362d09c PUSHINT";
+int op::jetton_internal_transfer() asm "0x178d4519 PUSHINT";
+int op::jetton_excesses() asm "0xd53276db PUSHINT";
+int op::jetton_burn() asm "0x595f07bc PUSHINT";
+int op::jetton_burn_notification() asm "0x7bdd97de PUSHINT";
+int op::jetton_mint() asm "21 PUSHINT";
+
+================
+File: common/utils.fc
+================
+const WORKCHAIN = 0;
+
+(int) get_workchain(slice address) inline {
+  (int wc, _) = parse_std_addr(address);
+  return wc;
+}
+
+() force_chain(int workchain, slice address, int error_code) impure inline {
+  (int wc) = get_workchain(address);
+  throw_unless(error_code, wc == workchain);
+}
+
+(builder) create_simple_transfer_body(int query_id, int fwd_amount, int jetton_amount, slice to) inline {
+  return begin_cell()
+        .store_uint(0xf8a7ea5, 32)
+        .store_uint(query_id, 64)
+        .store_coins(jetton_amount)
+        .store_slice(to) ;; to_owner_address
+        .store_slice(to)
+        .store_uint(0, 1)
+        .store_coins(fwd_amount) ;; forward_ton_amount
+        .store_uint(0, 1);
+}
+
+================
+File: imports/stdlib.fc
+================
+;; Standard library for funC
+;;
+
+{-
+  # Tuple manipulation primitives
+  The names and the types are mostly self-explaining.
+  See [polymorhism with forall](https://ton.org/docs/#/func/functions?id=polymorphism-with-forall)
+  for more info on the polymorphic functions.
+
+  Note that currently values of atomic type `tuple` can't be cast to composite tuple type (e.g. `[int, cell]`)
+  and vise versa.
+-}
+
+{-
+  # Lisp-style lists
+
+  Lists can be represented as nested 2-elements tuples.
+  Empty list is conventionally represented as TVM `null` value (it can be obtained by calling [null()]).
+  For example, tuple `(1, (2, (3, null)))` represents list `[1, 2, 3]`. Elements of a list can be of different types.
+-}
+
+;;; Adds an element to the beginning of lisp-style list.
+forall X -> tuple cons(X head, tuple tail) asm "CONS";
+
+;;; Extracts the head and the tail of lisp-style list.
+forall X -> (X, tuple) uncons(tuple list) asm "UNCONS";
+
+;;; Extracts the tail and the head of lisp-style list.
+forall X -> (tuple, X) list_next(tuple list) asm( -> 1 0) "UNCONS";
+
+;;; Returns the head of lisp-style list.
+forall X -> X car(tuple list) asm "CAR";
+
+;;; Returns the tail of lisp-style list.
+tuple cdr(tuple list) asm "CDR";
+
+;;; Creates tuple with zero elements.
+tuple empty_tuple() asm "NIL";
+
+;;; Appends a value `x` to a `Tuple t = (x1, ..., xn)`, but only if the resulting `Tuple t' = (x1, ..., xn, x)`
+;;; is of length at most 255. Otherwise throws a type check exception.
+forall X -> tuple tpush(tuple t, X value) asm "TPUSH";
+forall X -> (tuple, ()) ~tpush(tuple t, X value) asm "TPUSH";
+
+;;; Creates a tuple of length one with given argument as element.
+forall X -> [X] single(X x) asm "SINGLE";
+
+;;; Unpacks a tuple of length one
+forall X -> X unsingle([X] t) asm "UNSINGLE";
+
+;;; Creates a tuple of length two with given arguments as elements.
+forall X, Y -> [X, Y] pair(X x, Y y) asm "PAIR";
+
+;;; Unpacks a tuple of length two
+forall X, Y -> (X, Y) unpair([X, Y] t) asm "UNPAIR";
+
+;;; Creates a tuple of length three with given arguments as elements.
+forall X, Y, Z -> [X, Y, Z] triple(X x, Y y, Z z) asm "TRIPLE";
+
+;;; Unpacks a tuple of length three
+forall X, Y, Z -> (X, Y, Z) untriple([X, Y, Z] t) asm "UNTRIPLE";
+
+;;; Creates a tuple of length four with given arguments as elements.
+forall X, Y, Z, W -> [X, Y, Z, W] tuple4(X x, Y y, Z z, W w) asm "4 TUPLE";
+
+;;; Unpacks a tuple of length four
+forall X, Y, Z, W -> (X, Y, Z, W) untuple4([X, Y, Z, W] t) asm "4 UNTUPLE";
+
+;;; Returns the first element of a tuple (with unknown element types).
+forall X -> X first(tuple t) asm "FIRST";
+
+;;; Returns the second element of a tuple (with unknown element types).
+forall X -> X second(tuple t) asm "SECOND";
+
+;;; Returns the third element of a tuple (with unknown element types).
+forall X -> X third(tuple t) asm "THIRD";
+
+;;; Returns the fourth element of a tuple (with unknown element types).
+forall X -> X fourth(tuple t) asm "3 INDEX";
+
+;;; Returns the first element of a pair tuple.
+forall X, Y -> X pair_first([X, Y] p) asm "FIRST";
+
+;;; Returns the second element of a pair tuple.
+forall X, Y -> Y pair_second([X, Y] p) asm "SECOND";
+
+;;; Returns the first element of a triple tuple.
+forall X, Y, Z -> X triple_first([X, Y, Z] p) asm "FIRST";
+
+;;; Returns the second element of a triple tuple.
+forall X, Y, Z -> Y triple_second([X, Y, Z] p) asm "SECOND";
+
+;;; Returns the third element of a triple tuple.
+forall X, Y, Z -> Z triple_third([X, Y, Z] p) asm "THIRD";
+
+
+;;; Push null element (casted to given type)
+;;; By the TVM type `Null` FunC represents absence of a value of some atomic type.
+;;; So `null` can actually have any atomic type.
+forall X -> X null() asm "PUSHNULL";
+
+;;; Moves a variable [x] to the top of the stack
+forall X -> (X, ()) ~impure_touch(X x) impure asm "NOP";
+
+
+
+;;; Returns the current Unix time as an Integer
+int now() asm "NOW";
+
+;;; Returns the internal address of the current smart contract as a Slice with a `MsgAddressInt`.
+;;; If necessary, it can be parsed further using primitives such as [parse_std_addr].
+slice my_address() asm "MYADDR";
+
+;;; Returns the balance of the smart contract as a tuple consisting of an int
+;;; (balance in nanotoncoins) and a `cell`
+;;; (a dictionary with 32-bit keys representing the balance of "extra currencies")
+;;; at the start of Computation Phase.
+;;; Note that RAW primitives such as [send_raw_message] do not update this field.
+[int, cell] get_balance() asm "BALANCE";
+
+;;; Returns the logical time of the current transaction.
+int cur_lt() asm "LTIME";
+
+;;; Returns the starting logical time of the current block.
+int block_lt() asm "BLOCKLT";
+
+;;; Computes the representation hash of a `cell` [c] and returns it as a 256-bit unsigned integer `x`.
+;;; Useful for signing and checking signatures of arbitrary entities represented by a tree of cells.
+int cell_hash(cell c) asm "HASHCU";
+
+;;; Computes the hash of a `slice s` and returns it as a 256-bit unsigned integer `x`.
+;;; The result is the same as if an ordinary cell containing only data and references from `s` had been created
+;;; and its hash computed by [cell_hash].
+int slice_hash(slice s) asm "HASHSU";
+
+;;; Computes sha256 of the data bits of `slice` [s]. If the bit length of `s` is not divisible by eight,
+;;; throws a cell underflow exception. The hash value is returned as a 256-bit unsigned integer `x`.
+int string_hash(slice s) asm "SHA256U";
+
+{-
+  # Signature checks
+-}
+
+;;; Checks the Ed25519-`signature` of a `hash` (a 256-bit unsigned integer, usually computed as the hash of some data)
+;;; using [public_key] (also represented by a 256-bit unsigned integer).
+;;; The signature must contain at least 512 data bits; only the first 512 bits are used.
+;;; The result is `−1` if the signature is valid, `0` otherwise.
+;;; Note that `CHKSIGNU` creates a 256-bit slice with the hash and calls `CHKSIGNS`.
+;;; That is, if [hash] is computed as the hash of some data, these data are hashed twice,
+;;; the second hashing occurring inside `CHKSIGNS`.
+int check_signature(int hash, slice signature, int public_key) asm "CHKSIGNU";
+
+;;; Checks whether [signature] is a valid Ed25519-signature of the data portion of `slice data` using `public_key`,
+;;; similarly to [check_signature].
+;;; If the bit length of [data] is not divisible by eight, throws a cell underflow exception.
+;;; The verification of Ed25519 signatures is the standard one,
+;;; with sha256 used to reduce [data] to the 256-bit number that is actually signed.
+int check_data_signature(slice data, slice signature, int public_key) asm "CHKSIGNS";
+
+{---
+  # Computation of boc size
+  The primitives below may be useful for computing storage fees of user-provided data.
+-}
+
+;;; Returns `(x, y, z, -1)` or `(null, null, null, 0)`.
+;;; Recursively computes the count of distinct cells `x`, data bits `y`, and cell references `z`
+;;; in the DAG rooted at `cell` [c], effectively returning the total storage used by this DAG taking into account
+;;; the identification of equal cells.
+;;; The values of `x`, `y`, and `z` are computed by a depth-first traversal of this DAG,
+;;; with a hash table of visited cell hashes used to prevent visits of already-visited cells.
+;;; The total count of visited cells `x` cannot exceed non-negative [max_cells];
+;;; otherwise the computation is aborted before visiting the `(max_cells + 1)`-st cell and
+;;; a zero flag is returned to indicate failure. If [c] is `null`, returns `x = y = z = 0`.
+(int, int, int) compute_data_size(cell c, int max_cells) impure asm "CDATASIZE";
+
+;;; Similar to [compute_data_size?], but accepting a `slice` [s] instead of a `cell`.
+;;; The returned value of `x` does not take into account the cell that contains the `slice` [s] itself;
+;;; however, the data bits and the cell references of [s] are accounted for in `y` and `z`.
+(int, int, int) slice_compute_data_size(slice s, int max_cells) impure asm "SDATASIZE";
+
+;;; A non-quiet version of [compute_data_size?] that throws a cell overflow exception (`8`) on failure.
+(int, int, int, int) compute_data_size?(cell c, int max_cells) asm "CDATASIZEQ NULLSWAPIFNOT2 NULLSWAPIFNOT";
+
+;;; A non-quiet version of [slice_compute_data_size?] that throws a cell overflow exception (8) on failure.
+(int, int, int, int) slice_compute_data_size?(cell c, int max_cells) asm "SDATASIZEQ NULLSWAPIFNOT2 NULLSWAPIFNOT";
+
+;;; Throws an exception with exit_code excno if cond is not 0 (commented since implemented in compilator)
+;; () throw_if(int excno, int cond) impure asm "THROWARGIF";
+
+{--
+  # Debug primitives
+  Only works for local TVM execution with debug level verbosity
+-}
+;;; Dumps the stack (at most the top 255 values) and shows the total stack depth.
+() dump_stack() impure asm "DUMPSTK";
+
+{-
+  # Persistent storage save and load
+-}
+
+;;; Returns the persistent contract storage cell. It can be parsed or modified with slice and builder primitives later.
+cell get_data() asm "c4 PUSH";
+
+;;; Sets `cell` [c] as persistent contract data. You can update persistent contract storage with this primitive.
+() set_data(cell c) impure asm "c4 POP";
+
+{-
+  # Continuation primitives
+-}
+;;; Usually `c3` has a continuation initialized by the whole code of the contract. It is used for function calls.
+;;; The primitive returns the current value of `c3`.
+cont get_c3() impure asm "c3 PUSH";
+
+;;; Updates the current value of `c3`. Usually, it is used for updating smart contract code in run-time.
+;;; Note that after execution of this primitive the current code
+;;; (and the stack of recursive function calls) won't change,
+;;; but any other function call will use a function from the new code.
+() set_c3(cont c) impure asm "c3 POP";
+
+;;; Transforms a `slice` [s] into a simple ordinary continuation `c`, with `c.code = s` and an empty stack and savelist.
+cont bless(slice s) impure asm "BLESS";
+
+{---
+  # Gas related primitives
+-}
+
+;;; Sets current gas limit `gl` to its maximal allowed value `gm`, and resets the gas credit `gc` to zero,
+;;; decreasing the value of `gr` by `gc` in the process.
+;;; In other words, the current smart contract agrees to buy some gas to finish the current transaction.
+;;; This action is required to process external messages, which bring no value (hence no gas) with themselves.
+;;;
+;;; For more details check [accept_message effects](https://ton.org/docs/#/smart-contracts/accept).
+() accept_message() impure asm "ACCEPT";
+
+;;; Sets current gas limit `gl` to the minimum of limit and `gm`, and resets the gas credit `gc` to zero.
+;;; If the gas consumed so far (including the present instruction) exceeds the resulting value of `gl`,
+;;; an (unhandled) out of gas exception is thrown before setting new gas limits.
+;;; Notice that [set_gas_limit] with an argument `limit ≥ 2^63 − 1` is equivalent to [accept_message].
+() set_gas_limit(int limit) impure asm "SETGASLIMIT";
+
+;;; Commits the current state of registers `c4` (“persistent data”) and `c5` (“actions”)
+;;; so that the current execution is considered “successful” with the saved values even if an exception
+;;; in Computation Phase is thrown later.
+() commit() impure asm "COMMIT";
+
+;;; Not implemented
+;;() buy_gas(int gram) impure asm "BUYGAS";
+
+;;; Computes the amount of gas that can be bought for `amount` nanoTONs,
+;;; and sets `gl` accordingly in the same way as [set_gas_limit].
+() buy_gas(int amount) impure asm "BUYGAS";
+
+;;; Computes the minimum of two integers [x] and [y].
+int min(int x, int y) asm "MIN";
+
+;;; Computes the maximum of two integers [x] and [y].
+int max(int x, int y) asm "MAX";
+
+;;; Sorts two integers.
+(int, int) minmax(int x, int y) asm "MINMAX";
+
+;;; Computes the absolute value of an integer [x].
+int abs(int x) asm "ABS";
+
+{-
+  # Slice primitives
+
+  It is said that a primitive _loads_ some data,
+  if it returns the data and the remainder of the slice
+  (so it can also be used as [modifying method](https://ton.org/docs/#/func/statements?id=modifying-methods)).
+
+  It is said that a primitive _preloads_ some data, if it returns only the data
+  (it can be used as [non-modifying method](https://ton.org/docs/#/func/statements?id=non-modifying-methods)).
+
+  Unless otherwise stated, loading and preloading primitives read the data from a prefix of the slice.
+-}
+
+
+;;; Converts a `cell` [c] into a `slice`. Notice that [c] must be either an ordinary cell,
+;;; or an exotic cell (see [TVM.pdf](https://ton-blockchain.github.io/docs/tvm.pdf), 3.1.2)
+;;; which is automatically loaded to yield an ordinary cell `c'`, converted into a `slice` afterwards.
+slice begin_parse(cell c) asm "CTOS";
+
+;;; Checks if [s] is empty. If not, throws an exception.
+() end_parse(slice s) impure asm "ENDS";
+
+;;; Loads the first reference from the slice.
+(slice, cell) load_ref(slice s) asm( -> 1 0) "LDREF";
+
+;;; Preloads the first reference from the slice.
+cell preload_ref(slice s) asm "PLDREF";
+
+{- Functions below are commented because are implemented on compilator level for optimisation -}
+
+;;; Loads a signed [len]-bit integer from a slice [s].
+;; (slice, int) ~load_int(slice s, int len) asm(s len -> 1 0) "LDIX";
+
+;;; Loads an unsigned [len]-bit integer from a slice [s].
+;; (slice, int) ~load_uint(slice s, int len) asm( -> 1 0) "LDUX";
+
+;;; Preloads a signed [len]-bit integer from a slice [s].
+;; int preload_int(slice s, int len) asm "PLDIX";
+
+;;; Preloads an unsigned [len]-bit integer from a slice [s].
+;; int preload_uint(slice s, int len) asm "PLDUX";
+
+;;; Loads the first `0 ≤ len ≤ 1023` bits from slice [s] into a separate `slice s''`.
+;; (slice, slice) load_bits(slice s, int len) asm(s len -> 1 0) "LDSLICEX";
+
+;;; Preloads the first `0 ≤ len ≤ 1023` bits from slice [s] into a separate `slice s''`.
+;; slice preload_bits(slice s, int len) asm "PLDSLICEX";
+
+;;; Loads serialized amount of TonCoins (any unsigned integer up to `2^128 - 1`).
+(slice, int) load_grams(slice s) asm( -> 1 0) "LDGRAMS";
+(slice, int) load_coins(slice s) asm( -> 1 0) "LDGRAMS";
+
+;;; Returns all but the first `0 ≤ len ≤ 1023` bits of `slice` [s].
+slice skip_bits(slice s, int len) asm "SDSKIPFIRST";
+(slice, ()) ~skip_bits(slice s, int len) asm "SDSKIPFIRST";
+
+;;; Returns the first `0 ≤ len ≤ 1023` bits of `slice` [s].
+slice first_bits(slice s, int len) asm "SDCUTFIRST";
+
+;;; Returns all but the last `0 ≤ len ≤ 1023` bits of `slice` [s].
+slice skip_last_bits(slice s, int len) asm "SDSKIPLAST";
+(slice, ()) ~skip_last_bits(slice s, int len) asm "SDSKIPLAST";
+
+;;; Returns the last `0 ≤ len ≤ 1023` bits of `slice` [s].
+slice slice_last(slice s, int len) asm "SDCUTLAST";
+
+;;; Loads a dictionary `D` (HashMapE) from `slice` [s].
+;;; (returns `null` if `nothing` constructor is used).
+(slice, cell) load_dict(slice s) asm( -> 1 0) "LDDICT";
+
+;;; Preloads a dictionary `D` from `slice` [s].
+cell preload_dict(slice s) asm "PLDDICT";
+
+;;; Loads a dictionary as [load_dict], but returns only the remainder of the slice.
+slice skip_dict(slice s) asm "SKIPDICT";
+
+;;; Loads (Maybe ^Cell) from `slice` [s].
+;;; In other words loads 1 bit and if it is true
+;;; loads first ref and return it with slice remainder
+;;; otherwise returns `null` and slice remainder
+(slice, cell) load_maybe_ref(slice s) asm( -> 1 0) "LDOPTREF";
+
+;;; Preloads (Maybe ^Cell) from `slice` [s].
+cell preload_maybe_ref(slice s) asm "PLDOPTREF";
+
+
+;;; Returns the depth of `cell` [c].
+;;; If [c] has no references, then return `0`;
+;;; otherwise the returned value is one plus the maximum of depths of cells referred to from [c].
+;;; If [c] is a `null` instead of a cell, returns zero.
+int cell_depth(cell c) asm "CDEPTH";
+
+
+{-
+  # Slice size primitives
+-}
+
+;;; Returns the number of references in `slice` [s].
+int slice_refs(slice s) asm "SREFS";
+
+;;; Returns the number of data bits in `slice` [s].
+int slice_bits(slice s) asm "SBITS";
+
+;;; Returns both the number of data bits and the number of references in `slice` [s].
+(int, int) slice_bits_refs(slice s) asm "SBITREFS";
+
+;;; Checks whether a `slice` [s] is empty (i.e., contains no bits of data and no cell references).
+int slice_empty?(slice s) asm "SEMPTY";
+
+;;; Checks whether `slice` [s] has no bits of data.
+int slice_data_empty?(slice s) asm "SDEMPTY";
+
+;;; Checks whether `slice` [s] has no references.
+int slice_refs_empty?(slice s) asm "SREMPTY";
+
+;;; Returns the depth of `slice` [s].
+;;; If [s] has no references, then returns `0`;
+;;; otherwise the returned value is one plus the maximum of depths of cells referred to from [s].
+int slice_depth(slice s) asm "SDEPTH";
+
+{-
+  # Builder size primitives
+-}
+
+;;; Returns the number of cell references already stored in `builder` [b]
+int builder_refs(builder b) asm "BREFS";
+
+;;; Returns the number of data bits already stored in `builder` [b].
+int builder_bits(builder b) asm "BBITS";
+
+;;; Returns the depth of `builder` [b].
+;;; If no cell references are stored in [b], then returns 0;
+;;; otherwise the returned value is one plus the maximum of depths of cells referred to from [b].
+int builder_depth(builder b) asm "BDEPTH";
+
+{-
+  # Builder primitives
+  It is said that a primitive _stores_ a value `x` into a builder `b`
+  if it returns a modified version of the builder `b'` with the value `x` stored at the end of it.
+  It can be used as [non-modifying method](https://ton.org/docs/#/func/statements?id=non-modifying-methods).
+
+  All the primitives below first check whether there is enough space in the `builder`,
+  and only then check the range of the value being serialized.
+-}
+
+;;; Creates a new empty `builder`.
+builder begin_cell() asm "NEWC";
+
+;;; Converts a `builder` into an ordinary `cell`.
+cell end_cell(builder b) asm "ENDC";
+
+;;; Stores a reference to `cell` [c] into `builder` [b].
+builder store_ref(builder b, cell c) asm(c b) "STREF";
+
+;;; Stores an unsigned [len]-bit integer `x` into `b` for `0 ≤ len ≤ 256`.
+;; builder store_uint(builder b, int x, int len) asm(x b len) "STUX";
+
+;;; Stores a signed [len]-bit integer `x` into `b` for` 0 ≤ len ≤ 257`.
+;; builder store_int(builder b, int x, int len) asm(x b len) "STIX";
+
+
+;;; Stores `slice` [s] into `builder` [b]
+builder store_slice(builder b, slice s) asm "STSLICER";
+
+;;; Stores (serializes) an integer [x] in the range `0..2^128 − 1` into `builder` [b].
+;;; The serialization of [x] consists of a 4-bit unsigned big-endian integer `l`,
+;;; which is the smallest integer `l ≥ 0`, such that `x < 2^8l`,
+;;; followed by an `8l`-bit unsigned big-endian representation of [x].
+;;; If [x] does not belong to the supported range, a range check exception is thrown.
+;;;
+;;; Store amounts of TonCoins to the builder as VarUInteger 16
+builder store_grams(builder b, int x) asm "STGRAMS";
+builder store_coins(builder b, int x) asm "STGRAMS";
+
+;;; Stores dictionary `D` represented by `cell` [c] or `null` into `builder` [b].
+;;; In other words, stores a `1`-bit and a reference to [c] if [c] is not `null` and `0`-bit otherwise.
+builder store_dict(builder b, cell c) asm(c b) "STDICT";
+
+;;; Stores (Maybe ^Cell) to builder:
+;;; if cell is null store 1 zero bit
+;;; otherwise store 1 true bit and ref to cell
+builder store_maybe_ref(builder b, cell c) asm(c b) "STOPTREF";
+
+
+{-
+  # Address manipulation primitives
+  The address manipulation primitives listed below serialize and deserialize values according to the following TL-B scheme:
+  ```TL-B
+  addr_none$00 = MsgAddressExt;
+  addr_extern$01 len:(## 8) external_address:(bits len)
+               = MsgAddressExt;
+  anycast_info$_ depth:(#<= 30) { depth >= 1 }
+    rewrite_pfx:(bits depth) = Anycast;
+  addr_std$10 anycast:(Maybe Anycast)
+    workchain_id:int8 address:bits256 = MsgAddressInt;
+  addr_var$11 anycast:(Maybe Anycast) addr_len:(## 9)
+    workchain_id:int32 address:(bits addr_len) = MsgAddressInt;
+  _ _:MsgAddressInt = MsgAddress;
+  _ _:MsgAddressExt = MsgAddress;
+
+  int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
+    src:MsgAddress dest:MsgAddressInt
+    value:CurrencyCollection ihr_fee:Grams fwd_fee:Grams
+    created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+  ext_out_msg_info$11 src:MsgAddress dest:MsgAddressExt
+    created_lt:uint64 created_at:uint32 = CommonMsgInfoRelaxed;
+  ```
+  A deserialized `MsgAddress` is represented by a tuple `t` as follows:
+
+  - `addr_none` is represented by `t = (0)`,
+    i.e., a tuple containing exactly one integer equal to zero.
+  - `addr_extern` is represented by `t = (1, s)`,
+    where slice `s` contains the field `external_address`. In other words, `
+    t` is a pair (a tuple consisting of two entries), containing an integer equal to one and slice `s`.
+  - `addr_std` is represented by `t = (2, u, x, s)`,
+    where `u` is either a `null` (if `anycast` is absent) or a slice `s'` containing `rewrite_pfx` (if anycast is present).
+    Next, integer `x` is the `workchain_id`, and slice `s` contains the address.
+  - `addr_var` is represented by `t = (3, u, x, s)`,
+    where `u`, `x`, and `s` have the same meaning as for `addr_std`.
+-}
+
+;;; Loads from slice [s] the only prefix that is a valid `MsgAddress`,
+;;; and returns both this prefix `s'` and the remainder `s''` of [s] as slices.
+(slice, slice) load_msg_addr(slice s) asm( -> 1 0) "LDMSGADDR";
+
+;;; Decomposes slice [s] containing a valid `MsgAddress` into a `tuple t` with separate fields of this `MsgAddress`.
+;;; If [s] is not a valid `MsgAddress`, a cell deserialization exception is thrown.
+tuple parse_addr(slice s) asm "PARSEMSGADDR";
+
+;;; Parses slice [s] containing a valid `MsgAddressInt` (usually a `msg_addr_std`),
+;;; applies rewriting from the anycast (if present) to the same-length prefix of the address,
+;;; and returns both the workchain and the 256-bit address as integers.
+;;; If the address is not 256-bit, or if [s] is not a valid serialization of `MsgAddressInt`,
+;;; throws a cell deserialization exception.
+(int, int) parse_std_addr(slice s) asm "REWRITESTDADDR";
+
+;;; A variant of [parse_std_addr] that returns the (rewritten) address as a slice [s],
+;;; even if it is not exactly 256 bit long (represented by a `msg_addr_var`).
+(int, slice) parse_var_addr(slice s) asm "REWRITEVARADDR";
+
+{-
+  # Dictionary primitives
+-}
+
+
+;;; Sets the value associated with [key_len]-bit key signed index in dictionary [dict] to [value] (cell),
+;;; and returns the resulting dictionary.
+cell idict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTISETREF";
+(cell, ()) ~idict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTISETREF";
+
+;;; Sets the value associated with [key_len]-bit key unsigned index in dictionary [dict] to [value] (cell),
+;;; and returns the resulting dictionary.
+cell udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
+(cell, ()) ~udict_set_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETREF";
+
+cell idict_get_ref(cell dict, int key_len, int index) asm(index dict key_len) "DICTIGETOPTREF";
+(cell, int) idict_get_ref?(cell dict, int key_len, int index) asm(index dict key_len) "DICTIGETREF" "NULLSWAPIFNOT";
+(cell, int) udict_get_ref?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUGETREF" "NULLSWAPIFNOT";
+(cell, cell) idict_set_get_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTISETGETOPTREF";
+(cell, cell) udict_set_get_ref(cell dict, int key_len, int index, cell value) asm(value index dict key_len) "DICTUSETGETOPTREF";
+(cell, int) idict_delete?(cell dict, int key_len, int index) asm(index dict key_len) "DICTIDEL";
+(cell, int) udict_delete?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUDEL";
+(slice, int) idict_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTIGET" "NULLSWAPIFNOT";
+(slice, int) udict_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUGET" "NULLSWAPIFNOT";
+(cell, slice, int) idict_delete_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTIDELGET" "NULLSWAPIFNOT";
+(cell, slice, int) udict_delete_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUDELGET" "NULLSWAPIFNOT";
+(cell, (slice, int)) ~idict_delete_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTIDELGET" "NULLSWAPIFNOT";
+(cell, (slice, int)) ~udict_delete_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUDELGET" "NULLSWAPIFNOT";
+cell udict_set(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUSET";
+(cell, ()) ~udict_set(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUSET";
+cell idict_set(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTISET";
+(cell, ()) ~idict_set(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTISET";
+cell dict_set(cell dict, int key_len, slice index, slice value) asm(value index dict key_len) "DICTSET";
+(cell, ()) ~dict_set(cell dict, int key_len, slice index, slice value) asm(value index dict key_len) "DICTSET";
+(cell, int) udict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUADD";
+(cell, int) udict_replace?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTUREPLACE";
+(cell, int) idict_add?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTIADD";
+(cell, int) idict_replace?(cell dict, int key_len, int index, slice value) asm(value index dict key_len) "DICTIREPLACE";
+cell udict_set_builder(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTUSETB";
+(cell, ()) ~udict_set_builder(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTUSETB";
+cell idict_set_builder(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTISETB";
+(cell, ()) ~idict_set_builder(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTISETB";
+cell dict_set_builder(cell dict, int key_len, slice index, builder value) asm(value index dict key_len) "DICTSETB";
+(cell, ()) ~dict_set_builder(cell dict, int key_len, slice index, builder value) asm(value index dict key_len) "DICTSETB";
+(cell, int) udict_add_builder?(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTUADDB";
+(cell, int) udict_replace_builder?(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTUREPLACEB";
+(cell, int) idict_add_builder?(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTIADDB";
+(cell, int) idict_replace_builder?(cell dict, int key_len, int index, builder value) asm(value index dict key_len) "DICTIREPLACEB";
+(cell, int, slice, int) udict_delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
+(cell, (int, slice, int)) ~udict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
+(cell, int, slice, int) idict_delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTIREMMIN" "NULLSWAPIFNOT2";
+(cell, (int, slice, int)) ~idict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTIREMMIN" "NULLSWAPIFNOT2";
+(cell, slice, slice, int) dict_delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTREMMIN" "NULLSWAPIFNOT2";
+(cell, (slice, slice, int)) ~dict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTREMMIN" "NULLSWAPIFNOT2";
+(cell, int, slice, int) udict_delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMAX" "NULLSWAPIFNOT2";
+(cell, (int, slice, int)) ~udict::delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMAX" "NULLSWAPIFNOT2";
+(cell, int, slice, int) idict_delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTIREMMAX" "NULLSWAPIFNOT2";
+(cell, (int, slice, int)) ~idict::delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTIREMMAX" "NULLSWAPIFNOT2";
+(cell, slice, slice, int) dict_delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTREMMAX" "NULLSWAPIFNOT2";
+(cell, (slice, slice, int)) ~dict::delete_get_max(cell dict, int key_len) asm(-> 0 2 1 3) "DICTREMMAX" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_min?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMIN" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_max?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMAX" "NULLSWAPIFNOT2";
+(int, cell, int) udict_get_min_ref?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMINREF" "NULLSWAPIFNOT2";
+(int, cell, int) udict_get_max_ref?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMAXREF" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_min?(cell dict, int key_len) asm (-> 1 0 2) "DICTIMIN" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_max?(cell dict, int key_len) asm (-> 1 0 2) "DICTIMAX" "NULLSWAPIFNOT2";
+(int, cell, int) idict_get_min_ref?(cell dict, int key_len) asm (-> 1 0 2) "DICTIMINREF" "NULLSWAPIFNOT2";
+(int, cell, int) idict_get_max_ref?(cell dict, int key_len) asm (-> 1 0 2) "DICTIMAXREF" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_next?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTUGETNEXT" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_nexteq?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTUGETNEXTEQ" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_prev?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTUGETPREV" "NULLSWAPIFNOT2";
+(int, slice, int) udict_get_preveq?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTUGETPREVEQ" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_next?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTIGETNEXT" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_nexteq?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTIGETNEXTEQ" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_prev?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTIGETPREV" "NULLSWAPIFNOT2";
+(int, slice, int) idict_get_preveq?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTIGETPREVEQ" "NULLSWAPIFNOT2";
+
+;;; Creates an empty dictionary, which is actually a null value. Equivalent to PUSHNULL
+cell new_dict() asm "NEWDICT";
+;;; Checks whether a dictionary is empty. Equivalent to cell_null?.
+int dict_empty?(cell c) asm "DICTEMPTY";
+
+
+{- Prefix dictionary primitives -}
+(slice, slice, slice, int) pfxdict_get?(cell dict, int key_len, slice key) asm(key dict key_len) "PFXDICTGETQ" "NULLSWAPIFNOT2";
+(cell, int) pfxdict_set?(cell dict, int key_len, slice key, slice value) asm(value key dict key_len) "PFXDICTSET";
+(cell, int) pfxdict_delete?(cell dict, int key_len, slice key) asm(key dict key_len) "PFXDICTDEL";
+
+;;; Returns the value of the global configuration parameter with integer index `i` as a `cell` or `null` value.
+cell config_param(int x) asm "CONFIGOPTPARAM";
+;;; Checks whether c is a null. Note, that FunC also has polymorphic null? built-in.
+int cell_null?(cell c) asm "ISNULL";
+
+;;; Creates an output action which would reserve exactly amount nanotoncoins (if mode = 0), at most amount nanotoncoins (if mode = 2), or all but amount nanotoncoins (if mode = 1 or mode = 3), from the remaining balance of the account. It is roughly equivalent to creating an outbound message carrying amount nanotoncoins (or b − amount nanotoncoins, where b is the remaining balance) to oneself, so that the subsequent output actions would not be able to spend more money than the remainder. Bit +2 in mode means that the external action does not fail if the specified amount cannot be reserved; instead, all remaining balance is reserved. Bit +8 in mode means `amount <- -amount` before performing any further actions. Bit +4 in mode means that amount is increased by the original balance of the current account (before the compute phase), including all extra currencies, before performing any other checks and actions. Currently, amount must be a non-negative integer, and mode must be in the range 0..15.
+() raw_reserve(int amount, int mode) impure asm "RAWRESERVE";
+;;; Similar to raw_reserve, but also accepts a dictionary extra_amount (represented by a cell or null) with extra currencies. In this way currencies other than TonCoin can be reserved.
+() raw_reserve_extra(int amount, cell extra_amount, int mode) impure asm "RAWRESERVEX";
+;;; Sends a raw message contained in msg, which should contain a correctly serialized object Message X, with the only exception that the source address is allowed to have dummy value addr_none (to be automatically replaced with the current smart contract address), and ihr_fee, fwd_fee, created_lt and created_at fields can have arbitrary values (to be rewritten with correct values during the action phase of the current transaction). Integer parameter mode contains the flags. Currently mode = 0 is used for ordinary messages; mode = 128 is used for messages that are to carry all the remaining balance of the current smart contract (instead of the value originally indicated in the message); mode = 64 is used for messages that carry all the remaining value of the inbound message in addition to the value initially indicated in the new message (if bit 0 is not set, the gas fees are deducted from this amount); mode' = mode + 1 means that the sender wants to pay transfer fees separately; mode' = mode + 2 means that any errors arising while processing this message during the action phase should be ignored. Finally, mode' = mode + 32 means that the current account must be destroyed if its resulting balance is zero. This flag is usually employed together with +128.
+() send_raw_message(cell msg, int mode) impure asm "SENDRAWMSG";
+;;; Creates an output action that would change this smart contract code to that given by cell new_code. Notice that this change will take effect only after the successful termination of the current run of the smart contract
+() set_code(cell new_code) impure asm "SETCODE";
+
+;;; Generates a new pseudo-random unsigned 256-bit integer x. The algorithm is as follows: if r is the old value of the random seed, considered as a 32-byte array (by constructing the big-endian representation of an unsigned 256-bit integer), then its sha512(r) is computed; the first 32 bytes of this hash are stored as the new value r' of the random seed, and the remaining 32 bytes are returned as the next random value x.
+int random() impure asm "RANDU256";
+;;; Generates a new pseudo-random integer z in the range 0..range−1 (or range..−1, if range < 0). More precisely, an unsigned random value x is generated as in random; then z := x * range / 2^256 is computed.
+int rand(int range) impure asm "RAND";
+;;; Returns the current random seed as an unsigned 256-bit Integer.
+int get_seed() impure asm "RANDSEED";
+;;; Sets the random seed to unsigned 256-bit seed.
+() set_seed(int x) impure asm "SETRAND";
+;;; Mixes unsigned 256-bit integer x into the random seed r by setting the random seed to sha256 of the concatenation of two 32-byte strings: the first with the big-endian representation of the old seed r, and the second with the big-endian representation of x.
+() randomize(int x) impure asm "ADDRAND";
+;;; Equivalent to randomize(cur_lt());.
+() randomize_lt() impure asm "LTIME" "ADDRAND";
+
+;;; Checks whether the data parts of two slices coinside
+int equal_slice_bits(slice a, slice b) asm "SDEQ";
+int equal_slices(slice a, slice b) asm "SDEQ";
+
+;;; Concatenates two builders
+builder store_builder(builder to, builder from) asm "STBR";
+
+;;; Declare math lib
+;;; Docs: https://docs.ton.org/learn/tvm-instructions/instructions#52-division
+(int, int) muldivmodr(int x, int y, int z) asm "MULDIVMODR";
+(int, int) muldivmodc(int x, int y, int z) asm "MULDIVMODC";
+int divc(int x, int y) asm "DIVC";
+int modc(int x, int y) asm "MODC";
+
+================
+File: libraries/bit_math.fc
+================
+#include "./common.fc";
+const int error::bit_math::must_positive = 0x2000;
+
+;; @notice Returns the index of the most significant bit of the number,
+;; where the least significant bit is at index 0 and the most significant bit is at index 255
+;; @dev The function satisfies the property:
+;; x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
+;; @param x the value for which to compute the most significant bit, must be greater than 0
+;; @return r the index of the most significant bit
+int bit_math::msb(int x) inline_ref {
+    throw_unless(error::bit_math::must_positive, x > 0);
+    int r = 0;
+    if (x >= 0x100000000000000000000000000000000) {
+        x >>= 128;
+        r += 128;
+    }
+    if (x >= 0x10000000000000000) {
+        x >>= 64;
+        r += 64;
+    }
+    if (x >= 0x100000000) {
+        x >>= 32;
+        r += 32;
+    }
+    if (x >= 0x10000) {
+        x >>= 16;
+        r += 16;
+    }
+    if (x >= 0x100) {
+        x >>= 8;
+        r += 8;
+    }
+    if (x >= 0x10) {
+        x >>= 4;
+        r += 4;
+    }
+    if (x >= 0x4) {
+        x >>= 2;
+        r += 2;
+    }
+    if (x >= 0x2) {
+        r += 1;
+    }
+    return r;
+}
+;; @notice Returns the index of the least significant bit of the number,
+;; where the least significant bit is at index 0 and the most significant bit is at index 255
+;; @dev The function satisfies the property:
+;; (x & 2**leastSignificantBit(x)) != 0 and (x & (2**(leastSignificantBit(x)) - 1)) == 0)
+;; @param x the value for which to compute the least significant bit, must be greater than 0
+;; @return r the index of the least significant bit
+int bit_math::lsb(int x) inline_ref {
+    throw_unless(error::bit_math::must_positive, x > 0);
+
+    int r = 255;
+
+    if ((x & max::uint128 )> 0) {
+        r -= 128;
+    } else {
+        x >>= 128;
+    }
+    if ((x & max::uint64)> 0) {
+        r -= 64;
+    } else {
+        x >>= 64;
+    }
+    if ((x & max::uint32) > 0) {
+        r -= 32;
+    } else {
+        x >>= 32;
+    }
+    if ((x & max::uint16) > 0) {
+        r -= 16;
+    } else {
+        x >>= 16;
+    }
+    if ((x & max::uint8) > 0) {
+        r -= 8;
+    } else {
+        x >>= 8;
+    }
+    if (x & 0xf > 0) {
+        r -= 4;
+    } else {
+        x >>= 4;
+    }
+    if (x & 0x3 > 0) {
+        r -= 2;
+    } else {
+        x >>= 2;
+    }
+
+    if (x & 0x1 > 0) {
+        r -= 1;
+    }
+
+    return r;
+}
+
+================
+File: libraries/common.fc
+================
+const int max::uint8 = 0xff;
+const int max::uint16 = 0xffff;
+const int max::uint32 = 0xffffffff;
+const int max::uint64 = 0xffffffffffffffff;
+const int max::uint128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+const int max::uint160 = 0xffffffffffffffffffffffffffffffffffffffff;
+const int max::uint256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+
+const int fixed_point_96::resolution = 96;
+const int fixed_point_96::q96 = 0x1000000000000000000000000;
+const int fixed_point_128::q128 = 0x100000000000000000000000000000000;
+
+const int error::unexpected_error = 95;
+const int error::not_greater_than_zero = 0x101;
+const int error::not_equal = 0x102;
+const int error::overflow = 0x103;
+
+const int max::int128 = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+const int min::int128 = -0x80000000000000000000000000000000;
+
+const int max::int24 = 0x7fffff;
+const int min::int24 = -0x800000;
+
+================
+File: libraries/full_math.fc
+================
+#include "../imports/stdlib.fc";
+
+int full_math::mul_div(int a, int b, int denominator) inline_ref {
+  (int q, int r) = muldivmod(a, b, denominator);
+  return q;
+}
+
+int full_math::mul_mod(int a, int b, int denominator) inline_ref {
+  (int q, int r) = muldivmod(a, b, denominator);
+  return r;
+}
+
+int full_math::mul_div_rounding_up(int a, int b, int denominator) inline_ref {
+  (int q, int r) = muldivmodc(a, b, denominator);
+  return q;
+}
+
+================
+File: libraries/liquidity_math.fc
+================
+#include "./common.fc";
+
+const int error::liquidity_math::LS = 0x1002;
+const int error::liquidity_math::LA = 0x1003;
+
+int liquidity_math::add_delta(int x, int y) inline_ref {
+    int z = 0;
+    if (y < 0) {
+        throw_unless(error::liquidity_math::LS, (z = x - (- y)) < x);
+    } else {
+        throw_unless(error::liquidity_math::LA,  (z = x + y) >= x);
+    }
+    throw_unless(error::liquidity_math::LS, z >= 0);
+    throw_unless(error::liquidity_math::LA, z <= max::uint128);
+    return z;
+}
+
+================
+File: libraries/position.fc
+================
+#include "./common.fc";
+#include "../imports/stdlib.fc";
+#include "./full_math.fc";
+#include "./liquidity_math.fc";
+
+const int error::position::NP = 0x2000;
+
+int position::key(slice owner, int tick_lower, int tick_upper) inline_ref {
+    int key = begin_cell()
+        .store_slice(owner)
+        .store_int(tick_lower, 24)
+        .store_int(tick_upper, 24)
+        .end_cell().cell_hash();
+    return key;
+}
+
+slice position::get_position_by_key(cell self, int key) inline_ref {
+    (slice data, int existed) = self.udict_get?(256, key);
+    return data~load_ref().begin_parse();
+}
+
+(cell, ()) position::set(cell self, int key, cell data) inline_ref {
+    self~udict_set(256, key, begin_cell().store_ref(data).end_cell().begin_parse());
+    return (self, ());
+}
+
+(int, int, int, int, int) position::info(slice data) inline_ref {
+    int liquidity = data~load_int(128);
+    int fee_growth_inside_0_last_x128 = data~load_uint(256);
+    int fee_growth_inside_1_last_x128 = data~load_uint(256);
+    int tokens_owed_0 = data~load_uint(128);
+    int tokens_owed_1 = data~load_uint(128);
+    return (
+        liquidity, 
+        fee_growth_inside_0_last_x128, 
+        fee_growth_inside_1_last_x128, 
+        tokens_owed_0, 
+        tokens_owed_1
+    );
+}
+
+;; @notice Returns the Info struct of a position, given an owner and position boundaries
+;; @param self The mapping containing all user positions
+;; @param owner The address of the position owner
+;; @param tick_lower The lower tick boundary of the position
+;; @param tick_upper The upper tick boundary of the position
+;; @return position The position info struct of the given owners' position
+(int, int, int, int, int) position::get(cell self, slice owner, int tick_lower, int tick_upper) inline_ref {
+    int key = position::key(owner, tick_lower, tick_upper);
+    slice data = position::get_position_by_key(self, key);
+    return position::info(data);
+}
+
+;; @notice Credits accumulated fees to a user's position
+;; @param self The individual position to update
+;; @param liquidity_delta The change in pool liquidity as a result of the position update
+;; @param fee_growth_inside_0_x128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
+;; @param fee_growth_inside_1_x128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+;; NOTE: @return The updated position -> need to set this in the mapping 
+cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x128, int fee_growth_inside_1_x128) inline_ref {
+    (
+        int liquidity, 
+        int fee_growth_inside_0_last_x128, 
+        int fee_growth_inside_1_last_x128, 
+        int tokens_owed_0, 
+        int tokens_owed_1
+    ) = position::info(self);
+
+    int liquidity_next = 0;
+    if (liquidity_delta == 0) {
+        throw_unless(error::position::NP, liquidity > 0);
+        liquidity_next = liquidity;
+    } else {
+        liquidity_next = liquidity_math::add_delta(liquidity, liquidity_delta);
+    }
+
+    int tokens_owed_0_new = full_math::mul_div(fee_growth_inside_0_x128 - fee_growth_inside_0_last_x128, liquidity, fixed_point_128::q128);
+    int tokens_owed_1_new = full_math::mul_div(fee_growth_inside_1_x128 - fee_growth_inside_1_last_x128, liquidity, fixed_point_128::q128);
+
+    if (liquidity_delta != 0) {
+        liquidity = liquidity_next;
+    }
+    fee_growth_inside_0_last_x128 = fee_growth_inside_0_x128;
+    fee_growth_inside_1_last_x128 = fee_growth_inside_1_x128;
+    if ((tokens_owed_0_new > 0) | (tokens_owed_1_new > 0)) {
+        tokens_owed_0 += tokens_owed_0_new;
+        tokens_owed_1 += tokens_owed_0_new;
+    }
+
+    return begin_cell()
+        .store_int(liquidity, 128)
+        .store_uint(fee_growth_inside_0_last_x128, 256)
+        .store_uint(fee_growth_inside_1_last_x128, 256)
+        .store_uint(tokens_owed_0, 128)
+        .store_uint(tokens_owed_1, 128)
+        .end_cell();
+}
+
+
+(int,int,int,int,int) position::simulate_update(
+    int liquidity, 
+    int fee_growth_inside_0_last_x128, 
+    int fee_growth_inside_1_last_x128, 
+    int tokens_owed_0, 
+    int tokens_owed_1,
+    int liquidity_delta,
+    int fee_growth_inside_0_x128,
+    int fee_growth_inside_1_x128) 
+    inline_ref
+{
+    int liquidity_next = 0;
+    if (liquidity_delta == 0) {
+        throw_unless(error::position::NP, liquidity > 0);
+        liquidity_next = liquidity;
+    } else {
+        liquidity_next = liquidity_math::add_delta(liquidity, liquidity_delta);
+    }
+
+    int tokens_owed_0_new = full_math::mul_div(fee_growth_inside_0_x128 - fee_growth_inside_0_last_x128, liquidity, fixed_point_128::q128);
+    int tokens_owed_1_new = full_math::mul_div(fee_growth_inside_1_x128 - fee_growth_inside_1_last_x128, liquidity, fixed_point_128::q128);
+
+    if (liquidity_delta != 0) {
+        liquidity = liquidity_next;
+    }
+    fee_growth_inside_0_last_x128 = fee_growth_inside_0_x128;
+    fee_growth_inside_1_last_x128 = fee_growth_inside_1_x128;
+    if ((tokens_owed_0_new > 0) | (tokens_owed_1_new > 0)) {
+        tokens_owed_0 += tokens_owed_0_new;
+        tokens_owed_1 += tokens_owed_0_new;
+    }
+
+    return (liquidity, fee_growth_inside_0_last_x128, fee_growth_inside_1_last_x128, tokens_owed_0, tokens_owed_1);
+}
+
+================
+File: libraries/safe_cast.fc
+================
+#include "./unsafe_cast.fc";
+#include "./common.fc";
+
+;;; safe_cast from uint256 to uint160
+int safe_cast::to_uint160(int x) {
+  int converted_x = unsafe_cast::uint160(x);
+  throw_unless(error::not_equal, converted_x == x);
+  return converted_x;
+}
+
+================
+File: libraries/sqrt_price_math.fc
+================
+#include "./common.fc";
+#include "./full_math.fc";
+#include "./unsafe_math.fc";
+#include "./unsafe_cast.fc";
+#include "./safe_cast.fc";
+
+;;; @notice Gets the next sqrt price given a delta of token0
+;;; @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least
+;;; far enough to get the desired output amount, and in the exact input case (decreasing price) we need to move the
+;;; price less in order to not send too much output.
+;;; The most precise formula for this is liquidity * sqrtPX96 / (liquidity +- amount * sqrt_px96),
+;;; if this is impossible because of overflow, we calculate liquidity / (liquidity / sqrt_px96 +- amount).
+;;; @param sqrt_px96 The starting price, i.e. before accounting for the token0 delta
+;;; @param liquidity The amount of usable liquidity
+;;; @param amount How much of token0 to add or remove from virtual reserves
+;;; @param add Whether to add or remove the amount of token0
+;;; @return The price after adding or removing amount, depending on add
+int sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(int sqrt_px96, int liquidity, int amount, int add) inline_ref {
+  if amount == 0 {
+    return sqrt_px96;
+  }
+  int numerator1 = liquidity << fixed_point_96::resolution;
+
+  ;; mean add = true
+  if add == -1 {
+    int dividend = full_math::mul_div(amount, sqrt_px96, max::uint256);
+    if dividend <= 1 {
+      int product = amount * sqrt_px96;
+      if (product / amount) == sqrt_px96 {
+        int denominator = numerator1 + product;
+        if denominator >= numerator1 {
+          return unsafe_cast::uint160(full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator));
+        }
+      }
+    }
+    return unsafe_cast::uint160(unsafe_math::div_rounding_up(numerator1, (numerator1 / sqrt_px96) + amount));
+  }
+
+  int product = amount * sqrt_px96;
+  throw_unless(error::unexpected_error, (product / amount == sqrt_px96) & (numerator1 > product) == -1);
+  int denominator = numerator1 - product;
+  return safe_cast::to_uint160(full_math::mul_div_rounding_up(numerator1, sqrt_px96, denominator));
+}
+
+;;; @notice Gets the next sqrt price given a delta of token1
+;;; @dev Always rounds down, because in the exact output case (decreasing price) we need to move the price at least
+;;; far enough to get the desired output amount, and in the exact input case (increasing price) we need to move the
+;;; price less in order to not send too much output.
+;;; The formula we compute is within <1 wei of the lossless version: sqrtPX96 +- amount / liquidity
+;;; @param sqrt_px96 The starting price, i.e., before accounting for the token1 delta
+;;; @param liquidity The amount of usable liquidity
+;;; @param amount How much of token1 to add, or remove, from virtual reserves
+;;; @param add Whether to add, or remove, the amount of token1
+;;; @return The price after adding or removing `amount`
+int sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(int sqrt_px96, int liquidity, int amount, int add) inline_ref {
+  if add == -1 {
+    int quotient = amount < max::uint160 
+                    ? (amount << fixed_point_96::resolution) / liquidity 
+                    : full_math::mul_div(amount, fixed_point_96::q96,liquidity);
+    return safe_cast::to_uint160(sqrt_px96 + quotient);
+  }
+  int quotient = amount <= max::uint160 
+              ? unsafe_math::div_rounding_up(amount << fixed_point_96::resolution, liquidity)
+              : full_math::mul_div_rounding_up(amount, fixed_point_96::q96, liquidity);
+  throw_unless(error::unexpected_error, sqrt_px96 > quotient);
+  return unsafe_cast::uint160(sqrt_px96 - quotient);
+}
+
+;;; @notice Gets the next sqrt price given an input amount of token0 or token1
+;;; @dev Throws if price or liquidity are 0, or if the next price is out of bounds
+;;; @param sqrtPX96 The starting price, i.e., before accounting for the input amount
+;;; @param liquidity The amount of usable liquidity
+;;; @param amountIn How much of token0, or token1, is being swapped in
+;;; @param zeroForOne Whether the amount in is token0 or token1
+;;; @return sqrtQX96 The price after adding the input amount to token0 or token1
+int sqrt_price_math::get_next_sqrt_price_from_input(
+  int sqrt_px96, 
+  int liquidity, 
+  int amount_in, 
+  int zero_for_one
+) inline_ref {
+  throw_unless(error::unexpected_error, sqrt_px96 > 0);
+  throw_unless(error::unexpected_error, liquidity > 0);
+  if (zero_for_one == -1) {
+    return sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_in, -1);
+  }
+  return sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_in, -1);
+}
+
+;;; @notice Gets the next sqrt price given an output amount of token0 or token1
+;;; @dev Throws if price or liquidity are 0 or the next price is out of bounds
+;;; @param sqrtPX96 The starting price before accounting for the output amount
+;;; @param liquidity The amount of usable liquidity
+;;; @param amountOut How much of token0, or token1, is being swapped out
+;;; @param zeroForOne Whether the amount out is token0 or token1
+;;; @return sqrtQX96 The price after removing the output amount of token0 or token1
+int sqrt_price_math::get_next_sqrt_price_from_output(
+  int sqrt_px96, 
+  int liquidity, 
+  int amount_out, 
+  int zero_for_one
+) inline_ref {
+  throw_unless(error::unexpected_error, sqrt_px96 > 0);
+  throw_unless(error::unexpected_error, liquidity > 0);
+  if (zero_for_one == -1) {
+    return sqrt_price_math::get_next_sqrt_price_from_amount1_rounding_down(sqrt_px96, liquidity, amount_out, 0);
+  }
+  return sqrt_price_math::get_next_sqrt_price_from_amount0_rounding_up(sqrt_px96, liquidity, amount_out, 0);
+}
+
+;;; @notice Gets the amount0 delta between two prices
+;;; @dev Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
+;;; i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
+;;; @param sqrtRatioAX96 A sqrt price
+;;; @param sqrtRatioBX96 Another sqrt price
+;;; @param liquidity The amount of usable liquidity
+;;; @param roundUp Whether to round the amount up or down
+;;; @return amount0 Amount of token0 required to cover a position of size liquidity between the two passed prices
+int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) inline_ref {
+  if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
+    (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
+  }
+  ~strdump("sqrtPrice");
+  ~dump(sqrt_ratio_a_x96);
+  ~dump(sqrt_ratio_b_x96);
+  int numerator1 = liquidity << fixed_point_96::resolution;
+  int numerator2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
+  throw_unless(error::unexpected_error, sqrt_ratio_a_x96 > 0);
+  if (round_up == -1) {
+    return unsafe_math::div_rounding_up(
+      full_math::mul_div_rounding_up(numerator1, numerator2, sqrt_ratio_b_x96),
+      sqrt_ratio_a_x96
+    );
+  }
+  return full_math::mul_div(numerator1, numerator2, sqrt_ratio_b_x96) ~/ sqrt_ratio_a_x96;
+}
+
+;;; @notice Gets the amount1 delta between two prices
+;;; @dev Calculates liquidity * (sqrt(upper) - sqrt(lower))
+;;; @param sqrtRatioAX96 A sqrt price
+;;; @param sqrtRatioBX96 Another sqrt price
+;;; @param liquidity The amount of usable liquidity
+;;; @param roundUp Whether to round the amount up, or down
+;;; @return amount1 Amount of token1 required to cover a position of size liquidity between the two passed prices
+int sqrt_price_math::get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) inline_ref {
+  if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
+    (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
+  }
+  return round_up ? full_math::mul_div_rounding_up(liquidity, sqrt_ratio_b_x96 - sqrt_ratio_a_x96, fixed_point_96::q96)
+                  : full_math::mul_div(liquidity, sqrt_ratio_b_x96 - sqrt_ratio_a_x96, fixed_point_96::q96);
+}
+
+;;; @notice Helper that gets signed token0 delta
+;;; @param sqrtRatioAX96 A sqrt price
+;;; @param sqrtRatioBX96 Another sqrt price
+;;; @param liquidity The change in liquidity for which to compute the amount0 delta
+;;; @return amount0 Amount of token0 corresponding to the passed liquidityDelta between the two prices
+int sqrt_price_math::get_amount0_delta_special(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) inline_ref {
+  return liquidity < 0 ? - sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, - liquidity, 0) 
+                        : sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
+}
+
+;;; @notice Helper that gets signed token1 delta
+;;; @param sqrtRatioAX96 A sqrt price
+;;; @param sqrtRatioBX96 Another sqrt price
+;;; @param liquidity The change in liquidity for which to compute the amount1 delta
+;;; @return amount1 Amount of token1 corresponding to the passed liquidityDelta between the two prices
+int sqrt_price_math::get_amount1_delta_special(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) inline_ref {
+  return liquidity < 0 ? - sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, - liquidity, 0)
+                       : sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
+}
+
+================
+File: libraries/swap_math.fc
+================
+#include "./full_math.fc";
+#include "./sqrt_price_math.fc";
+
+;; return uint160 sqrt_ratio_next_x96, uint256 amountIn, uint256 amountOut, uint256 fee_amount
+(int, int, int, int) swap_math::compute_swap_step(
+    int sqrt_ratio_current_x96, ;; uint160
+    int sqrt_ratio_target_x96, ;; uint160
+    int liquidity, ;; uint128
+    int amount_remaining, ;; int256
+    int fee_pips ;; uint24
+) inline_ref {
+    (int sqrt_ratio_next_x96, int amount_in, int amount_out, int fee_amount) = (0, 0, 0, 0);
+
+    int zero_for_one = sqrt_ratio_current_x96 >= sqrt_ratio_target_x96;
+    int exact_in = amount_remaining >= 0;
+
+    if (exact_in) { ;; check if `exact_in` is true
+        int amount_remaining_less_fee = full_math::mul_div(amount_remaining, 1000000 - fee_pips, 1000000); ;; cast int256 -> uint256: amount_remaining
+        amount_in = zero_for_one
+                ? sqrt_price_math::get_amount0_delta(sqrt_ratio_target_x96, sqrt_ratio_current_x96, liquidity, -1)
+                : sqrt_price_math::get_amount1_delta(sqrt_ratio_current_x96, sqrt_ratio_target_x96, liquidity, -1);
+        ~strdump("compute_swap_step");
+        ~dump(amount_in);
+        ~strdump("amount_remaining");
+        ~dump(amount_remaining);
+        ~strdump("amount_remaining_less_fee");
+        ~dump(amount_remaining_less_fee);
+        ~dump(liquidity);
+        if (amount_remaining_less_fee >= amount_in) {
+            sqrt_ratio_next_x96 = sqrt_ratio_target_x96;
+        } else {
+            sqrt_ratio_next_x96 = sqrt_price_math::get_next_sqrt_price_from_input(
+                sqrt_ratio_current_x96,
+                liquidity,
+                amount_remaining_less_fee,
+                zero_for_one
+            );
+        }
+    } else {
+        amount_out = zero_for_one
+                ? sqrt_price_math::get_amount1_delta(sqrt_ratio_target_x96, sqrt_ratio_current_x96, liquidity, 0)
+                : sqrt_price_math::get_amount0_delta(sqrt_ratio_current_x96, sqrt_ratio_target_x96, liquidity, 0);
+        if (abs(amount_remaining) >= amount_out) { ;; cast int256 -> abs
+            sqrt_ratio_next_x96 = sqrt_ratio_target_x96;
+        } else {
+            sqrt_ratio_next_x96 = sqrt_price_math::get_next_sqrt_price_from_output(
+                sqrt_ratio_current_x96,
+                liquidity,
+                abs(amount_remaining), ;; cast int256 -> abs
+                zero_for_one
+            );
+        }
+    }
+
+    int max = sqrt_ratio_target_x96 == sqrt_ratio_next_x96;
+    ;; get the input/output amounts
+    if (zero_for_one) {
+        if (max) {
+            if (exact_in) {
+                amount_in = amount_in;
+                amount_out = sqrt_price_math::get_amount1_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, 0);
+            } else {
+                amount_in = sqrt_price_math::get_amount0_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, -1);
+                amount_out = amount_out;
+            }
+        } else {
+            amount_in = sqrt_price_math::get_amount0_delta(sqrt_ratio_current_x96,sqrt_ratio_next_x96, liquidity, -1);
+            ~dump(amount_in);
+            amount_out = sqrt_price_math::get_amount1_delta(sqrt_ratio_next_x96, sqrt_ratio_current_x96, liquidity, 0);
+        }
+    } else {
+        if (max) {
+            if (exact_in) {
+                amount_in = amount_in;
+                amount_out = sqrt_price_math::get_amount0_delta(sqrt_ratio_current_x96, sqrt_ratio_next_x96, liquidity, 0);
+            } else {
+                amount_in = sqrt_price_math::get_amount1_delta(sqrt_ratio_current_x96, sqrt_ratio_next_x96, liquidity, -1);
+                amount_out = amount_out;
+            }
+        } else {
+            amount_in = sqrt_price_math::get_amount1_delta(sqrt_ratio_current_x96, sqrt_ratio_next_x96, liquidity, -1);
+            amount_out = sqrt_price_math::get_amount0_delta(sqrt_ratio_current_x96, sqrt_ratio_next_x96, liquidity, 0);
+        }
+    }
+
+    ;; cap the output amount to not exceed the remaining output amount
+    if (exact_in == 0) {
+        if (amount_out > abs(amount_remaining)) {
+            amount_out = abs(amount_remaining); ;; cast int256 -> abs
+        }
+    }
+
+    if (exact_in & (sqrt_ratio_next_x96 != sqrt_ratio_target_x96)) {
+        ;; we didn't reach the target, so take the remainder of the maximum input as fee
+        fee_amount = amount_remaining - amount_in; ;; cast int256 -> uint256
+    } else {
+        fee_amount = full_math::mul_div_rounding_up(amount_in, fee_pips, 1000000 - fee_pips);
+    }
+
+    return (sqrt_ratio_next_x96, amount_in, amount_out, fee_amount);
+}
+
+================
+File: libraries/tick_bitmap.fc
+================
+#include "./common.fc";
+#include "./bit_math.fc";
+
+int get_by_key(cell self, int key) inline_ref {
+  (slice data, int existed) = self.idict_get?(16, key);
+  if (existed == -1) {
+    return data~load_uint(256);
+  }
+  return 0;
+}
+;;; @notice Computes the position in the mapping where the initialized bit for a tick lives
+;;; @param tick The tick for which to compute the position
+;;; @return word_pos The key in the mapping containing the word in which the bit is stored
+;;; @return bit_pos The bit position in the word where the flag is stored
+(int, int) tick_bitmap::position(int tick) inline_ref {
+  throw_unless(error::overflow, (tick < max::int24) & (tick > min::int24));
+  int word_pos = tick >> 8;
+  int bit_pos = tick % 256;
+  return (word_pos, bit_pos);
+}
+
+;;; @notice Flips the initialized state for a given tick from false to true, or vice versa
+;;; @param self The mapping in which to flip the tick
+;;; @param tick The tick to flip
+;;; @param tick_spacing The spacing between usable ticks
+(cell, ()) ~tick_bitmap::flip_tick(cell self, int tick, int tick_spacing) inline_ref {
+  throw_unless(error::not_equal, tick % tick_spacing == 0);
+  (int word_pos, int bit_pos) = tick_bitmap::position(tick / tick_spacing);
+  int mask = 1 << bit_pos;
+  int value = self.get_by_key(word_pos);
+  int word_pos_value = value ^ mask;
+  self~idict_set(16, word_pos, begin_cell().store_uint(word_pos_value, 256).end_cell().begin_parse());
+  return (self, ());
+}
+
+;;; @notice Returns the next initialized tick contained in the same word (or adjacent word) as the tick that is either
+;;; to the left (less than or equal to) or right (greater than) of the given tick
+;;; @param self The mapping in which to compute the next initialized tick
+;;; @param tick The starting tick
+;;; @param tick_spacing The spacing between usable ticks
+;;; @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
+;;; @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
+;;; @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
+(int, int) tick_bitmap::next_initialized_tick_within_one_word(cell self, int tick, int tick_spacing, int lte) inline_ref {
+  int compressed = tick / tick_spacing;
+  if ((tick < 0) & (tick % tick_spacing != 0)) {
+    compressed -= 1;
+  }
+  if (lte) {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed);
+    int mask = (1 << bit_pos) - 1 + (1 << bit_pos);
+    int masked = self.get_by_key(word_pos) & mask;
+    int initialized = masked != 0;
+    int next = initialized ? (compressed - (bit_pos - bit_math::msb(masked))) * tick_spacing : (compressed - bit_pos) * tick_spacing;
+    return (next, initialized);
+  }
+  (int word_pos, int bit_pos) = tick_bitmap::position(compressed + 1);
+  int mask = ((1 << bit_pos) - 1) ^ max::uint256;
+  int masked = self.get_by_key(word_pos) & mask;
+  int initialized = masked != 0;
+  int next = initialized ? (compressed + 1 + (bit_math::lsb(masked) - bit_pos)) * tick_spacing : (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
+  return (next, initialized);
+}
+
+int tick_bitmap::calculate_last_index_from_that_word(int tick, int tick_spacing, int lte) inline_ref {
+  int compressed = tick / tick_spacing;
+  if ((tick < 0) & (tick % tick_spacing != 0)) {
+    compressed -= 1;
+  }
+  if (lte) {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed);
+    int next = (compressed - bit_pos) * tick_spacing;
+    return next;
+  } else {
+    (int word_pos, int bit_pos) = tick_bitmap::position(compressed + 1);
+    int next = (compressed + 1 + (max::uint8 - bit_pos)) * tick_spacing;
+    return next;
+  }
+}
+
+;; (int , int) tick_bitmap::next_initialized_tick(cell ticks, int tick, int tickSpacing, int lte){
+;;   if(lte){
+;;     (int next_tick, slice _, int existed) = ticks.idict_get_next?(24, tick);
+;;     if(existed){
+;;       return (next_tick, existed);
+;;     }
+;;   } else {
+;;     (int next_tick, slice _, int existed) = ticks.idict_get_prev?(24, tick);
+;;     if(existed){
+;;       return (next_tick, existed);
+;;     }
+;;   }
+;;   return (0, 0);
+;; }
+
+================
+File: libraries/tick_math.fc
+================
+const int error::tick_math::T = 0x1000;
+const int error::tick_math::R = 0x1001;
+
+const int max::uint256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+const int tick_math::MIN_TICK = -887272;
+const int tick_math::MAX_TICK = 887272;
+const int tick_math::MIN_SQRT_RATIO = 4295128739;
+const int tick_math::MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+
+int tick_math::get_sqrt_ratio_at_tick(int tick) inline_ref {
+    int abs_tick  = (tick < 0) ? - tick : tick;
+    
+    throw_unless(error::tick_math::T, abs_tick <= tick_math::MAX_TICK);
+    int ratio = (abs_tick & 0x1)  != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+
+    if (abs_tick & 0x2 != 0) {
+        ratio = (ratio * 0xfff97272373d413259a46990580e213a) >> 128;
+    }
+    if (abs_tick & 0x4 != 0) {
+        ratio = (ratio * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
+    }
+    if (abs_tick & 0x8 != 0) {
+        ratio = (ratio * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
+    }
+    if (abs_tick & 0x10 != 0) {
+        ratio = (ratio * 0xffcb9843d60f6159c9db58835c926644) >> 128;
+    }
+    if (abs_tick & 0x20 != 0) {
+        ratio = (ratio * 0xff973b41fa98c081472e6896dfb254c0) >> 128;
+    }
+    if (abs_tick & 0x40 != 0) {
+        ratio = (ratio * 0xff2ea16466c96a3843ec78b326b52861) >> 128;
+    }
+    if (abs_tick & 0x80 != 0) {
+        ratio = (ratio * 0xfe5dee046a99a2a811c461f1969c3053) >> 128;
+    }
+    if (abs_tick & 0x100 != 0) {
+        ratio = (ratio * 0xfcbe86c7900a88aedcffc83b479aa3a4) >> 128;
+    }
+    if (abs_tick & 0x200 != 0) {
+        ratio = (ratio * 0xf987a7253ac413176f2b074cf7815e54) >> 128;
+    }
+    if (abs_tick & 0x400 != 0) {
+        ratio = (ratio * 0xf3392b0822b70005940c7a398e4b70f3) >> 128;
+    }
+    if (abs_tick & 0x800 != 0) {
+        ratio = (ratio * 0xe7159475a2c29b7443b29c7fa6e889d9) >> 128;
+    }
+    if (abs_tick & 0x1000 != 0) {
+        ratio = (ratio * 0xd097f3bdfd2022b8845ad8f792aa5825) >> 128;
+    }
+    if (abs_tick & 0x2000 != 0) {
+        ratio = (ratio * 0xa9f746462d870fdf8a65dc1f90e061e5) >> 128;
+    }
+    if (abs_tick & 0x4000 != 0) {
+        ratio = (ratio * 0x70d869a156d2a1b890bb3df62baf32f7) >> 128;
+    }
+    if (abs_tick & 0x8000 != 0) {
+        ratio = (ratio * 0x31be135f97d08fd981231505542fcfa6) >> 128;
+    }
+    if (abs_tick & 0x10000 != 0) {
+        ratio = (ratio * 0x9aa508b5b7a84e1c677de54f3e99bc9) >> 128;
+    }
+    if (abs_tick & 0x20000 != 0) {
+        ratio = (ratio * 0x5d6af8dedb81196699c329225ee604) >> 128;
+    }
+    if (abs_tick & 0x40000 != 0) {
+        ratio = (ratio * 0x2216e584f5fa1ea926041bedfe98) >> 128;
+    }
+    if (abs_tick & 0x80000 != 0) {
+        ratio = (ratio * 0x48a170391f7dc42444e8fa2) >> 128;
+    }
+
+    if (tick > 0) {
+        ratio = max::uint256 / ratio;
+    }
+
+    ;; // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+    ;; // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+    ;; // we round up in the division so getTickAtSqrtRatio of the output price is always consistent
+    int sqrtPriceX96 = (ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1);
+    return sqrtPriceX96;
+}
+
+int tick_math::get_tick_at_sqrt_ratio(int sqrtPriceX96){
+    throw_unless(error::tick_math::R, (sqrtPriceX96 >= tick_math::MIN_SQRT_RATIO) & (sqrtPriceX96 < tick_math::MAX_SQRT_RATIO));
+    int ratio = sqrtPriceX96 << 32;
+    int r = ratio;
+    int msb = 0;
+
+    if (r > 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) {
+        msb += 128;
+        r >>= 128;
+    }
+    if (r > 0xFFFFFFFFFFFFFFFF) {
+        msb += 64;
+        r >>= 64;
+    }
+    if (r > 0xFFFFFFFF) {
+        msb += 32;
+        r >>= 32;
+    }
+    if (r > 0xFFFF) {
+        msb += 16;
+        r >>= 16;
+    }
+    if (r > 0xFF) {
+        msb += 8;
+        r >>= 8;
+    }
+    if (r > 0xF) {
+        msb += 4;
+        r >>= 4;
+    }
+    if (r > 0x3) {
+        msb += 2;
+        r >>= 2;
+    }
+    if (r > 0x1) {
+        msb += 1;
+    }
+
+    ;; Normalize r based on the msb value
+    if (msb >= 128) {
+        r = ratio >> (msb - 127);
+    } else {
+        r = ratio << (127 - msb);
+    }
+
+    ;; Calculate log_2 based on msb
+    int log_2 = (msb - 128) << 64;
+
+    ;; ;; Perform the binary search to calculate log_2
+    int i = 0;
+    while(i < 14){
+        r = (r * r) >> 127;
+        if (r >= 0x100000000000000000000000000000000) {
+            log_2 |= 1 << (63 - i);
+            r >>= 1;
+        }
+        i += 1;
+    }
+
+
+    ;; Calculate log_sqrt10001 using the precomputed constant
+    int log_sqrt10001 = log_2 * 255738958999603826347141; ;; 128.128 number
+
+    ;; Calculate tickLow and tickHi
+    int tickLow = (log_sqrt10001 - 3402992956809132418596140100660247210) >> 128;
+    int tickHi = (log_sqrt10001 + 291339464771989622907027621153398088495) >> 128;
+
+    ;; Determine the final tick value
+    int tick = (tickLow == tickHi) ? tickLow : (tick_math::get_sqrt_ratio_at_tick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow);
+    
+    return tick;
+}
+
+================
+File: libraries/tick.fc
+================
+#include "./tick_math.fc";
+#include "./common.fc";
+#include "./liquidity_math.fc";
+
+const int error::tick::L0 = 0x3000;
+
+;;tick#_ liquidity_gross:uint128 liquidity_net:int128 fee_growth_outside_0_x128:uint256 
+;;fee_growth_outside_1_x128:uint256 tick_cumulative_outside:int56 initialized:Bool = Info;
+(int, int, int, int, int) unpack_tick(slice tick) inline_ref {
+    (int liquidity_gross, 
+        int liquidity_net, 
+        int fee_growth_outside_0_x128, 
+        int fee_growth_outside_1_x128, 
+        int initialized
+    ) = (
+        tick~load_uint(128),
+        tick~load_int(128),
+        tick~load_uint(256),
+        tick~load_uint(256),
+        tick~load_int(1)
+    );
+ 
+
+    return (liquidity_gross, 
+        liquidity_net, 
+        fee_growth_outside_0_x128, 
+        fee_growth_outside_1_x128, 
+        initialized);
+}
+
+cell pack_tick(
+    int liquidity_gross, 
+    int liquidity_net, 
+    int fee_growth_outside_0_x128, 
+    int fee_growth_outside_1_x128, 
+    int initialized
+) inline_ref {
+    
+    builder b = begin_cell()
+        .store_uint(liquidity_gross, 128)
+        .store_int(liquidity_net, 128)
+        .store_uint(fee_growth_outside_0_x128, 256)
+        .store_uint(fee_growth_outside_1_x128, 256)
+        .store_int(initialized, 1);
+    return b.end_cell();
+}
+               
+
+int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing) inline_ref {
+    int min_tick = (tick_math::MIN_TICK ^/ tick_spacing) * tick_spacing;
+    int max_tick = (tick_math::MAX_TICK / tick_spacing) * tick_spacing;
+    int num_ticks = ((max_tick - min_tick) ~/ tick_spacing) + 1;
+    return max::uint128 ~/ num_ticks;
+
+}
+
+(int, int) tick::get_fee_growth_below(
+    cell tick_map,
+    int tick_lower,
+    int tick_current,
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128 
+) inline_ref {
+    (slice lower, int lower_existed) = tick_map.idict_get?(24, tick_lower);
+    (
+        int lower_liquidity_gross, 
+        int lower_liquidity_net, 
+        int lower_fee_growth_outside_0X128, 
+        int lower_fee_growth_outside_1X128, 
+        int lower_initialized
+    ) = lower_existed == -1 ? lower.unpack_tick() : (0,0,0,0,0);
+    int fee_growth_below_0X128 = 0;
+    int fee_growth_below_1X128 = 0;
+
+    if (tick_current >= tick_lower) {
+        fee_growth_below_0X128 = lower_fee_growth_outside_0X128;
+        fee_growth_below_1X128 = lower_fee_growth_outside_1X128;
+    } else {
+        fee_growth_below_0X128 = fee_growth_global_0X128 - lower_fee_growth_outside_0X128;
+        fee_growth_below_1X128 = fee_growth_global_1X128 - lower_fee_growth_outside_1X128;
+    }
+
+    return (fee_growth_below_0X128, fee_growth_below_1X128);
+}
+
+(int, int) tick::get_fee_growth_above(
+    cell tick_map,
+    int tick_upper,
+    int tick_current,
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128 
+) inline_ref {
+    (slice upper, int upper_existed) = tick_map.idict_get?(24, tick_upper);
+    (
+        int upper_liquidity_gross, 
+        int upper_liquidity_net, 
+        int upper_fee_growth_outside_0X128, 
+        int upper_fee_growth_outside_1X128, 
+        int upper_initialized
+    ) = upper_existed == -1 ? upper.unpack_tick():(0,0,0,0,0);
+
+    int fee_growth_above_0X128 = 0;
+    int fee_growth_above_1X128 = 0;
+
+    if (tick_current < tick_upper){
+        fee_growth_above_0X128 = upper_fee_growth_outside_0X128;
+        fee_growth_above_1X128 = upper_fee_growth_outside_1X128;
+    } else {
+        fee_growth_above_0X128 = fee_growth_global_0X128 - upper_fee_growth_outside_0X128;
+        fee_growth_above_1X128 = fee_growth_global_1X128 - upper_fee_growth_outside_1X128;
+    }
+   
+    return (fee_growth_above_0X128, fee_growth_above_1X128);
+}
+
+(int, int) tick::get_fee_growth_inside(
+    cell tick_map,
+    int tick_lower,
+    int tick_upper,
+    int tick_current,
+    int fee_growth_global_0X128,
+    int fee_growth_global_1X128 
+) {
+    (slice lower, int lower_existed) = tick_map.idict_get?(24, tick_lower);
+    (slice upper, int upper_existed) = tick_map.idict_get?(24, tick_upper);
+    (
+        int lower_liquidity_gross, 
+        int lower_liquidity_net, 
+        int lower_fee_growth_outside_0_x128, 
+        int lower_fee_growth_outside_1_x128, 
+        int lower_initialized
+    ) = lower_existed == -1 ? lower.unpack_tick() : (0,0,0,0,0);
+    (
+        int upper_liquidity_gross, 
+        int upper_liquidity_net, 
+        int upper_fee_growth_outside_0_x128, 
+        int upper_fee_growth_outside_1_x128, 
+        int upper_initialized
+    ) = upper_existed == -1 ? upper.unpack_tick():(0,0,0,0,0);
+
+    int fee_growth_below_0_x128 = 0;
+    int fee_growth_below_1_x128 = 0;
+
+    if (tick_current >= tick_lower) {
+        fee_growth_below_0_x128 = lower_fee_growth_outside_0_x128;
+        fee_growth_below_1_x128 = lower_fee_growth_outside_1_x128;
+    } else {
+        fee_growth_below_0_x128 = fee_growth_global_0X128 - lower_fee_growth_outside_0_x128;
+        fee_growth_below_1_x128 = fee_growth_global_1X128 - lower_fee_growth_outside_1_x128;
+    }
+
+    int fee_growth_above_0_x128 = 0;
+    int fee_growth_above_1_x128 = 0;
+
+    if (tick_current < tick_upper){
+        fee_growth_above_0_x128 = upper_fee_growth_outside_0_x128;
+        fee_growth_above_1_x128 = upper_fee_growth_outside_1_x128;
+    } else {
+        fee_growth_above_0_x128 = fee_growth_global_0X128 - upper_fee_growth_outside_0_x128;
+        fee_growth_above_1_x128 = fee_growth_global_1X128 - upper_fee_growth_outside_1_x128;
+    }
+   
+    int fee_growth_inside_0X128 = fee_growth_global_0X128 - fee_growth_below_0_x128 - fee_growth_above_0_x128;
+    int fee_growth_inside_1X128 = fee_growth_global_1X128 - fee_growth_below_1_x128 - fee_growth_above_1_x128;
+    if (fee_growth_inside_0X128 < 0) {
+        fee_growth_inside_0X128 = max::uint256 + fee_growth_inside_0X128 + 1;
+    }
+    if (fee_growth_inside_1X128 < 0) {
+        fee_growth_inside_1X128 = max::uint256 + fee_growth_inside_1X128 + 1;
+    }
+    return (fee_growth_inside_0X128, fee_growth_inside_1X128);
+}
+
+(cell, (int)) ~tick::update(
+    cell tick_map,
+    int tick,
+    int tick_current,
+    int liquidity_delta,
+    int fee_growth_global_0_x128,
+    int fee_growth_global_1_x128,
+    int upper,
+    int max_liquidity
+) inline_ref {
+    (slice info_raw, int existed) = tick_map.idict_get?(24, tick);
+    (
+        int liquidity_gross_before, 
+        int liquidity_net, 
+        int fee_growth_outside_0_x128, 
+        int fee_growth_outside_1_x128, 
+        int initialized
+    ) = existed == -1 ? info_raw.unpack_tick() : (0,0,0,0,0);
+    int liquidity_gross_after = liquidity_math::add_delta(liquidity_gross_before, liquidity_delta);
+   
+    throw_unless(error::tick::L0, liquidity_gross_after <= max_liquidity);
+    int flipped = (liquidity_gross_after == 0) != (liquidity_gross_before == 0);
+    if (liquidity_gross_before == 0){
+        if(tick <= tick_current){
+            fee_growth_outside_0_x128 = fee_growth_global_0_x128;
+            fee_growth_outside_1_x128 = fee_growth_global_1_x128;
+        }
+        initialized = -1;
+    }
+
+    liquidity_net = upper ? liquidity_net - liquidity_delta : liquidity_net + liquidity_delta;
+    cell new_tick = pack_tick(liquidity_gross_after, liquidity_net, fee_growth_outside_0_x128, fee_growth_outside_1_x128, initialized);
+    tick_map~idict_set(24, tick, new_tick.begin_parse());
+    return (tick_map, (flipped));
+}
+
+(cell, ()) ~tick::clear(
+    cell tick_map,
+    int tick
+) inline_ref {
+    tick_map~idict_delete?(24,tick);
+    return (tick_map, ());
+}
+
+(cell, (int)) ~tick::cross(
+    cell tick_map,
+    int tick,
+    int fee_growth_global_0_x128,
+    int fee_growth_global_1_x128
+) inline_ref {
+    (slice info_raw, _) = tick_map.idict_get?(24, tick);
+    (
+        int liquidity_gross, 
+        int liquidity_net, 
+        int fee_growth_outside_0_x128, 
+        int fee_growth_outside_1_x128, 
+        int initialized
+    ) = info_raw.unpack_tick();
+    fee_growth_outside_0_x128 = fee_growth_global_0_x128 - fee_growth_outside_0_x128;
+    fee_growth_outside_1_x128 = fee_growth_global_1_x128 - fee_growth_outside_1_x128;
+    tick_map~idict_set(24,tick,pack_tick(liquidity_gross, liquidity_net, fee_growth_outside_0_x128,fee_growth_outside_1_x128, initialized).begin_parse());
+    return (tick_map, (liquidity_net));
+}
+
+(int, int) tick::next_tick_initialized(cell ticks, int tick, int zero_for_one){
+    if(zero_for_one){
+        (int key, _, int existed) = ticks.idict_get_preveq?(24, tick);
+        if (existed) {
+            return (key, existed);
+        }
+    } else {
+      (int key, _, int existed) = ticks.idict_get_next?(24, tick);
+      if (existed) {
+          return (key, existed);
+      }
+    }
+    return (0, 0);
+}
+
+================
+File: libraries/unsafe_cast.fc
+================
+#include "./common.fc";
+
+;;; unsafe_cast from uint256 to uint160
+int unsafe_cast::uint160(int x) inline_ref {
+  throw_unless(error::not_equal, x >= 0);
+  int bits = 0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+  return x & bits;
+}
+
+================
+File: libraries/unsafe_math.fc
+================
+#include "../imports/stdlib.fc";
+
+int unsafe_math::div_rounding_up(int x, int y) inline_ref {
+  return divc(x, y);
+}
+
+int unsafe_math::mod_rounding_up(int x, int y) inline_ref {
+  return modc(x, y);
+}
+
+================
+File: lp_account/opcodes.fc
+================
+const op::add_liquidity = "op::add_liquidity"c;
+
+================
+File: pool/constants.fc
+================
+const int exit::refund = 0;
+const int exist::finish_swap = 1;
+
+const GAS::REFUND = 200000000;
+const GAS::CB_ADD_LIQUIDITY = 100000000;
+
+================
+File: pool/errors.fc
+================
+const int error::LOW_AMOUNT = 41;
+const int error::SPL = 42;
+
+================
+File: pool/lp_account-utils.fc
+================
+cell pack_lp_account_data(slice user_address, slice pool_address, int tick_lower, int tick_upper, int amount0, int amount1) inline {
+  return begin_cell()
+    .store_slice(user_address)
+    .store_slice(pool_address)
+    .store_int(tick_lower, 24)
+    .store_int(tick_upper, 24)
+    .store_coins(amount0)
+    .store_coins(amount1)
+  .end_cell();
+}
+
+cell calculate_lp_account_state_init(slice user_address, slice pool_address, int tick_lower, int tick_upper, cell lp_account_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(lp_account_code)
+    .store_dict(pack_lp_account_data(user_address, pool_address, tick_lower, tick_upper, 0, 0))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_lp_account_address(cell state_init) inline {
+  return begin_cell()
+    .store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(state_init.cell_hash(), 256)
+  .end_cell().begin_parse();
+}
+
+slice calculate_user_lp_account_address(slice user_address, slice pool_address, int tick_lower, int tick_upper, cell lp_account_code) inline {
+  return calculate_lp_account_address(calculate_lp_account_state_init(user_address, pool_address, tick_lower, tick_upper, lp_account_code));
+}
+
+================
+File: pool/opcodes.fc
+================
+const op::cb_update_fee_growth_inside = "op::cb_update_fee_growth_inside"c;
+const op::initialize = "op::initialize"c;
+const op::mint = "op::mint"c;
+const op::cb_add_liquidity = "op::cb_add_liquidity"c;
+const op::swap = "op::swap"c;
+const op::cb_swap = "op::cb_swap"c;
+const op::burn = "op::burn"c;
+const op::cb_burn = "op::cb_burn"c;
+const op::cb_mint_position = "op::cb_mint_position"c;
+
+================
+File: pool/params.fc
+================
+const WORKCHAIN = 0;
+
+================
+File: pool/router-utils.fc
+================
+builder build_pay_to_msg(int query_id, slice recipient, int exit_code, slice jetton_0_wallet, int jetton_0_amount, slice jetton_1_wallet, int jetton_1_amount, int fee, int tick_spacing) {
+    builder body = begin_cell()
+        .store_uint(op::pay_to,32)
+        .store_uint(query_id, 64)
+        .store_slice(recipient)
+        .store_uint(exit_code, 32)
+        .store_ref(
+        begin_cell()
+                    .store_slice(jetton_0_wallet)
+                    .store_coins(jetton_0_amount)
+                    .store_slice(jetton_1_wallet)
+                    .store_coins(jetton_1_amount)
+                    .store_uint(fee, 24)
+                    .store_int(tick_spacing, 24)
+                .end_cell()
+    );
+
+    return body;
+}
+
+================
+File: pool/storage.fc
+================
+global slice storage::router_address; ;; 267
+global slice storage::jetton0_wallet; ;; 267
+global slice storage::jetton1_wallet; ;; 267
+global int storage::fee; ;; 24 - uint
+global int storage::protocol_fee; ;; 8 - uint
+global int storage::sqrt_price_x96; ;; 160 - uint
+
+
+global int storage::tick_spacing; ;; 24
+global int storage::tick; ;; 24
+global int storage::fee_growth_global_0x128; ;; 256 - uint
+global int storage::fee_growth_global_1x128; ;; 256 - uint
+global int storage::collected_protocol_fee0; ;; 128 - uint
+global int storage::collected_protocol_fee1; ;; 128 - uint
+global int storage::liquidity; ;; 128 - uint
+
+global int storage::max_liquidity_per_tick; ;; 128 - uint
+global cell storage::position_code;
+global cell storage::lp_account_code;
+global cell storage::ticks;
+
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  slice first_cell = ds~load_ref().begin_parse();
+  storage::router_address = first_cell~load_msg_addr();
+  storage::jetton0_wallet = first_cell~load_msg_addr();
+  storage::jetton1_wallet = first_cell~load_msg_addr();
+  storage::fee = first_cell~load_uint(24);
+  storage::protocol_fee = first_cell~load_uint(8);
+  storage::sqrt_price_x96 = first_cell~load_uint(160);
+  slice second_cell = ds~load_ref().begin_parse();
+  storage::tick_spacing = second_cell~load_int(24);
+  storage::tick = second_cell~load_int(24);
+  storage::fee_growth_global_0x128 = second_cell~load_uint(256);
+  storage::fee_growth_global_1x128 = second_cell~load_uint(256);
+  storage::collected_protocol_fee0 = second_cell~load_uint(128);
+  storage::collected_protocol_fee1 = second_cell~load_uint(128);
+  storage::liquidity = second_cell~load_uint(128);
+  slice third_cell = ds~load_ref().begin_parse();
+  storage::max_liquidity_per_tick = third_cell~load_uint(128);
+  storage::ticks = third_cell~load_dict();
+  storage::position_code = third_cell~load_ref();
+  storage::lp_account_code = third_cell~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_ref(
+      begin_cell()
+          .store_slice(storage::router_address)
+          .store_slice(storage::jetton0_wallet)
+          .store_slice(storage::jetton1_wallet)
+          .store_uint(storage::fee, 24)
+          .store_uint(storage::protocol_fee, 8)
+          .store_uint(storage::sqrt_price_x96, 160)
+          .end_cell())
+      .store_ref(
+      begin_cell()
+          .store_int(storage::tick_spacing, 24)
+          .store_int(storage::tick, 24)
+          .store_uint(storage::fee_growth_global_0x128, 256)
+          .store_uint(storage::fee_growth_global_1x128, 256)
+          .store_uint(storage::collected_protocol_fee0, 128)
+          .store_uint(storage::collected_protocol_fee1, 128)
+          .store_uint(storage::liquidity, 128)
+          .end_cell())
+      .store_ref(
+      begin_cell()
+          .store_uint(storage::max_liquidity_per_tick, 128)
+          .store_dict(storage::ticks)
+          .store_ref(storage::position_code)
+          .store_ref(storage::lp_account_code)
+          .end_cell())
+        .end_cell()
+  );
+}
+
+================
+File: pool/structs.fc
+================
+;; cb_swap
+cell pack_cb_swap(
+  int batch_index, 
+  int tick, 
+  int sqrt_price_x96, 
+  int liquidity, 
+  int fee_growth_global0_x128, 
+  int fee_growth_global1_x128,
+  int zero_for_one,
+  int protocol_fee,
+  int amount0,
+  int amount1,
+  slice response_address
+) {
+  return begin_cell()
+          .store_ref(begin_cell()
+                      .store_int(batch_index, 16)
+                      .store_int(tick, 24)
+                      .store_uint(sqrt_price_x96, 160)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_global0_x128, 256)
+                      .store_uint(fee_growth_global1_x128, 256)
+                      .end_cell())
+          .store_ref(begin_cell()
+                      .store_int(zero_for_one, 2)
+                      .store_uint(protocol_fee, 128)
+                      .store_int(amount0, 256)
+                      .store_int(amount1, 256)
+                      .end_cell())
+          .store_ref(begin_cell()
+                      .store_slice(response_address)
+                      .end_cell())
+          .end_cell();
+}
+
+(int, int, int, int, int, int, int, int, int, int, slice) unpack_cb_swap(slice ds) {
+  slice ds_0 = ds~load_ref().begin_parse();
+  slice ds_1 = ds~load_ref().begin_parse();
+  slice ds_2 = ds~load_ref().begin_parse();
+  return (
+    ds_0~load_int(16),
+    ds_0~load_int(24),
+    ds_0~load_uint(160),
+    ds_0~load_uint(128),
+    ds_0~load_uint(256),
+    ds_0~load_uint(256),
+    ds_1~load_int(2),
+    ds_1~load_uint(128),
+    ds_1~load_int(256),
+    ds_1~load_int(256),
+    ds_2~load_msg_addr()
+  );
+}
+
+================
+File: position/opcodes.fc
+================
+const op::mint_position = "op::mint_position"c;
+const op::burn_position = "op::burn_position"c;
+
+================
+File: position/storage.fc
+================
+global int storage::tick_lower;
+global int storage::tick_upper;
+global int storage::liquidity;
+global int storage::fee_growth_inside0_last_x128;
+global int storage::fee_growth_inside1_last_x128;
+global int storage::token_owed0;
+global int storage::token_owed1;
+global slice storage::owner_address;
+global slice storage::pool_address;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  slice first_slice = ds~load_ref().begin_parse();
+  storage::tick_lower = first_slice~load_int(24);
+  storage::tick_upper = first_slice~load_int(24);
+  storage::liquidity = first_slice~load_uint(128);
+  storage::fee_growth_inside0_last_x128 = first_slice~load_uint(256);
+  storage::fee_growth_inside1_last_x128 = first_slice~load_uint(256);
+  slice second_slice = ds~load_ref().begin_parse();
+  storage::token_owed0 = second_slice~load_uint(128);
+  storage::token_owed1 = second_slice~load_uint(128);
+  storage::owner_address = second_slice~load_msg_addr();
+  storage::pool_address =  second_slice;
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_ref(
+      begin_cell()
+          .store_int(storage::tick_lower, 24)
+          .store_int(storage::tick_upper, 24)
+          .store_uint(storage::liquidity, 128)
+          .store_uint(storage::fee_growth_inside0_last_x128, 256)
+          .store_uint(storage::fee_growth_inside1_last_x128, 256)
+        .end_cell()
+    )
+      .store_ref(
+      begin_cell()
+          .store_uint(storage::token_owed0, 128)
+          .store_uint(storage::token_owed1, 128)
+          .store_slice(storage::pool_address)
+          .store_slice(storage::owner_address)
+        .end_cell()
+    )
+    .end_cell()
+  );
+}
+
+================
+File: position/utils.fc
+================
+cell pack_position_code(int tick_lower, int tick_upper, slice owner, slice pool_address) inline {
+  return begin_cell()
+          .store_ref(begin_cell()
+              .store_int(tick_lower, 24)
+              .store_int(tick_upper, 24)
+              .store_uint(0, 128)
+              .store_uint(0, 256)
+              .store_uint(0, 256)
+              .end_cell())
+          .store_ref(begin_cell()
+              .store_uint(0, 128)
+              .store_uint(0, 128)
+              .store_slice(owner)
+              .store_slice(pool_address)
+              .end_cell())
+        .end_cell();
+}
+
+cell calculate_position_state_init(int tick_lower, int tick_upper, slice owner, slice pool_address,  cell position_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(position_code)
+    .store_dict(pack_position_code(tick_lower, tick_upper, owner, pool_address))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_position_address(cell state_init) inline {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_position_state_init_and_address(int tick_lower, int tick_upper, slice owner, slice pool_address, cell position_code) inline {
+  cell state_init = calculate_position_state_init(tick_lower, tick_upper, owner, pool_address, position_code);
+  return (state_init, calculate_position_address(state_init));
+}
+
+================
+File: router/opcodes.fc
+================
+const op::create_pool = "op::create_pool"c;
+const op::cb_create_pool = "op::cb_create_pool"c;
+const op::set_admin_address = "op::set_admin_address"c;
+const op::update_lock_state = "op::update_lock_state"c;
+const op::update_pool_code = "op::update_pool_code"c;
+const op::update_account_code = "op::update_account_code"c;
+const op::update_batch_tick_code = "op::update_batch_tick_code"c;
+const op::update_position_code = "op::update_position_code"c;
+const op::update_lp_account_code = "op::update_lp_account_code"c;
+const op::pay_to = "op::pay_to"c;
+
+================
+File: router/storage.fc
+================
+global int storage::is_locked;
+global int storage::pool_seqno;
+global slice storage::admin_address;
+global cell storage::pool_code;
+global cell storage::position_code;
+global cell storage::lp_account_code;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  storage::is_locked = ds~load_int(8);
+  storage::pool_seqno = ds~load_uint(64);
+  storage::admin_address = ds~load_msg_addr();
+  slice code_storage = ds~load_ref().begin_parse();
+  storage::pool_code = code_storage~load_ref();
+  storage::position_code = code_storage~load_ref();
+  storage::lp_account_code = code_storage~load_ref();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_int(storage::is_locked, 8)
+      .store_uint(storage::pool_seqno, 64)
+      .store_slice(storage::admin_address)
+      .store_ref(
+      begin_cell()
+              .store_ref(storage::pool_code)
+              .store_ref(storage::position_code)
+              .store_ref(storage::lp_account_code)
+        .end_cell())
+    .end_cell()
+  );
+}
+
+================
+File: router/utils.fc
+================
+(slice) get_serialized_address(int workchain, int address) inline {
+  return (begin_cell()
+        .store_uint(4, 3)
+        .store_uint(workchain, 8)
+        .store_uint(address, 256)
+  ).end_cell().begin_parse();
+}
+
+cell pack_pool_data(slice jetton_0_wallet, slice jetton_1_wallet, int fee, int tick_spacing, cell position_code, cell lp_account_code) inline_ref {
+  return begin_cell()
+        .store_ref(begin_cell()
+          .store_slice(my_address())     
+          .store_slice(jetton_0_wallet)
+          .store_slice(jetton_1_wallet)
+          .store_uint(fee, 24)         
+          .store_uint(0, 8)
+          .store_uint(0, 160)
+          .end_cell())
+        .store_ref(begin_cell()
+          .store_int(tick_spacing, 24)     
+          .store_int(0, 24)     
+          .store_uint(0, 256)    
+          .store_uint(0, 256)    
+          .store_uint(0, 128)    
+          .store_uint(0, 128)    
+          .store_uint(0, 128)    
+          .end_cell())
+        .store_ref(begin_cell()
+          .store_uint(0, 128)
+          .store_dict(new_dict())
+          .store_ref(position_code)    
+          .store_ref(lp_account_code)    
+          .end_cell())
+    .end_cell();
+}
+
+(cell, slice) get_pool_state_init_and_address(slice token0_address, slice token1_address, int fee, int tick_spacing) inline {
+  builder state_init_builder = begin_cell()
+        .store_uint(0, 2)
+        .store_dict(storage::pool_code);
+
+  if (slice_hash(token0_address) < slice_hash(token1_address)) {
+    state_init_builder = state_init_builder.store_dict(pack_pool_data(token0_address, token1_address, fee, tick_spacing, storage::position_code, storage::lp_account_code));
+  } else {
+    state_init_builder = state_init_builder.store_dict(pack_pool_data(token1_address, token0_address, fee, tick_spacing, storage::position_code, storage::lp_account_code));
+  }
+
+  cell state_init = state_init_builder
+        .store_uint(0, 1)
+        .end_cell();
+    
+  return (state_init, get_serialized_address(WORKCHAIN, cell_hash(state_init)));
+}
+
+================
+File: tests/bit_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/bit_math.fc";
+
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+    .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_msb(int x) method_id {
+    return bit_math::msb(x);
+}
+
+int get_lsb(int x) method_id {
+    return bit_math::lsb(x);
+}
+
+================
+File: tests/full_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/full_math.fc";
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+  set_data(
+    begin_cell()
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  int flags = cs~load_uint(4);
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_mul_div(int a, int b, int denominator) method_id {
+  return full_math::mul_div(a, b, denominator);
+}
+
+int get_mul_div_rounding_up(int a, int b, int denominator) method_id {
+  return full_math::mul_div_rounding_up(a, b, denominator);
+}
+
+================
+File: tests/liquidity_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/liquidity_math.fc";
+
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+    .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_add_delta(int x, int y) method_id {
+  return liquidity_math::add_delta(x, y);
+}
+
+================
+File: tests/position_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/position.fc";
+
+const op::position_update = "op::position_update"c;
+const op::position_create = "op::position_create"c;
+global cell positions;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    positions = ds~load_dict();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+        .store_dict(positions)
+        .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+
+    slice sender_address = cs~load_msg_addr();
+    int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+    if (op == op::position_update) {
+        int key = in_msg_body~load_uint(256);
+        int liquidity_delta = in_msg_body~load_int(128);
+        int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
+        int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
+        slice data = position::get_position_by_key(positions, key);
+        cell new_data = position::update(data, liquidity_delta,fee_growth_inside_0_x128,fee_growth_inside_1_x128);
+        slice new_data_slide = new_data.begin_parse();
+        positions~position::set(key, new_data);
+        save_data();
+        return ();
+    }
+
+    if (op == op::position_create) {
+        int key = in_msg_body~load_uint(256);
+        int liquidity = in_msg_body~load_int(128);
+        int fee_growth_inside_0_last_x128 = in_msg_body~load_uint(256);
+        int fee_growth_inside_1_last_x128 = in_msg_body~load_uint(256);
+        cell new_data = begin_cell()
+            .store_uint(liquidity, 128)
+            .store_uint(fee_growth_inside_0_last_x128, 256)
+            .store_uint(fee_growth_inside_1_last_x128, 256)
+            .store_uint(0, 128)
+            .store_uint(0, 128)
+            .end_cell();
+        positions~position::set(key, new_data);
+        save_data();
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+(int, int, int, int, int) get_position(slice owner, int tick_lower, int tick_upper) method_id {
+    load_data();
+    slice owner = owner~load_msg_addr();
+    return positions.position::get(owner, tick_lower, tick_upper);
+}
+
+================
+File: tests/sqrt_price_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/sqrt_price_math.fc";
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+  set_data(
+    begin_cell()
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  int flags = cs~load_uint(4);
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_next_sqrt_price_from_input(int sqrt_px96, int liquidity, int amount_in, int zero_for_one) method_id {
+  return sqrt_price_math::get_next_sqrt_price_from_input(sqrt_px96, liquidity, amount_in, zero_for_one);
+}
+
+int get_next_sqrt_price_from_output(int sqrt_px96, int liquidity, int amount_in, int zero_for_one) method_id {
+  return sqrt_price_math::get_next_sqrt_price_from_output(sqrt_px96, liquidity, amount_in, zero_for_one);
+}
+
+int get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) method_id {
+  return sqrt_price_math::get_amount0_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
+}
+
+int get_amount1_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity, int round_up) method_id {
+  return sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, round_up);
+}
+
+================
+File: tests/swap_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/swap_math.fc";
+
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+    .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+(int, int, int, int) get_compute_swap_step(
+    int sqrt_ratio_current_x96,
+    int sqrt_ratio_target_x96,
+    int liquidity,
+    int amount_remaining,
+    int fee_pips
+) method_id {
+    return swap_math::compute_swap_step(sqrt_ratio_current_x96, sqrt_ratio_target_x96, liquidity, amount_remaining, fee_pips);
+}
+
+================
+File: tests/tick_bitmap_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/tick_bitmap.fc";
+
+const op::flip_tick = "op::flip_tick"c;
+global cell bitmap;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  bitmap = ds~load_dict();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+  set_data(
+    begin_cell()
+    .store_dict(bitmap)
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  int flags = cs~load_uint(4);
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if (op == op::flip_tick) {
+    int tick = in_msg_body~load_int(24);
+    bitmap~tick_bitmap::flip_tick(tick, 1);
+    save_data();
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_is_initialized(int tick) method_id {
+  load_data();
+  (int next, int initialized) = bitmap.tick_bitmap::next_initialized_tick_within_one_word(tick, 1, -1);
+  return next == tick ? initialized : 0;
+}
+
+(int, int) get_next_initialized_tick_within_one_word(int tick, int lte) method_id {
+  load_data();
+  return bitmap.tick_bitmap::next_initialized_tick_within_one_word(tick, 1, lte);
+}
+
+================
+File: tests/tick_math_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/tick_math.fc";
+
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+    .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_sqrt_ratio_at_tick(int tick) method_id {
+    return tick_math::get_sqrt_ratio_at_tick(tick);
+}
+
+int get_tick_at_sqrt_ratio(int sqrtPriceX96) method_id {
+    return tick_math::get_tick_at_sqrt_ratio(sqrtPriceX96);
+}
+
+================
+File: tests/tick_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/tick.fc";
+#include "../utils/messages.fc";
+
+global cell ticks;
+
+const int op::set_tick = "set_tick"c;
+
+const int op::tick_update = "tick_update"c;
+
+const int op::tick_clear = "tick_clear"c;
+
+const int op::tick_cross = "tick_cross"c;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    ticks = ds~load_dict();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+    set_data(
+        begin_cell()
+        .store_dict(ticks)
+        .end_cell()
+    );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+        return ();
+    }
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+
+    load_data(); ;; here we populate the storage variables
+    cs~load_msg_addr();
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+    if(op == op::set_tick){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, cell tick_info) = (body~load_int(24), body~load_ref());
+        slice tick_info_cs = tick_info.begin_parse();
+        ( _, _,  _, _,  _ ) = unpack_tick(tick_info_cs); ;; validate tick data
+        ticks~idict_set(24, tick, tick_info_cs);
+        save_data();
+        return ();
+    }
+    if(op == op::tick_update){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, int tick_current, int liquidity_delta, int fee_growth_global_0_X128, int fee_growth_global_1_X128, int upper, int max_liquidity) = (body~load_int(24), body~load_int(24), body~load_int(128), body~load_uint(256), body~load_uint(256), body~load_uint(1), body~load_uint(128));
+        int flipped = ticks~tick::update(tick, tick_current, liquidity_delta, fee_growth_global_0_X128, fee_growth_global_1_X128, upper, max_liquidity);
+        emit_log_simple(my_address().slice_hash(), begin_cell().store_int(flipped,2).end_cell(),query_id);
+        save_data();
+        return ();
+    }
+    if(op == op::tick_clear){
+        slice body = in_msg_body~load_ref().begin_parse();
+        int tick = body~load_int(24);
+        (cell new_ticks, int success) = ticks.idict_delete?(24, tick);
+        ticks = new_ticks;
+        save_data();
+        return ();
+    }
+    if(op == op::tick_cross){
+        slice body = in_msg_body~load_ref().begin_parse();
+        (int tick, int fee_growth_global_0_X128, int fee_growth_global_1_X128) = (body~load_int(24), body~load_uint(256), body~load_uint(256));
+        int liquidity_net = ticks~tick::cross(tick, fee_growth_global_0_X128, fee_growth_global_1_X128);
+        save_data();
+        return ();
+    }
+  
+    throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int tick_spacing_to_max_liquidity_per_tick(int tick_spacing) method_id {
+    return tick::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+}
+
+
+
+;; (int, int) get_fee_growth_inside(
+;;     int tick_lower,
+;;     int tick_upper,
+;;     int tick_current,
+;;     int fee_growth_global_0X128,
+;;     int fee_growth_global_1X128 
+;; ) method_id {
+;;     load_data();
+;;     return tick::get_fee_growth_inside(tick_lower, tick_upper, tick_current, fee_growth_global_0X128, fee_growth_global_1X128);
+;; }
+
+slice get_tick(
+    int tick
+) method_id {
+    load_data();
+    (slice tick, int exist) = ticks.idict_get?(24,tick);
+    if (exist){
+        return tick;
+    } 
+    return begin_cell()
+            .store_int(0, 128)
+            .store_int(0, 128)
+            .store_uint(0, 256)
+            .store_uint(0, 256)
+            .store_int(0, 1)
+            .end_cell().begin_parse();
+}
+
+================
+File: tests/unsafe_cast_test.fc
+================
+#include "../imports/stdlib.fc";
+#include "../libraries/unsafe_cast.fc";
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure {
+  set_data(
+    begin_cell()
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  int flags = cs~load_uint(4);
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+int get_uint160(int x) method_id {
+  return unsafe_cast::uint160(x);
+}
+
+================
+File: utils/messages.fc
+================
+const int BOUNCEABLE = 0x18;
+const int NON_BOUNCEABLE = 0x10;
+
+const int SEND_MODE_REGULAR = 0;
+const int SEND_MODE_PAY_FEES_SEPARETELY = 1;
+const int SEND_MODE_IGNORE_ERRORS = 2;
+const int SEND_MODE_DESTROY = 32;
+const int SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE = 64;
+const int SEND_MODE_CARRY_ALL_BALANCE = 128;
+
+() emit_log_simple(int event_id, cell data, int query_id) impure inline {
+    var msg = begin_cell()
+    .store_uint (12, 4)         ;; ext_out_msg_info$11 src:MsgAddressInt ()
+    .store_uint (1, 2)          ;; addr_extern$01
+    .store_uint (256, 9)        ;; len:(## 9)
+    .store_uint(event_id, 256); ;; external_address:(bits len)
+
+    if(null?(data)) {
+        msg = msg
+      .store_uint(0, 64 + 32 + 2) ;; created_lt, created_at, init:Maybe, body:Either
+      .store_uint(query_id, 64);
+    } else {
+        msg = msg
+      .store_uint(1, 64 + 32 + 2) ;; created_lt, created_at, init:Maybe, body:Either
+      .store_ref(data);
+    }
+
+    send_raw_message(msg.end_cell(), SEND_MODE_REGULAR);
+}
+
+================
+File: batch_tick.fc
+================
+#include "imports/stdlib.fc";
+#include "common/utils.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+#include "batch_tick/constants.fc";
+#include "batch_tick/errors.fc";
+#include "batch_tick/opcodes.fc";
+#include "batch_tick/storage.fc";
+#include "batch_tick/utils.fc";
+#include "batch_tick/structs.fc";
+#include "libraries/tick.fc";
+#include "libraries/tick_math.fc";
+#include "libraries/swap_math.fc";
+#include "libraries/tick_bitmap.fc";
+#include "pool/opcodes.fc";
+#include "pool/structs.fc";
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if (op == op::update_tick_lower) {
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+    int tick_lower = in_msg_body~load_int(24);
+    int tick_upper = in_msg_body~load_int(24);
+    int lower_range = storage::batch_index * storage::tick_spacing * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * storage::tick_spacing * constants::batch_index_range - 1;
+    throw_unless(error::wrong_range_batch_tick, (tick_lower <= tick_upper) & (tick_lower >= lower_range) & (tick_lower <= upper_range));
+    int current_tick = in_msg_body~load_int(24);
+    int liquidity_delta = in_msg_body~load_uint(128);
+    int fee_growth_global_0X128 = in_msg_body~load_uint(256);
+    int fee_growth_global_1X128 = in_msg_body~load_uint(256);
+    int upper = in_msg_body~load_int(2);
+    throw_unless(error::wrong_upper, upper == 0);
+    int max_liquidity = in_msg_body~load_uint(128);
+    slice recipient = in_msg_body~load_ref().begin_parse();
+    int flipped_lower = storage::ticks~tick::update(tick_lower, current_tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, upper, max_liquidity);
+    (int fee_growth_below_0X128, int fee_growth_below_1X128) = storage::ticks.tick::get_fee_growth_below(tick_lower, current_tick,  fee_growth_global_0X128,
+      fee_growth_global_1X128);
+    if (tick_upper > upper_range) {
+      int upper_batch_tick_index = calculate_batch_tick_index(tick_upper, storage::tick_spacing);
+      (cell state_init, slice upper_batch_tick_address) = get_batch_tick_state_init_and_address(upper_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
+      builder msg = begin_cell()
+                      .store_uint(op::update_tick_upper, 32)
+                      .store_uint(query_id, 64)
+                      .store_int(flipped_lower, 2)
+                      .store_int(tick_lower, 24)
+                      .store_int(tick_upper, 24)
+                      .store_int(current_tick, 24)
+                      .store_uint(liquidity_delta, 128)
+                      .store_uint(fee_growth_global_0X128, 256)
+                      .store_uint(fee_growth_global_1X128, 256)
+                      .store_int(-1, 2) ;; true
+                      .store_uint(max_liquidity, 128)
+                      .store_ref(begin_cell()
+                            .store_uint(fee_growth_below_0X128, 256)
+                            .store_uint(fee_growth_below_1X128, 256)
+                            .store_slice(recipient)
+                          .end_cell()
+      );
+      send_message_with_stateinit(0, upper_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+    } else {
+      int flipped_upper = storage::ticks~tick::update(tick_upper, current_tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, -1, max_liquidity);
+      (int fee_growth_above_0X128, int fee_growth_above_1X128) = storage::ticks.tick::get_fee_growth_above(
+        tick_upper,
+        current_tick,
+        fee_growth_global_0X128,
+        fee_growth_global_1X128 
+      );
+        (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick::get_fee_growth_inside(
+        fee_growth_global_0X128,
+        fee_growth_global_1X128,
+        fee_growth_below_0X128,
+        fee_growth_below_1X128,
+        fee_growth_above_0X128,
+        fee_growth_above_1X128
+      );
+      builder msg = begin_cell()
+                    .store_uint(op::cb_update_fee_growth_inside, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(
+                      begin_cell()
+                          .store_int(storage::batch_index, 16)
+                          .store_uint(liquidity_delta, 128)
+                          .store_int(tick_lower, 24)
+                          .store_int(flipped_lower, 2)
+                          .store_int(tick_upper, 24)
+                          .store_int(flipped_upper, 2)
+                          .store_uint(fee_growth_inside_0X128, 256)
+                          .store_uint(fee_growth_inside_1X128, 256)
+                          .store_slice(recipient)
+                        .end_cell()
+                    );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      if (liquidity_delta < 0 & flipped_upper) {
+        storage::ticks~idict_delete?(24, tick_upper);
+      }
+    }
+    if (liquidity_delta < 0 & flipped_lower) {
+      storage::ticks~idict_delete?(24, tick_lower);
+    }
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_tick_upper) {
+    int flipped_lower = in_msg_body~load_int(2);
+    int tick_lower = in_msg_body~load_int(24);
+    int tick_upper = in_msg_body~load_int(24);
+    int prev_batch_tick_index = calculate_batch_tick_index(tick_lower, storage::tick_spacing);
+    slice prev_batch_tick_address = get_batch_tick_address(prev_batch_tick_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, prev_batch_tick_address));
+
+    int tick = in_msg_body~load_int(24);
+    int lower_range = storage::batch_index * storage::tick_spacing * constants::batch_index_range;
+    int upper_range = (storage::batch_index + 1) * storage::tick_spacing * constants::batch_index_range - 1;
+    throw_unless(error::wrong_range_batch_tick, (tick_upper >= lower_range) & (tick_upper <= upper_range));
+    int liquidity_delta = in_msg_body~load_uint(128);
+    int fee_growth_global_0X128 = in_msg_body~load_uint(256);
+    int fee_growth_global_1X128 = in_msg_body~load_uint(256);
+    int upper = in_msg_body~load_int(2);
+    throw_unless(error::wrong_upper, upper == -1);
+    int max_liquidity = in_msg_body~load_uint(128);
+    slice fee_lower_info_cs = in_msg_body~load_ref().begin_parse();
+    (int fee_growth_below_0X128, int fee_growth_below_1X128) = (fee_lower_info_cs~load_uint(256), fee_lower_info_cs~load_uint(256));
+    slice recipient = fee_lower_info_cs~load_msg_addr();
+    (int fee_growth_above_0X128, int fee_growth_above_1X128) = storage::ticks.tick::get_fee_growth_above(
+      tick_upper,
+      tick,
+      fee_growth_global_0X128,
+      fee_growth_global_1X128 
+    );
+    (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick::get_fee_growth_inside(
+      fee_growth_global_0X128,
+      fee_growth_global_1X128,
+      fee_growth_below_0X128,
+      fee_growth_below_1X128,
+      fee_growth_above_0X128,
+      fee_growth_above_1X128
+    );
+    int flipped_upper = storage::ticks~tick::update(tick_upper, tick, liquidity_delta, fee_growth_global_0X128, fee_growth_global_1X128, upper, max_liquidity);
+    builder msg = begin_cell()
+                    .store_uint(op::cb_update_fee_growth_inside, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(
+                      begin_cell()
+                          .store_int(storage::batch_index, 16)
+                          .store_uint(liquidity_delta, 128)
+                          .store_int(tick_lower, 24)
+                          .store_int(flipped_lower, 2)
+                          .store_int(tick_upper, 24)
+                          .store_int(flipped_upper, 2)
+                          .store_uint(fee_growth_inside_0X128, 256)
+                          .store_uint(fee_growth_inside_1X128, 256)
+                          .store_slice(recipient)
+                        .end_cell()
+                    );
+    send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    if (liquidity_delta < 0 & flipped_upper) {
+      storage::ticks~idict_delete?(24, tick_upper);
+    }
+    save_data();
+    return ();
+  }
+
+  if (op == op::internal_swap) {
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::pool_address));
+    slice first_ref = in_msg_body~load_ref().begin_parse();
+    slice second_ref = in_msg_body~load_ref().begin_parse();
+    (int amount_specified, int fee_protocol, int sqrt_price_limit_x96, int fee_growth_global0_x128, int fee_growth_global1_x128, int liquidity, int tick, int fee, int zero_for_one, int sqrt_price_x96, slice response_address) = (
+      first_ref~load_int(256),
+      first_ref~load_uint(8),
+      first_ref~load_uint(160),
+      first_ref~load_uint(256),
+      first_ref~load_uint(256),
+      second_ref~load_uint(128),
+      second_ref~load_int(24),
+      second_ref~load_uint(24),
+      second_ref~load_int(2),
+      second_ref~load_uint(160),
+      second_ref~load_msg_addr()
+    );
+   
+    int exact_input = amount_specified > 0;
+    ;; init cache
+    int cache::liquidity_start = liquidity; ;; u128
+    int cache::fee_protocol = zero_for_one ? (fee_protocol % 16) : (fee_protocol >> 4); ;; u8
+
+    ;; init state
+    int state::amount_specified_remaining = amount_specified; ;; i256
+    int state::amount_calculated = 0; ;; i256
+    int state::sqrt_price_x96 = sqrt_price_x96; ;; u160
+    int state::tick = tick; ;;  i24
+    int state::fee_growth_global_x128 = zero_for_one ? fee_growth_global0_x128 : fee_growth_global1_x128; ;; u256
+    int state::protocol_fee = 0; ;; u128
+    int state::liquidity = cache::liquidity_start; ;; u128
+    
+    int current_batch_index = calculate_batch_tick_index(state::tick, storage::tick_spacing);
+    
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+      ;; init step
+      int step::sqrt_price_start_x96 = state::sqrt_price_x96;
+      int step::amount_in = 0;
+      int step::amount_out = 0;
+      int step::fee_amount = 0;
+      
+      (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
+     
+      if (step::existed != -1){
+        step::next_tick = last_tick_on_word;
+      } elseif (step::next_tick < last_tick_on_word & (zero_for_one == -1)) {
+            step::next_tick = last_tick_on_word;
+      } elseif (step::next_tick > last_tick_on_word & (zero_for_one != -1))  {
+          step::next_tick = last_tick_on_word;
+      }
+      
+      int move_up_on_tick = zero_for_one ? 0 : -1;
+
+      (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::next_tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
+      
+      (_, int step::tick_next_existed) = storage::ticks.idict_get?(24, tick_next);
+
+      if (is_jump) {
+        (cell state_init, slice next_batch_tick_address) = get_batch_tick_state_init_and_address(batch_index_next,
+        storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
+        cell cache = batch_tick::pack_cache(cache::liquidity_start, cache::fee_protocol);
+        cell state = batch_tick::pack_state(state::amount_specified_remaining, state::amount_calculated, state::sqrt_price_x96, state::tick, state::fee_growth_global_x128, state::protocol_fee, state::liquidity);
+        ~strdump("internal_swap:state::liquidity");
+        ~dump(state::liquidity);
+        cell packed_data = batch_tick::pack_cross_swap(
+                      current_batch_index,
+                      zero_for_one,
+                      amount_specified,
+                      liquidity,
+                      tick,
+                      sqrt_price_x96,
+                      sqrt_price_limit_x96,
+                      fee,
+                      fee_growth_global0_x128,
+                      fee_growth_global1_x128,
+                      cache,
+                      state,
+                      response_address);
+        builder msg = begin_cell()
+                        .store_uint(op::cross_swap, 32)
+                        .store_uint(query_id, 64)
+                        .store_ref(packed_data);
+        send_message_with_stateinit(0, next_batch_tick_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+        return ();
+      }
+
+      int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
+      int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
+      (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+
+      if (exact_input) {
+        state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+        state::amount_calculated += step::amount_out;
+      } else {
+        state::amount_specified_remaining += step::amount_out;
+        state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+      }
+
+      if (cache::fee_protocol > 0) {
+        int delta = step::fee_amount / cache::fee_protocol;
+        step::fee_amount -= delta;
+        state::protocol_fee += delta;
+      }
+
+      if (state::liquidity > 0) {
+        state::fee_growth_global_x128 += full_math::mul_div(step::fee_amount, fixed_point_128::q128, state::liquidity);
+      }
+
+      if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
+        if (step::tick_next_existed == -1) {
+          int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : fee_growth_global0_x128;
+          int cross_fee_growth_global_1_x128 = zero_for_one ? fee_growth_global1_x128 : state::fee_growth_global_x128;
+          int liquidity_net = storage::ticks~tick::cross(
+                                step::next_tick, 
+                                cross_fee_growth_global_0_x128,
+                                cross_fee_growth_global_1_x128);
+          if (zero_for_one) {
+            liquidity_net = 0 - liquidity_net;
+          }
+
+          state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
+        }
+        state::tick = zero_for_one ? step::next_tick - 1 : step::next_tick;
+        ~strdump("state::tick_update_1");
+        ~dump(state::tick);
+      }
+
+      if (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
+        state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+         ~strdump("state::tick_update_2");
+        ~dump(state::tick);
+      }
+    }
+
+    ;; call back to pool to update pool and
+    if (state::tick != tick) {
+      sqrt_price_x96 = state::sqrt_price_x96;
+      tick = state::tick;
+      ~strdump("state::tick_update_3");
+      ~dump(state::tick);
+    } else {
+      sqrt_price_x96 = state::sqrt_price_x96;
+    }
+
+    if (cache::liquidity_start != state::liquidity) {
+      liquidity = state::liquidity;
+    }
+
+    if (zero_for_one) {
+      fee_growth_global0_x128 = state::fee_growth_global_x128;
+    } else {
+      fee_growth_global1_x128 = state::fee_growth_global_x128;
+    }
+
+    (int amount0, int amount1) =  zero_for_one == exact_input ? (amount_specified - state::amount_specified_remaining, state::amount_calculated) : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
+    ~strdump("amount0");
+    ~dump(amount0);
+    ~strdump("amount1");
+    ~dump(amount1);
+    ~dump(state::amount_specified_remaining);
+    ~strdump("state::amount_calculated");
+    ~dump(state::amount_calculated);
+    if (zero_for_one) {
+      if (amount1 < 0) {
+        amount1 = 0 - amount1;
+      }
+      amount0 = amount_specified - amount0;
+      
+      builder msg = begin_cell()
+                      .store_uint(op::cb_swap, 32)
+                      .store_uint(query_id, 64)
+                      .store_ref(
+                        pack_cb_swap(
+                          storage::batch_index,
+                          tick,
+                          sqrt_price_x96,
+                          liquidity,
+                          fee_growth_global0_x128,
+                          fee_growth_global1_x128,
+                          zero_for_one,
+                          state::protocol_fee,
+                          amount0,
+                          amount1,
+                          response_address)
+                      );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    } else {
+      if (amount0 < 0) {
+        amount0 = 0 - amount0;
+      }
+      amount1 = amount_specified - amount1;
+      
+      builder msg = begin_cell()
+                    .store_uint(op::cb_swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(
+                      pack_cb_swap(
+                        storage::batch_index,
+                        tick,
+                        sqrt_price_x96,
+                        liquidity,
+                        fee_growth_global0_x128,
+                        fee_growth_global1_x128,
+                        zero_for_one,
+                        state::protocol_fee,
+                        amount0,
+                        amount1,
+                        response_address)
+                    );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+
+    save_data();
+    return ();
+  }
+
+  if (op == op::cross_swap) {
+    slice ds = in_msg_body~load_ref().begin_parse();
+    (int batch_index, int zero_for_one, int amount_specified, int liquidity, int tick, int sqrt_price_x96, int sqrt_price_limit_x96, int fee, int fee_growth_global0_x128, int fee_growth_global1_x128, cell cache, cell state, slice response_address) = batch_tick::unpack_cross_swap(ds);
+    slice batch_tick_address = get_batch_tick_address(batch_index, storage::tick_spacing, storage::pool_address, storage::batch_tick_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
+    (int cache::liquidity_start, int cache::fee_protocol) = batch_tick::unpack_cache(cache.begin_parse());
+    (int state::amount_specified_remaining, int state::amount_calculated, int state::sqrt_price_x96, int state::tick, int state::fee_growth_global_x128, int state::protocol_fee, int state::liquidity) = batch_tick::unpack_state(state.begin_parse());
+    int exact_input = amount_specified > 0;
+    int current_batch_index = storage::batch_index;
+    ~strdump("op:engineer");
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+      ;; init step
+      int step::sqrt_price_start_x96 = state::sqrt_price_x96;
+      int step::amount_in = 0;
+      int step::amount_out = 0;
+      int step::fee_amount = 0;
+      int last_tick_on_word = tick_bitmap::calculate_last_index_from_that_word(state::tick, storage::tick_spacing, zero_for_one);
+      (int step::next_tick, slice tick_value, int step::existed) = storage::ticks.batch_tick::find_next_tick(state::tick, zero_for_one);
+
+      if (step::existed != -1){
+        step::next_tick = last_tick_on_word;
+      } elseif (step::next_tick < last_tick_on_word & (zero_for_one == -1)) {
+            step::next_tick = last_tick_on_word;
+      } elseif (step::next_tick > last_tick_on_word & (zero_for_one != -1))  {
+          step::next_tick = last_tick_on_word;
+      }
+      
+      ~strdump("[check with last word] step::next_tick");
+      ~dump(step::next_tick);
+      int move_up_on_tick = zero_for_one ? 0 : -1;
+      ;; FIXME: check step::next_tick belong to batch ?
+      (int tick_next, int batch_index_next, int is_jump) = batch_tick::recalculate_next_tick(step::next_tick, storage::batch_index, storage::tick_spacing, step::existed, zero_for_one);
+     
+      (_, int step::tick_next_existed) = storage::ticks.idict_get?(24, tick_next);
+      ~strdump("cross_swap_1");
+
+      int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::next_tick);
+      ~strdump("cross_swap_1");
+
+      int sqrt_price_target_x96 = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
+      ~strdump("cross_swap_2");
+      (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_price_target_x96, state::liquidity, state::amount_specified_remaining, fee);
+      ~dump(step::amount_in);
+      ~dump(step::fee_amount);
+      ~strdump("cross_swap_3");
+
+      if (exact_input) {
+        state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+        state::amount_calculated += step::amount_out;
+      } else {
+        state::amount_specified_remaining += step::amount_out;
+        state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+      }
+      ~dump(state::amount_specified_remaining);
+      ~strdump("cross_swap_4");
+      if (cache::fee_protocol > 0) {
+        int delta = step::fee_amount / cache::fee_protocol;
+        step::fee_amount -= delta;
+        state::protocol_fee += delta;
+      }
+         ~strdump("cross_swap_5");
+      if (state::liquidity > 0) {
+        state::fee_growth_global_x128 += full_math::mul_div(step::fee_amount, fixed_point_128::q128, state::liquidity);
+      }
+         ~strdump("cross_swap_6");
+          ~dump(step::sqrt_price_next_x96);
+          ~dump(state::sqrt_price_x96);
+      if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
+        ~strdump("step::tick_next_existed");
+        ~dump(step::tick_next_existed);
+        if (step::tick_next_existed == -1) {
+         ~strdump("cross_swap_6_1");
+
+          int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : fee_growth_global0_x128;
+          int cross_fee_growth_global_1_x128 = zero_for_one ? fee_growth_global1_x128 : state::fee_growth_global_x128;
+          ~strdump("cross_swap_6_2");
+          ~dump(step::next_tick);
+          ~dump(cross_fee_growth_global_0_x128);
+          ~dump(cross_fee_growth_global_1_x128);
+          int liquidity_net = storage::ticks~tick::cross(
+                                step::next_tick, 
+                                cross_fee_growth_global_0_x128,
+                                cross_fee_growth_global_1_x128);
+         ~strdump("cross_swap_6_3");
+
+          if (zero_for_one) {
+            liquidity_net = 0 - liquidity_net;
+          }
+          ~strdump("cross_swap_6_4");
+          ~dump(state::liquidity );
+          ~dump(liquidity_net);
+          state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
+          ~strdump("cross_swap_6_5");
+
+        }
+        state::tick = zero_for_one ? step::next_tick - 1 : step::next_tick;
+      }
+         ~strdump("cross_swap_7");
+      
+      if (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
+        state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+      }
+     
+         ~strdump("cross_swap_8");
+
+    }
+
+    ;; call back to pool to update pool and
+    if (state::tick != tick) {
+      sqrt_price_x96 = state::sqrt_price_x96;
+      tick = state::tick;
+    } else {
+      sqrt_price_x96 = state::sqrt_price_x96;
+    }
+
+    if (cache::liquidity_start != state::liquidity) {
+      liquidity = state::liquidity;
+    }
+
+    if (zero_for_one) {
+      fee_growth_global0_x128 = state::fee_growth_global_x128;
+    } else {
+      fee_growth_global1_x128 = state::fee_growth_global_x128;
+    }
+
+    ;; amount_specified => chính là jetton_amount truyền vào
+    ;; chưa transfer token => amount_specified - state::amount_specified_remaining
+    ;; đã transfer => 0 - state::amount_specified_remaining
+
+    (int amount0, int amount1) =  zero_for_one == exact_input ? (amount_specified - state::amount_specified_remaining, state::amount_calculated) : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
+    ~strdump("amount0");
+    ~dump(amount0);
+    ~strdump("amount1");
+    ~dump(amount1);
+
+    if (zero_for_one) {
+      if (amount1 < 0) {
+        amount1 = 0 - amount1;
+      }
+      amount0 = amount_specified - amount0;
+      
+      builder msg = begin_cell()
+                      .store_uint(op::cb_swap, 32)
+                      .store_uint(query_id, 64)
+                      .store_ref(
+                        pack_cb_swap(
+                          storage::batch_index,
+                          tick,
+                          sqrt_price_x96,
+                          liquidity,
+                          fee_growth_global0_x128,
+                          fee_growth_global1_x128,
+                          zero_for_one,
+                          state::protocol_fee,
+                          amount0,
+                          amount1,
+                          response_address)
+                      );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    } else {
+      if (amount0 < 0) {
+        amount0 = 0 - amount0;
+      }
+      amount1 = amount_specified - amount1;
+      
+      builder msg = begin_cell()
+                    .store_uint(op::cb_swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(
+                      pack_cb_swap(
+                        storage::batch_index,
+                        tick,
+                        sqrt_price_x96,
+                        liquidity,
+                        fee_growth_global0_x128,
+                        fee_growth_global1_x128,
+                        zero_for_one,
+                        state::protocol_fee,
+                        amount0,
+                        amount1,
+                        response_address)
+                    );
+      send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+
+    save_data();
+    return ();
+  }
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+slice get_tick(
+    int tick
+) method_id {
+    load_data();
+    (slice tick, int exist) = storage::ticks.idict_get?(24,tick);
+    if (exist){
+        return tick;
+    } 
+    return begin_cell()
+            .store_int(0, 128)
+            .store_int(0, 128)
+            .store_uint(0, 256)
+            .store_uint(0, 256)
+            .store_int(0, 1)
+            .end_cell().begin_parse();
+}
+
+================
+File: lp_account.fc
+================
+#include "imports/stdlib.fc";
+#include "lp_account/opcodes.fc";
+#include "pool/opcodes.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+
+global slice recipient;
+global slice pool_address;
+global int tick_lower;
+global int tick_upper;
+global int amount0;
+global int amount1;
+
+;; load_data populates storage variables using stored data
+() load_data() impure {
+  var ds = get_data().begin_parse();
+  recipient = ds~load_msg_addr();
+  pool_address = ds~load_msg_addr();
+  tick_lower = ds~load_int(24);
+  tick_upper = ds~load_int(24);
+  amount0 = ds~load_coins();
+  amount1 = ds~load_coins();
+  ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+  set_data(
+    begin_cell()
+      .store_slice(recipient)
+      .store_slice(pool_address)
+      .store_int(tick_lower, 24)
+      .store_int(tick_upper, 24)
+      .store_coins(amount0)
+      .store_coins(amount1)
+    .end_cell()
+  );
+}
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if(op::add_liquidity){
+     (int new_amount0, int new_amount1, int liquidity_delta) = (in_msg_body~load_coins(), in_msg_body~load_coins(), in_msg_body~load_int(128));
+        amount0 += new_amount0;
+        amount1 += new_amount1;
+
+        if (liquidity_delta & ((amount0 > 1000) & (amount1 > 1000))){
+            builder body = begin_cell()
+                .store_uint(op::cb_add_liquidity, 32)
+                .store_uint(query_id, 64)
+                .store_ref(
+                  begin_cell()
+                   .store_coins(amount0)
+                   .store_coins(amount1)
+                   .store_int(tick_lower, 24)
+                    .store_int(tick_upper, 24)
+                    .store_int(liquidity_delta, 128)
+                   .store_slice(recipient)
+                   .end_cell()
+                )
+       ;
+           
+            send_simple_message(0, pool_address, body.end_cell(), CARRY_REMAINING_GAS);
+            amount0 = 0;
+            amount1 = 0;
+        }
+
+        save_data();
+        return ();
+  }
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+================
+File: pool.fc
+================
+#include "imports/stdlib.fc";
+#include "libraries/sqrt_price_math.fc";
+#include "libraries/tick_math.fc";
+#include "libraries/swap_math.fc";
+#include "libraries/tick_bitmap.fc";
+#include "libraries/tick.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+#include "lp_account/opcodes.fc";
+#include "router/opcodes.fc";
+#include "pool/params.fc";
+#include "pool/opcodes.fc";
+#include "pool/lp_account-utils.fc";
+#include "pool/router-utils.fc";
+#include "pool/errors.fc";
+#include "pool/constants.fc";
+#include "pool/structs.fc";
+#include "pool/storage.fc";
+#include "position/utils.fc";
+#include "position/opcodes.fc";
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure { 
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+  
+  if (op == op::initialize) {
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
+    (int relative_sqrt_price_x96, slice response_address) = (in_msg_body~load_uint(160), in_msg_body~load_msg_addr());
+    ;; make sure it is first time
+    if ((storage::tick == 0) & (storage::sqrt_price_x96 == 0) & (storage::max_liquidity_per_tick == 0)) {
+      int relative_tick = tick_math::get_tick_at_sqrt_ratio(relative_sqrt_price_x96);
+      storage::tick = relative_tick;
+      storage::sqrt_price_x96 = relative_sqrt_price_x96;
+      storage::max_liquidity_per_tick = tick::tick_spacing_to_max_liquidity_per_tick(storage::tick_spacing);
+      builder body = begin_cell()
+            .store_uint(op::cb_create_pool, 32)
+            .store_uint(query_id, 64)
+            .store_slice(storage::jetton0_wallet) ;; jetton 1
+            .store_slice(storage::jetton1_wallet) ;; jetton 0
+            .store_uint(storage::fee, 24)
+            .store_int(storage::tick_spacing, 24)
+            .store_slice(response_address);
+      send_simple_message(0, storage::router_address, body.end_cell(), CARRY_REMAINING_GAS);
+      save_data();
+    }
+    return ();
+  }
+
+  if(op == op::mint){
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
+    slice body = in_msg_body~load_ref().begin_parse();
+    (int jetton_amount_0, int jetton_amount_1,  int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128),  body~load_msg_addr());
+    cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, storage::lp_account_code);
+    slice to_lp_account_address = calculate_lp_account_address(state_init);
+    builder body = begin_cell()
+            .store_uint(op::add_liquidity, 32)
+            .store_uint(query_id, 64)
+            .store_coins(jetton_amount_0)
+            .store_coins(jetton_amount_1)
+            .store_int(liquidity_delta, 128);
+    send_message_with_stateinit(0, to_lp_account_address, state_init, body.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
+  }
+
+  if(op == op::cb_add_liquidity){
+    slice body = in_msg_body~load_ref().begin_parse();
+    (int jetton_0_amount, int jetton_1_amount, int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128), body~load_msg_addr());
+    slice lp_account = calculate_user_lp_account_address(recipient, my_address(), tick_lower,tick_upper,storage::lp_account_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, lp_account));
+    ~strdump("cb_add_liquidity");
+    ~dump(tick_lower);
+    ;; _updatePosition
+    int flipped_lower = 0;
+    int flipped_upper = 0;
+    if(liquidity_delta != 0){
+      flipped_lower = storage::ticks~tick::update(
+        tick_lower,
+        storage::tick,
+        liquidity_delta,
+        storage::fee_growth_global_0x128,
+        storage::fee_growth_global_1x128,
+        0,
+        storage::max_liquidity_per_tick
+      );
+
+      flipped_upper = storage::ticks~tick::update(
+        tick_upper,
+        storage::tick,
+        liquidity_delta,
+        storage::fee_growth_global_0x128,
+        storage::fee_growth_global_1x128,
+        -1,
+        storage::max_liquidity_per_tick
+      );
+    }
+
+    if (liquidity_delta < 0){
+      if(flipped_lower){
+        storage::ticks~tick::clear(tick_lower);
+      }
+      if(flipped_upper){
+        storage::ticks~tick::clear(tick_upper);
+      }
+    }
+    (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = storage::ticks.tick::get_fee_growth_inside(tick_lower,tick_upper, storage::tick, storage::fee_growth_global_0x128,storage::fee_growth_global_1x128);
+    int amount0 = 0;
+    int amount1 = 0;
+    if(storage::tick < tick_lower){
+      amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    } elseif (storage::tick < tick_upper) {
+      ~dump(storage::sqrt_price_x96);
+      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_upper));
+      ~dump(tick_math::get_sqrt_ratio_at_tick(tick_lower));
+      amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+      amount1 = sqrt_price_math::get_amount1_delta_special(
+        tick_math::get_sqrt_ratio_at_tick(tick_lower),
+        storage::sqrt_price_x96,
+        liquidity_delta
+      );
+      storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
+    } else {
+      amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    }
+    ~dump(storage::tick);
+    ~strdump("amount1");
+    ~dump(amount1);
+    ~dump(amount0);
+    ~strdump("jettonAmount");
+    ~dump(jetton_0_amount);
+    ~dump(jetton_1_amount);
+    
+
+    if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
+      ;; refunds to user
+      builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, storage::jetton0_wallet, jetton_0_amount, storage::jetton1_wallet, jetton_1_amount, storage::fee, storage::tick_spacing); 
+      send_simple_message(0, storage::router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
+      return ();
+    } 
+  
+    int refund_amount0 = jetton_0_amount - amount0;
+    int refund_amount1 = jetton_1_amount - amount1;
+    int remaining_gas = msg_value;
+    ~strdump("refund_amount0");
+    ~dump(refund_amount0);
+    ~dump(refund_amount1);
+    if((refund_amount0 > 0) | (refund_amount1 > 0)){
+      ;; refunds to user
+      builder refund_body = build_pay_to_msg(query_id, recipient, exit::refund, storage::jetton0_wallet, refund_amount0, storage::jetton1_wallet, refund_amount1, storage::fee, storage::tick_spacing);
+      send_simple_message(GAS::REFUND, storage::router_address, refund_body.end_cell(), NORMAL);
+      remaining_gas -= GAS::REFUND;
+    }
+    ;; send batch storage::tick
+    remaining_gas -=  GAS::CB_ADD_LIQUIDITY;
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, recipient, my_address(),  storage::position_code);
+    builder mint_body = begin_cell()
+                          .store_uint(op::mint_position, 32)
+                          .store_uint(query_id, 64)
+                          .store_int(liquidity_delta, 128)
+                          .store_uint(fee_growth_inside_0X128, 256)
+                          .store_uint(fee_growth_inside_1X128, 256);
+    send_message_with_stateinit(remaining_gas, position_address, state_init, mint_body.end_cell(), 0);
+    save_data();
+    return ();
+  }
+
+  ;; if(op == op::burn){
+  ;; }
+
+  ;; if(op == op::cb_burn){
+
+  ;; }
+
+  if(op == op::swap){
+    throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
+    int amount_specified = in_msg_body~load_int(256);
+    int zero_for_one = in_msg_body~load_int(2);
+    int sqrt_price_limit_x96 = in_msg_body~load_uint(160);
+    slice response_address = in_msg_body~load_msg_addr();
+    int is_unspl = zero_for_one ? 
+    (((sqrt_price_limit_x96 < storage::sqrt_price_x96) & (sqrt_price_limit_x96 > tick_math::MIN_SQRT_RATIO)) == -1)
+    : (((sqrt_price_limit_x96 > storage::sqrt_price_x96) & (sqrt_price_limit_x96 < tick_math::MAX_SQRT_RATIO)) == -1);
+    int exact_input = amount_specified > 0;
+    throw_unless(error::SPL, is_unspl);
+    ;; init cache
+    int cache::liquidity_start = storage::liquidity; ;; u129
+    int cache::fee_protocol = zero_for_one ? (storage::protocol_fee % 16) : (storage::protocol_fee >> 4); ;; u8
+    ;; init state
+    int state::amount_specified_remaining = amount_specified; ;; i256
+    int state::amount_calculated = 0; ;; i256
+    int state::sqrt_price_x96 = storage::sqrt_price_x96; ;; u160
+    int state::tick = storage::tick; ;;  i24
+    int state::fee_growth_global_x128 = zero_for_one ? storage::fee_growth_global_0x128 : storage::fee_growth_global_1x128; ;; u256
+    int state::protocol_fee = 0; ;; u128
+    int state::liquidity = cache::liquidity_start; ;; u128
+
+    while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+      ;; init step
+      int step::sqrt_price_start_x96 = state::sqrt_price_x96;
+      int step::amount_in = 0;
+      int step::amount_out = 0;
+      int step::fee_amount = 0;
+      ;; get next tick 
+      ~strdump("ticknext");
+      ~dump(state::tick);
+      (int step::tick_next, int step::initialized) = storage::ticks.tick::next_tick_initialized(state::tick, zero_for_one);
+      ~dump(step::tick_next);
+      ~dump(step::initialized);
+      ~dump(state::tick);
+      ~dump(zero_for_one);
+
+      if(~ step::initialized) {
+        if(zero_for_one){
+          step::tick_next = tick_math::MIN_TICK;
+        } else {
+          step::tick_next = tick_math::MAX_TICK;
+        }
+      }
+      ~dump(step::tick_next);
+
+      int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::tick_next);
+      int sqrt_target_price = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
+      ~strdump("compute_swap_step");
+      ~dump(state::sqrt_price_x96);
+      ~dump(sqrt_target_price);
+      ~dump(state::liquidity);
+      ~dump(state::amount_specified_remaining);
+      ~dump(storage::fee);
+      
+      (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_target_price, state::liquidity, state::amount_specified_remaining, storage::fee);
+      ~strdump("step::fee_amount");
+      ~dump(step::fee_amount);
+      ~dump(step::amount_in);
+      ~dump(step::amount_out);
+      ~dump(state::sqrt_price_x96);
+
+      if(exact_input){
+        state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+        state::amount_calculated -= step::amount_out;
+      } else {
+        state::amount_specified_remaining += step::amount_out;
+        state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+      }
+
+      if (cache::fee_protocol > 0) {
+        int delta = step::fee_amount / cache::fee_protocol;
+        step::fee_amount -= delta;
+        state::protocol_fee += delta;
+      }
+
+      if (state::liquidity > 0) {
+        state::fee_growth_global_x128 += full_math::mul_div(step::fee_amount, fixed_point_128::q128, state::liquidity);
+      }
+
+      if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
+        if (step::initialized) {
+          int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : storage::fee_growth_global_0x128;
+          int cross_fee_growth_global_1_x128 = zero_for_one ? storage::fee_growth_global_1x128 : state::fee_growth_global_x128;
+          int liquidity_net = storage::ticks~tick::cross(
+            step::tick_next, 
+            cross_fee_growth_global_0_x128,
+            cross_fee_growth_global_1_x128);
+          if (zero_for_one) {
+            liquidity_net = 0 - liquidity_net;
+          }
+          state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
+          ~strdump("state::liquidity");
+          ~dump(state::liquidity);
+          ~dump(step::tick_next);
+        }
+        state::tick = zero_for_one ? step::tick_next - 1 : step::tick_next + 1;
+        ~dump(state::tick);
+      } elseif (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
+        state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+      }
+    }
+
+    if(state::tick != storage::tick){
+      storage::sqrt_price_x96 = state::sqrt_price_x96;
+      storage::tick = state::tick;
+    } else {
+      storage::sqrt_price_x96 = state::sqrt_price_x96;
+    }
+
+    ;; update liquidity if it changed
+    if (cache::liquidity_start != state::liquidity) {
+      storage::liquidity = state::liquidity;
+    }
+
+    ;; update fee growth global and, if necessary, protocol fees
+    ;; overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
+    if (zero_for_one) {
+      storage::fee_growth_global_0x128 = state::fee_growth_global_x128;
+      if (state::protocol_fee > 0) {
+        storage::collected_protocol_fee0 += state::protocol_fee;
+      }
+    } else {
+      storage::fee_growth_global_1x128 = state::fee_growth_global_x128;
+      if (state::protocol_fee > 0) {
+        storage::collected_protocol_fee1 += state::protocol_fee;
+      }
+    }
+
+    (int amount0, int amount1) = zero_for_one == exact_input
+            ? (amount_specified - state::amount_specified_remaining, state::amount_calculated)
+            : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
+
+    if (zero_for_one){
+      if(amount1 < 0) {
+          amount1 = 0 - amount1;
+        }
+      amount0 = amount_specified - amount0; 
+
+      builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+
+    send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      } else {
+      if(amount0 < 0) {
+          amount0 = 0 - amount0;
+        }
+      amount1 = amount_specified - amount1; 
+    builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+
+    send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      }
+
+
+    save_data();
+    return ();
+  }
+
+  ;; if (op == op::cb_swap) {
+  ;;   slice ds = in_msg_body~load_ref().begin_parse();
+  ;;   (
+  ;;     int r_batch_index, 
+  ;;     int r_tick, 
+  ;;     int r_sqrt_price_x96, 
+  ;;     int r_liquidity, 
+  ;;     int r_storage::storage::fee_growth_global_0x128, 
+  ;;     int r_storage::storage::fee_growth_global_1x128, 
+  ;;     int r_zero_for_one, 
+  ;;     int r_protocol_storage::fee,  
+  ;;     int r_amount0, 
+  ;;     int r_amount1, 
+  ;;     slice response_address
+  ;;   ) = unpack_cb_swap(ds);
+  ;;   slice batch_tick_address = get_batch_tick_address(r_batch_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
+  ;;   throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
+  ;;   storage::tick = r_tick;
+  ;;   storage::sqrt_price_x96 = r_sqrt_price_x96;
+  ;;   storage::liquidity = r_liquidity;
+  ;;   storage::storage::fee_growth_global_0x128 = r_storage::storage::fee_growth_global_0x128;
+  ;;   storage::storage::fee_growth_global_1x128 = r_storage::storage::fee_growth_global_1x128;
+  ;;   if (r_zero_for_one) {
+  ;;     collected_protocol_storage::fee0 += r_protocol_storage::fee;
+  ;;   } else {
+  ;;     collected_protocol_storage::fee1 += r_protocol_storage::fee;
+  ;;   }
+  ;;   ~dump(op::cb_swap);
+  ;;   ~dump(r_amount0);
+  ;;   ~dump(r_amount1);
+  ;;   builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, r_amount0, storage::jetton1_wallet, r_amount1, storage::fee, storage::tick_spacing);
+  ;;   send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+  ;;   save_data();
+  ;;   return ();
+  ;; }
+
+  ;; if(op == op::cb_update_storage::fee_growth_inside){
+  ;;   slice body = in_msg_body~load_ref().begin_parse();
+  ;;   (int batch_tick_index, int liquidity_delta, int tick_lower, int flipped_lower, int tick_upper, int flipped_upper, int storage::fee_growth_inside_0X128, int storage::fee_growth_inside_1X128, slice owner_address) = (body~load_int(16),body~load_uint(128), body~load_int(24), body~load_int(2), body~load_int(24), body~load_int(2), body~load_uint(256), body~load_uint(256), body~load_msg_addr());
+  ;;   slice batch_tick_address = get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(),storage::batch_tick_code);
+  ;;   throw_unless(error::unauthorized, compare_address(sender_address, batch_tick_address));
+  ;;   if ((storage::tick >  tick_lower) & (storage::tick < tick_upper)) {
+  ;;     storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
+  ;;   }
+  ;;   if(flipped_lower){
+  ;;     storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_lower, storage::tick_spacing);
+  ;;   }
+  ;;   if(flipped_upper){
+  ;;     storage::tick_bitmap~storage::tick_bitmap::flip_tick(tick_upper, storage::tick_spacing);
+  ;;   }
+
+  ;;   (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(),  storage::position_code);
+
+  ;;   builder mint_body = begin_cell()
+  ;;                         .store_uint(op::mint_position, 32)
+  ;;                         .store_uint(query_id, 64)
+  ;;                         .store_int(liquidity_delta, 128)
+  ;;                         .store_uint(storage::fee_growth_inside_0X128, 256)
+  ;;                         .store_uint(storage::fee_growth_inside_1X128, 256);
+
+  ;;   send_message_with_stateinit(0, position_address, state_init, mint_body.end_cell(), CARRY_REMAINING_GAS);
+  ;;   save_data();
+  ;;   return();
+  ;; }
+
+  if (op == op::cb_mint_position) {
+    slice first_ref = in_msg_body~load_ref().begin_parse();
+    (int tick_lower, int tick_upper, int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
+    slice second_ref = in_msg_body~load_ref().begin_parse();
+    (int tokens_owed_0, int tokens_owed_1, slice owner_address) = (second_ref~load_uint(128), second_ref~load_uint(128), second_ref~load_msg_addr());
+    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), storage::position_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
+    send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
+    builder msg = begin_cell()
+                  .store_slice(sender_address)
+                  .store_ref(begin_cell()
+                      .store_int(tick_lower, 24)
+                      .store_int(tick_upper, 24)
+                      .store_uint(liquidity, 128)
+                      .store_uint(fee_growth_inside_0_last_x128, 256)
+                      .store_uint(fee_growth_inside_1_last_x128, 256)
+                      .end_cell())
+                  .store_ref(begin_cell()
+                      .store_uint(tokens_owed_0, 128)
+                      .store_uint(tokens_owed_1, 128)
+                      .store_slice(owner_address)
+                      .end_cell());
+    emit_log_simple(0, msg.end_cell(), query_id);
+    return ();
+  }
+
+  
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+(slice, slice) get_jettons_wallet() method_id {
+  load_data();
+  return (storage::jetton0_wallet, storage::jetton1_wallet);
+}
+
+(int, int) get_storage::fees_growth_global() method_id {
+  load_data();
+  return (storage::fee_growth_global_0x128, storage::fee_growth_global_1x128);
+}
+
+(int, int) get_collected_storage::fees() method_id {
+  load_data();
+  return (storage::collected_protocol_fee0, storage::collected_protocol_fee1);
+}
+
+slice get_lp_account_address(slice user_address, int tick_lower, int tick_upper) method_id {
+  load_data();
+  return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, storage::lp_account_code);
+}
+
+;; int get_batch_tick_index(int storage::tick) method_id {
+;;   load_data();
+;;   return calculate_batch_tick_index(storage::tick, storage::tick_spacing);
+;; }
+
+;; slice get_calculate_batch_tick_address(int batch_tick_index) method_id {
+;;   load_data();
+;;   return get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
+;; }
+
+slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner) method_id {
+  load_data();
+  (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner, my_address(), storage::position_code);
+  return position_address;
+}
+
+(int, int, int, int, int) get_pool_info() method_id {
+  load_data();
+  return (storage::fee, storage::tick_spacing, storage::tick, storage::sqrt_price_x96, storage::liquidity);
+}
+
+(int, int) get_fee_growth_global() method_id {
+  load_data();
+  return (storage::fee_growth_global_0x128, storage::fee_growth_global_1x128);
+}
+
+================
+File: position.fc
+================
+#include "imports/stdlib.fc";
+#include "position/storage.fc";
+#include "position/opcodes.fc";
+#include "pool/opcodes.fc";
+#include "libraries/position.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if (op == op::mint_position) {
+    throw_unless(error::unauthorized, compare_address(storage::pool_address, sender_address));
+    int liquidity_delta = in_msg_body~load_int(128);
+    int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
+    int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
+    (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::simulate_update(
+      storage::liquidity, 
+      storage::fee_growth_inside0_last_x128, storage::fee_growth_inside1_last_x128, 
+      storage::token_owed0, 
+      storage::token_owed1, 
+      liquidity_delta,
+      fee_growth_inside_0_x128,
+      fee_growth_inside_1_x128);
+    storage::liquidity += liquidity;
+    storage::fee_growth_inside0_last_x128 += fee_growth_inside_0_last_x128;
+    storage::fee_growth_inside1_last_x128 += fee_growth_inside_1_last_x128;
+    storage::token_owed0 += tokens_owed_0;
+    storage::token_owed1 += tokens_owed_1;
+
+    builder msg = begin_cell()
+                    .store_uint(op::cb_mint_position, 32)
+                    .store_uint(query_id, 64)
+                    .store_ref(begin_cell()
+                      .store_int(storage::tick_lower, 24)
+                      .store_int(storage::tick_upper, 24)
+                      .store_uint(storage::liquidity, 128)
+                      .store_uint(fee_growth_inside_0_last_x128, 256)
+                      .store_uint(fee_growth_inside_1_last_x128, 256)
+                      .end_cell())
+                    .store_ref(begin_cell()
+                      .store_uint(tokens_owed_0, 128)
+                      .store_uint(tokens_owed_1, 128)
+                      .store_slice(storage::owner_address)
+                      .end_cell());
+                    
+    send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
+  }
+
+  if (op == op::burn_position) {
+    throw_unless(error::unauthorized, compare_address(storage::pool_address, sender_address));
+    int liquidity_delta = in_msg_body~load_int(128);
+    int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
+    int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
+    slice ds = in_msg_body~load_ref().begin_parse();
+    int amount0 = ds~load_int(256);
+    int amount1 = ds~load_int(256);
+    (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::simulate_update(
+      storage::liquidity, 
+      storage::fee_growth_inside0_last_x128, storage::fee_growth_inside1_last_x128, 
+      storage::token_owed0, 
+      storage::token_owed1, 
+      liquidity_delta,
+      fee_growth_inside_0_x128,
+      fee_growth_inside_1_x128);
+    storage::liquidity = liquidity;
+    storage::fee_growth_inside0_last_x128 = fee_growth_inside_0_last_x128;
+    storage::fee_growth_inside1_last_x128 = fee_growth_inside_1_last_x128;
+    storage::token_owed0 = tokens_owed_0;
+    storage::token_owed1 = tokens_owed_1;
+    if ((amount0 > 0) | (amount1 > 0)) {
+      storage::token_owed0 = storage::token_owed0 + amount0;
+      storage::token_owed1 = storage::token_owed1 + amount1;
+    }
+    builder msg = begin_cell()
+                    .store_uint(op::cb_burn, 32)
+                    .store_uint(query_id, 64)
+                    .store_int(amount0, 256)
+                    .store_int(amount1, 256)
+                    .store_slice(storage::owner_address);
+    send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+    save_data();
+    return ();
+  }
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+================
+File: router.fc
+================
+#include "imports/stdlib.fc";
+#include "common/utils.fc";
+#include "common/messages.fc";
+#include "common/address.fc";
+#include "common/errors.fc";
+#include "common/op_codes.fc";
+#include "router/storage.fc";
+#include "router/opcodes.fc";
+#include "router/utils.fc";
+#include "pool/opcodes.fc";
+
+;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+   
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+    return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if (op == op::jetton_transfer_notification()) {
+    (int jetton_amount, slice from_user) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr());
+    cell ref_cs = in_msg_body~load_ref();
+    slice ref_ds = ref_cs.begin_parse();
+    throw_unless(error:not_enough_amount, jetton_amount > 0);
+    (int forward_opcode, slice jetton1_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
+
+    if (forward_opcode == op::mint) {
+      int tick_lower = ref_ds~load_int(24);
+      int tick_upper = ref_ds~load_int(24);
+      int fee = ref_ds~load_uint(24);
+      int tick_spacing = ref_ds~load_int(24);
+      int liquidity_delta = ref_ds~load_int(128);
+      slice jetton0_wallet = sender_address;
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
+      builder mint_msg = begin_cell()
+                    .store_uint(op::mint, 32)
+                    .store_uint(query_id, 64);
+      builder body_builder = begin_cell();
+      if (slice_hash(jetton0_wallet) < slice_hash(jetton1_wallet)) {
+        body_builder = body_builder.store_coins(jetton_amount);
+        body_builder = body_builder.store_coins(0);
+      } else {
+        body_builder = body_builder.store_coins(0);
+        body_builder = body_builder.store_coins(jetton_amount);
+      }
+      body_builder = body_builder                    
+                  .store_int(tick_lower, 24)
+                  .store_int(tick_upper, 24)
+                  .store_int(liquidity_delta, 128)
+                  .store_slice(from_user);
+      mint_msg = mint_msg.store_ref(body_builder.end_cell());
+      send_message_with_stateinit(0, pool_address, state_init, mint_msg.end_cell(), CARRY_REMAINING_GAS);
+    }
+
+    if (forward_opcode == op::swap) {;
+      int fee = ref_ds~load_uint(24);
+      int tick_spacing = ref_ds~load_int(24);
+      int zero_for_one = ref_ds~load_int(2);
+      int sqrt_price_limit = ref_ds~load_uint(160);
+      (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton1_wallet, fee, tick_spacing);
+      ~strdump("swap");
+    (_, int token0_parsed) = parse_std_addr(sender_address);
+      ~dump(token0_parsed);
+      ~dump(sender_address);
+      ~dump(jetton1_wallet);
+      builder msg = begin_cell()
+                    .store_uint(op::swap, 32)
+                    .store_uint(query_id, 64)
+                    .store_int(jetton_amount, 256)
+                    .store_int(zero_for_one, 2)
+                    .store_uint(sqrt_price_limit, 160)
+                    .store_slice(from_user);
+      send_simple_message(0, pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      return ();
+    }
+
+    if (forward_opcode == op::burn) {
+    }
+    return ();  
+  }
+
+  if (op == op::pay_to) {
+    slice recipient = in_msg_body~load_msg_addr();
+    int exit_code = in_msg_body~load_uint(32);
+    slice ds = in_msg_body~load_ref().begin_parse();
+    slice token0_address = ds~load_msg_addr();
+    int token0_amount = ds~load_coins();
+    slice token1_address = ds~load_msg_addr();
+    int token1_amount = ds~load_coins();
+    int fee = ds~load_uint(24);
+    int tick_spacing = ds~load_int(24);
+    ~strdump("payto");
+    ~dump(token0_amount);
+    ~dump(token1_amount);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
+    int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
+    if (token0_amount > 0) {
+      var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
+      ;;body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
+    }
+    if (token1_amount > 0) {
+      var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
+      ;; body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
+    }
+    return ();
+  }
+
+  if (op == op::create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    int sqrt_price_x96 = in_msg_body~load_uint(160);
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    builder msg = begin_cell()
+                    .store_uint(op::initialize, 32)
+                    .store_uint(query_id, 64)
+                    .store_uint(sqrt_price_x96, 160)
+                    .store_slice(sender_address);
+    send_message_with_stateinit(0, pool_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
+    storage::pool_seqno = storage::pool_seqno + 1;
+    save_data();
+    return ();
+  }
+  
+  if (op == op::cb_create_pool) {
+    slice token0_address = in_msg_body~load_msg_addr();
+    slice token1_address = in_msg_body~load_msg_addr();
+    int fee = in_msg_body~load_uint(24);
+    int tick_spacing = in_msg_body~load_int(24);
+    slice response_address = in_msg_body~load_msg_addr();
+    (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
+    if (compare_address(sender_address, pool_address)) {
+      storage::pool_seqno = storage::pool_seqno + 1;
+      ;; emit event
+      cell data = begin_cell()
+                    .store_slice(sender_address)
+                    .store_slice(token0_address)
+                    .store_slice(token1_address)
+                    .store_uint(fee, 24)
+                    .store_int(tick_spacing, 24)
+                    .end_cell();
+      emit_log_simple(storage::pool_seqno - 1, data, query_id);
+      save_data();
+    }
+    send_empty_message(0, response_address, CARRY_REMAINING_GAS + IGNORE_ERRORS);
+    return ();
+  }
+
+  ;; [MONITOR]
+  if (op == op::set_admin_address) {
+    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
+    slice new_address = in_msg_body~load_msg_addr();
+    storage::admin_address = new_address;
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_lock_state) {
+    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
+    storage::is_locked = in_msg_body~load_int(8);
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_pool_code) {
+    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
+    storage::pool_code = in_msg_body~load_ref();
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_position_code) {
+    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
+    storage::position_code = in_msg_body~load_ref();
+    save_data();
+    return ();
+  }
+
+  if (op == op::update_lp_account_code) {
+    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
+    storage::lp_account_code = in_msg_body~load_ref();
+    save_data();
+    return ();
+  }
+
+  throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
+}
+
+slice get_admin_address() method_id {
+  load_data();
+  return storage::admin_address;
+}
+
+int get_is_locked() method_id {
+  load_data();
+  return storage::is_locked;
+}
+
+cell get_pool_code() method_id {
+  load_data();
+  return storage::pool_code;
+}
+
+cell get_position_code() method_id {
+  load_data();
+  return storage::position_code;
+}
+
+cell get_lp_account_code() method_id {
+  load_data();
+  return storage::lp_account_code;
+}
+
+slice get_pool_address(slice token0_address, slice token1_address, int fee, int tick_spacing) method_id {
+  load_data();
+  (_, slice pool_address) = get_pool_state_init_and_address(token0_address,token1_address,fee,tick_spacing);
+  return pool_address;
+}
+
+
+
+================================================================
+End of Codebase
+================================================================

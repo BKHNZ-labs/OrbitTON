@@ -8,6 +8,7 @@
 #include "router/opcodes.fc";
 #include "router/utils.fc";
 #include "pool/opcodes.fc";
+#include "pool/constants.fc";
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -70,11 +71,6 @@
       int zero_for_one = ref_ds~load_int(2);
       int sqrt_price_limit = ref_ds~load_uint(160);
       (cell state_init, slice pool_address) = get_pool_state_init_and_address(sender_address, jetton1_wallet, fee, tick_spacing);
-      ~strdump("swap");
-    (_, int token0_parsed) = parse_std_addr(sender_address);
-      ~dump(token0_parsed);
-      ~dump(sender_address);
-      ~dump(jetton1_wallet);
       builder msg = begin_cell()
                     .store_uint(op::swap, 32)
                     .store_uint(query_id, 64)
@@ -101,9 +97,6 @@
     int token1_amount = ds~load_coins();
     int fee = ds~load_uint(24);
     int tick_spacing = ds~load_int(24);
-    ~strdump("payto");
-    ~dump(token0_amount);
-    ~dump(token1_amount);
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
     int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
@@ -139,23 +132,37 @@
   }
   
   if (op == op::cb_create_pool) {
-    slice token0_address = in_msg_body~load_msg_addr();
-    slice token1_address = in_msg_body~load_msg_addr();
-    int fee = in_msg_body~load_uint(24);
-    int tick_spacing = in_msg_body~load_int(24);
-    slice response_address = in_msg_body~load_msg_addr();
+    slice body_address = in_msg_body~load_ref().begin_parse();
+    slice token0_address = body_address~load_msg_addr();
+    slice token1_address = body_address~load_msg_addr();
+    slice response_address = body_address~load_msg_addr();
+    slice body_params = in_msg_body~load_ref().begin_parse();
+    int fee = body_params~load_uint(24);
+    int tick_spacing = body_params~load_int(24);
+    int tick = body_params~load_int(24);
+    int sqrt_price_x96 = body_params~load_uint(160);
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     if (compare_address(sender_address, pool_address)) {
       storage::pool_seqno = storage::pool_seqno + 1;
       ;; emit event
       cell data = begin_cell()
-                    .store_slice(sender_address)
-                    .store_slice(token0_address)
-                    .store_slice(token1_address)
-                    .store_uint(fee, 24)
-                    .store_int(tick_spacing, 24)
+                  .store_ref(
+                      begin_cell()
+                        .store_slice(response_address)
+                        .store_slice(token0_address)
+                        .store_slice(token1_address)
+                        .end_cell()
+                    )
+                  .store_ref(
+                      begin_cell()
+                        .store_uint(fee, 24)
+                        .store_int(tick_spacing, 24)
+                        .store_int(tick, 24)
+                        .store_uint(sqrt_price_x96, 160)
+                        .end_cell()
+                    )
                     .end_cell();
-      emit_log_simple(storage::pool_seqno - 1, data, query_id);
+      emit_log_simple(INITIALIZE_EVENT, data, query_id);
       save_data();
     }
     send_empty_message(0, response_address, CARRY_REMAINING_GAS + IGNORE_ERRORS);
