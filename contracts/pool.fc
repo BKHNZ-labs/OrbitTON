@@ -223,11 +223,7 @@
       int step::fee_amount = 0;
       ;; get next tick 
       (int step::tick_next, int step::initialized) = storage::ticks.tick::next_tick_initialized(state::tick, zero_for_one);
-      ~strdump("ticknext");
-      ~dump(step::tick_next);
-      ~dump(step::initialized);
-      ~dump(state::tick);
-      ~dump(zero_for_one);
+
       if(~ step::initialized) {
         if(zero_for_one){
           step::tick_next = tick_math::MIN_TICK;
@@ -404,11 +400,6 @@
   return (storage::jetton0_wallet, storage::jetton1_wallet);
 }
 
-(int, int) get_storage::fees_growth_global() method_id {
-  load_data();
-  return (storage::fee_growth_global_0x128, storage::fee_growth_global_1x128);
-}
-
 (int, int) get_collected_storage::fees() method_id {
   load_data();
   return (storage::collected_protocol_fee0, storage::collected_protocol_fee1);
@@ -418,16 +409,6 @@ slice get_lp_account_address(slice user_address, int tick_lower, int tick_upper)
   load_data();
   return calculate_user_lp_account_address(user_address, my_address(), tick_lower, tick_upper, storage::lp_account_code);
 }
-
-;; int get_batch_tick_index(int storage::tick) method_id {
-;;   load_data();
-;;   return calculate_batch_tick_index(storage::tick, storage::tick_spacing);
-;; }
-
-;; slice get_calculate_batch_tick_address(int batch_tick_index) method_id {
-;;   load_data();
-;;   return get_batch_tick_address(batch_tick_index, storage::tick_spacing, my_address(), storage::batch_tick_code);
-;; }
 
 slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner) method_id {
   load_data();
@@ -443,4 +424,21 @@ slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner
 (int, int) get_fee_growth_global() method_id {
   load_data();
   return (storage::fee_growth_global_0x128, storage::fee_growth_global_1x128);
+}
+
+(int, int, int) get_fee_growth_outside_at_tick(int tick) method_id {
+  load_data();
+  (slice info_raw, int existed) = storage::ticks.idict_get?(24, tick);
+  if (existed == 0){
+      return (0, 0, existed);
+  }
+  (
+      int liquidity_gross, 
+      int liquidity_net, 
+      int fee_growth_outside_0_x128, 
+      int fee_growth_outside_1_x128, 
+      int initialized
+  ) = info_raw.unpack_tick();
+
+  return (fee_growth_outside_0_x128, fee_growth_outside_1_x128, existed);
 }
