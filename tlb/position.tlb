@@ -1,0 +1,19 @@
+position#_
+  first_ref:^PositionFirst
+  second_ref:^PositionSecond
+  = PositionStorage;
+
+position_first#_
+  tick_lower:int24
+  tick_upper:int24
+  liquidity:uint128
+  fee_growth_inside0_last_x128:uint256
+  fee_growth_inside1_last_x128:uint256
+  = PositionFirst;
+
+position_second#_
+  token_owed0:uint128
+  token_owed1:uint128
+  owner_address:MsgAddress
+  pool_address:MsgAddress
+  = PositionSecond;
