@@ -1,0 +1,46 @@
+pool#_
+  first_ref:^PoolFirst
+  second_ref:^PoolSecond
+  third_ref:^PoolThird
+  = PoolStorage;
+
+pool_first#_
+  router_address:MsgAddress
+  jetton0_wallet:MsgAddress
+  jetton1_wallet:MsgAddress
+  fee:uint24
+  protocol_fee:uint8
+  sqrt_price_x96:uint160
+  = PoolFirst;
+
+pool_second#_
+  tick_spacing:int24
+  tick:int24
+  fee_growth_global_0x128:uint256
+  fee_growth_global_1x128:uint256
+  collected_protocol_fee0:uint128
+  collected_protocol_fee1:uint128
+  liquidity:uint128
+  = PoolSecond;
+
+
+hme_empty$0 {n:#} {X:Type} = HashmapE n X;
+hme_root$1 {n:#} {X:Type} root:^(Hashmap n X) = HashmapE n X;
+
+tick#_ 
+  liquidity_gross:uint128 
+  liquidity_net:int128 
+  fee_growth_outside_0_x128:uint256 
+  fee_growth_outside_1_x128:uint256 
+  tick_cumulative_outside:int56 
+  initialized:Bool = TickInfo;
+
+pool_third#_
+  max_liquidity_per_tick:uint128
+  ticks:^(HashmapE 32 TickInfo)
+  position_code:^Cell
+  lp_account_code:^Cell
+  = PoolThird;
+
+  
+
