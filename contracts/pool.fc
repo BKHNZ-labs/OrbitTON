@@ -59,7 +59,6 @@
                   begin_cell()
                     .store_slice(storage::jetton0_wallet) ;; jetton 1
                     .store_slice(storage::jetton1_wallet) ;; jetton 0
-
                     .store_slice(response_address)
                     .end_cell()
             )
