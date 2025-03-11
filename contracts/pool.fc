@@ -42,6 +42,7 @@
   if (op == op::initialize) {
     throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
     (int relative_sqrt_price_x96, slice response_address) = (in_msg_body~load_uint(160), in_msg_body~load_msg_addr());
+    cell jetton_master_ref = in_msg_body~load_ref();
     ;; make sure it is first time
     if ((storage::tick == 0) & (storage::sqrt_price_x96 == 0) & (storage::max_liquidity_per_tick == 0)) {
       int relative_tick = tick_math::get_tick_at_sqrt_ratio(relative_sqrt_price_x96);
@@ -60,6 +61,7 @@
                     .store_slice(storage::jetton0_wallet) ;; jetton 1
                     .store_slice(storage::jetton1_wallet) ;; jetton 0
                     .store_slice(response_address)
+                    .store_ref(jetton_master_ref)
                     .end_cell()
             )
              .store_ref(

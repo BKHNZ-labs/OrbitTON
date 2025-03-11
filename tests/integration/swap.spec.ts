@@ -119,8 +119,7 @@ describe('OrbitTonPool', () => {
     },
   ];
 
-  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS
-  .filter((test) => !test.exactOut)
+  const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut);
   // .slice(0, 1);
 
   const TEST_POOLS = [
@@ -278,7 +277,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals("0.000000000000002"),
+          liquidity: expandTo18Decimals('0.000000000000002'),
         },
       ],
     },
@@ -291,7 +290,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals("0.000000000000002"),
+          liquidity: expandTo18Decimals('0.000000000000002'),
         },
       ],
     },
@@ -317,7 +316,7 @@ describe('OrbitTonPool', () => {
         {
           tickLower: getMinTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
           tickUpper: getMaxTick(TICK_SPACINGS[FeeAmount.MEDIUM]),
-          liquidity: expandTo18Decimals("0.000000000000002"),
+          liquidity: expandTo18Decimals('0.000000000000002'),
         },
       ],
     },
@@ -334,7 +333,7 @@ describe('OrbitTonPool', () => {
         },
       ],
     },
-  ]
+  ];
   // .filter((test) => test.description === "close to max price");
 
   function swapCaseToDescription(testCase: any): string {
@@ -435,7 +434,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals("5000000"),
+        jettonAmount: expandTo18Decimals('5000000'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -447,7 +446,7 @@ describe('OrbitTonPool', () => {
       deployer.getSender(),
       {
         toAddress: deployer.address,
-        jettonAmount: expandTo18Decimals("5000000"),
+        jettonAmount: expandTo18Decimals('5000000'),
         amount: toNano(0.5), // deploy fee
       },
       {
@@ -505,6 +504,11 @@ describe('OrbitTonPool', () => {
               fee: feeAmount,
               sqrt_price_x96: startingSqrtPrice,
               tick_spacing: tickSpacing,
+              jetton_master_ref: {
+                kind: 'JettonMasterRef',
+                jetton0_master: token0MasterContract.address,
+                jetton1_master: token1MasterContract.address,
+              },
             },
             {
               value: toNano('0.2'),
@@ -516,9 +520,9 @@ describe('OrbitTonPool', () => {
             BigInt(feeAmount),
             BigInt(tickSpacing),
           );
-          console.log("createPool")
+          console.log('createPool');
           printTransactionFees(createPool.transactions);
-        
+
           // expect(createPool.transactions).toHaveTransaction({
           //   from: router.address,
           //   to: pool,
@@ -526,8 +530,8 @@ describe('OrbitTonPool', () => {
           // });
           const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
           for (const position of poolCase.positions) {
-            let jettonAmount0 = expandTo18Decimals("50000");
-            let jettonAmount1 = expandTo18Decimals("50000");
+            let jettonAmount0 = expandTo18Decimals('50000');
+            let jettonAmount1 = expandTo18Decimals('50000');
 
             let transfer0;
             let transfer1;
@@ -726,8 +730,8 @@ describe('OrbitTonPool', () => {
             let swapBalance1 = await swapToken1Wallet!.getBalance();
             console.log({
               swapBalance0,
-              swapBalance1
-            })
+              swapBalance1,
+            });
 
             if (testCase.zeroForOne) {
               swapTx = await swapToken0Wallet!.sendTransferSwap(
@@ -784,49 +788,50 @@ describe('OrbitTonPool', () => {
               );
             }
 
-            console.log('==== After Swap ====')
+            console.log('==== After Swap ====');
             printTransactionFees(swapTx.transactions);
             const transactions = swapTx.transactions;
             const allErrorExitCode = filterOutSuccessMessages(transactions);
             console.log(allErrorExitCode);
-            if(allErrorExitCode.length > 0) {
+            if (allErrorExitCode.length > 0) {
               expect({
                 poolBalance0: poolBalance0!.amount.toString(),
                 poolBalance1: poolBalance1!.amount.toString(),
                 poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
                 tickBefore: Number(poolInfoBefore.tick),
-                computeErr: typeof allErrorExitCode[0] ===
-                  'number' && allErrorExitCode[0].toString(),
+                computeErr: typeof allErrorExitCode[0] === 'number' && allErrorExitCode[0].toString(),
               }).toMatchSnapshot();
             } else {
-            swapBalance0 = await swapToken0Wallet!.getBalance();
-            swapBalance1 = await swapToken1Wallet!.getBalance();
-            console.log({
-              swapBalance0,
-              swapBalance1
-            })
-            let router0AfterBalance = await routerJetton0WalletContract!.getBalance();
-            let router1AfterBalance = await routerJetton1WalletContract!.getBalance();
-            let poolInfoAfter = await poolContract!.getPoolInfo();
-            let { feeGrowthGlobal0X128: feeGrowthGlobal0X128After, feeGrowthGlobal1X128: feeGrowthGlobal1X128After } =
-              await poolContract!.getFeeGrowthGlobal();
-            const poolBalance0Delta = router0AfterBalance.amount - poolBalance0!.amount;
-            const poolBalance1Delta = router1AfterBalance.amount - poolBalance1!.amount;
-            const executionPrice = new Decimal(poolBalance1Delta.toString()).div(poolBalance0Delta.toString()).mul(-1);
+              swapBalance0 = await swapToken0Wallet!.getBalance();
+              swapBalance1 = await swapToken1Wallet!.getBalance();
+              console.log({
+                swapBalance0,
+                swapBalance1,
+              });
+              let router0AfterBalance = await routerJetton0WalletContract!.getBalance();
+              let router1AfterBalance = await routerJetton1WalletContract!.getBalance();
+              let poolInfoAfter = await poolContract!.getPoolInfo();
+              let { feeGrowthGlobal0X128: feeGrowthGlobal0X128After, feeGrowthGlobal1X128: feeGrowthGlobal1X128After } =
+                await poolContract!.getFeeGrowthGlobal();
+              const poolBalance0Delta = router0AfterBalance.amount - poolBalance0!.amount;
+              const poolBalance1Delta = router1AfterBalance.amount - poolBalance1!.amount;
+              const executionPrice = new Decimal(poolBalance1Delta.toString())
+                .div(poolBalance0Delta.toString())
+                .mul(-1);
 
-            expect({
-              amount0Before: poolBalance0!.amount.toString(),
-              amount0Delta: poolBalance0Delta.toString(),
-              amount1Before: poolBalance1!.amount.toString(),
-              amount1Delta: poolBalance1Delta.toString(),
-              executionPrice: Number(executionPrice.toString()).toFixed(4).toString(),
-              feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
-              feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
-              poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
-              poolPriceAfter: formatPrice(poolInfoAfter.sqrtPriceX96),
-              tickAfter: Number(poolInfoAfter.tick),
-              tickBefore: Number(poolInfoBefore.tick),
-            }).toMatchSnapshot();
+              expect({
+                amount0Before: poolBalance0!.amount.toString(),
+                amount0Delta: poolBalance0Delta.toString(),
+                amount1Before: poolBalance1!.amount.toString(),
+                amount1Delta: poolBalance1Delta.toString(),
+                executionPrice: Number(executionPrice.toString()).toFixed(4).toString(),
+                feeGrowthGlobal0X128Delta: (feeGrowthGlobal0X128After - feeGrowthGlobal0X128).toString(),
+                feeGrowthGlobal1X128Delta: (feeGrowthGlobal1X128After - feeGrowthGlobal1X128).toString(),
+                poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
+                poolPriceAfter: formatPrice(poolInfoAfter.sqrtPriceX96),
+                tickAfter: Number(poolInfoAfter.tick),
+                tickBefore: Number(poolInfoBefore.tick),
+              }).toMatchSnapshot();
             }
           });
         }
@@ -859,6 +864,11 @@ describe('OrbitTonPool', () => {
           fee: feeAmount,
           sqrt_price_x96: startingSqrtPrice,
           tick_spacing: tickSpacing,
+          jetton_master_ref: {
+            kind: 'JettonMasterRef',
+            jetton0_master: token0MasterContract.address,
+            jetton1_master: token1MasterContract.address,
+          },
         },
         {
           value: toNano('0.2'),
