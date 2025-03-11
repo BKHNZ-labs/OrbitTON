@@ -14,7 +14,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
   const userAddress = provider.sender().address!;
   const pool = provider.open(
-    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQADOUolXlWNgWXmMqMWeCK_wfm8oUejTfRomQwTBI989T9f')),
+    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQA2cMCngViW_vCGu1P77XJPs8ouLiBZa9B5_prm8vqEOQVR')),
   );
-  console.log('Pool info:', await pool.getPoolInfo());
+  console.log('Pool info:', await pool.getJettonsWallet());
 }

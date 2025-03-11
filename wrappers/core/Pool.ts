@@ -110,7 +110,7 @@ namespace PoolWrapper {
       let data: any[] = [];
       while (tuple.remaining > 0) {
         const item = tuple.pop();
-        if (item.type === 'slice') {
+        if (item.type === 'cell') {
           data = [...data, item.cell.beginParse().loadAddress()];
         }
       }
