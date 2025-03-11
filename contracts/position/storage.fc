@@ -1,12 +1,12 @@
-global int storage::tick_lower;
-global int storage::tick_upper;
-global int storage::liquidity;
-global int storage::fee_growth_inside0_last_x128;
-global int storage::fee_growth_inside1_last_x128;
-global int storage::token_owed0;
-global int storage::token_owed1;
-global slice storage::owner_address;
-global slice storage::pool_address;
+global int storage::tick_lower; ;; int24
+global int storage::tick_upper; ;; int24
+global int storage::liquidity; ;; uint128
+global int storage::fee_growth_inside0_last_x128; ;; uint256
+global int storage::fee_growth_inside1_last_x128; ;; uint256
+global int storage::token_owed0; ;; uint128
+global int storage::token_owed1; ;; uint128
+global slice storage::owner_address; ;; msg_addr
+global slice storage::pool_address; ;; msg_addr
 
 ;; load_data populates storage variables using stored data
 () load_data() impure {

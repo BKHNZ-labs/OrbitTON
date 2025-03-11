@@ -17,6 +17,7 @@
 #include "pool/constants.fc";
 #include "pool/structs.fc";
 #include "pool/storage.fc";
+#include "pool/tick-utils.fc";
 #include "position/utils.fc";
 #include "position/opcodes.fc";
 
@@ -103,57 +104,18 @@
     slice lp_account = calculate_user_lp_account_address(recipient, my_address(), tick_lower,tick_upper,storage::lp_account_code);
     throw_unless(error::unauthorized, compare_address(sender_address, lp_account));
     ;; _updatePosition
-    int flipped_lower = 0;
-    int flipped_upper = 0;
-    ~strdump("cb_add_liquidity");
-    ~dump(my_address().slice_hash());
-    ~dump(storage::tick);
-    if(liquidity_delta != 0){
-      flipped_lower = storage::ticks~tick::update(
-        tick_lower,
-        storage::tick,
-        liquidity_delta,
-        storage::fee_growth_global_0x128,
-        storage::fee_growth_global_1x128,
-        0,
-        storage::max_liquidity_per_tick
-      );
+    (
+      int flipped_lower, 
+      int flipped_upper,
+      int fee_growth_inside_0X128,
+      int fee_growth_inside_1X128,
+      cell tick_map
+    ) = update_position_ticks(storage::ticks, tick_lower, tick_upper, storage::tick, liquidity_delta,storage::fee_growth_global_0x128, storage::fee_growth_global_1x128, storage::max_liquidity_per_tick);
+    storage::ticks = tick_map;
 
-      flipped_upper = storage::ticks~tick::update(
-        tick_upper,
-        storage::tick,
-        liquidity_delta,
-        storage::fee_growth_global_0x128,
-        storage::fee_growth_global_1x128,
-        -1,
-        storage::max_liquidity_per_tick
-      );
-    }
+    (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, liquidity_delta, storage::sqrt_price_x96, storage::liquidity);
+     storage::liquidity = liquidity;
 
-    if (liquidity_delta < 0){
-      if(flipped_lower){
-        storage::ticks~tick::clear(tick_lower);
-      }
-      if(flipped_upper){
-        storage::ticks~tick::clear(tick_upper);
-      }
-    }
-    (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = storage::ticks.tick::get_fee_growth_inside(tick_lower,tick_upper, storage::tick, storage::fee_growth_global_0x128,storage::fee_growth_global_1x128);
-    int amount0 = 0;
-    int amount1 = 0;
-    if(storage::tick < tick_lower){
-      amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
-    } elseif (storage::tick < tick_upper) {
-      amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
-      amount1 = sqrt_price_math::get_amount1_delta_special(
-        tick_math::get_sqrt_ratio_at_tick(tick_lower),
-        storage::sqrt_price_x96,
-        liquidity_delta
-      );
-      storage::liquidity = storage::liquidity.liquidity_math::add_delta(liquidity_delta);
-    } else {
-      amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
-    }
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
       builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, storage::jetton0_wallet, jetton_0_amount, storage::jetton1_wallet, jetton_1_amount, storage::fee, storage::tick_spacing); 
@@ -185,8 +147,35 @@
     return ();
   }
 
-  ;; if(op == op::burn){
-  ;; }
+   if(op == op::burn){
+    int tick_lower = in_msg_body~load_int(24);
+    int tick_upper = in_msg_body~load_int(24);
+    int liquidity_delta = in_msg_body~load_int(128);
+    slice position_owner = in_msg_body~load_msg_addr();
+    (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, position_owner, my_address(),  storage::position_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
+    int position = in_msg_body~load_ref().begin_parse();
+    int position::liquidity = position~load_uint(128);
+    int position::fee_growth_inside0 = position~load_uint(256);
+    int position::fee_growth_inside1 = position~load_uint(256);
+    int position::token_owned0 = position~load_uint(128);
+    int position::token_owned1 = position~load_uint(128);
+    (
+      int flipped_lower, 
+      int flipped_upper,
+      int fee_growth_inside_0X128,
+      int fee_growth_inside_1X128,
+      cell tick_map
+    ) = update_position_ticks(storage::ticks, tick_lower, tick_upper, storage::tick, liquidity_delta,storage::fee_growth_global_0x128, storage::fee_growth_global_1x128, storage::max_liquidity_per_tick);
+    storage::ticks = tick_map;
+
+    (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, -liquidity_delta, storage::sqrt_price_x96, storage::liquidity);
+     storage::liquidity = liquidity;
+
+     
+
+
+   }
 
   ;; if(op == op::cb_burn){
 

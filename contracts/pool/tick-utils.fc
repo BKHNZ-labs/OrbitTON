@@ -1,0 +1,79 @@
+#include "../libraries/sqrt_price_math.fc";
+#include "../libraries/tick_math.fc";
+#include "../libraries/liquidity_math.fc";
+#include "../libraries/tick.fc";
+
+(int, int, int) calculate_amounts(
+    int tick_lower, 
+    int tick_upper, 
+    int tick,
+    int liquidity_delta,
+    int sqrt_price_x96,
+    int liquidity
+  ) inline_ref {
+   int amount0 = 0;
+   int amount1 = 0;
+   if(tick < tick_lower){
+      amount0 = sqrt_price_math::get_amount0_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    } elseif (tick < tick_upper) {
+      amount0 = sqrt_price_math::get_amount0_delta_special(storage::sqrt_price_x96, tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+      amount1 = sqrt_price_math::get_amount1_delta_special(
+        tick_math::get_sqrt_ratio_at_tick(tick_lower),
+        sqrt_price_x96,
+        liquidity_delta
+      );
+      liquidity = liquidity.liquidity_math::add_delta(liquidity_delta);
+    } else {
+      amount1 = sqrt_price_math::get_amount1_delta_special(tick_math::get_sqrt_ratio_at_tick(tick_lower), tick_math::get_sqrt_ratio_at_tick(tick_upper), liquidity_delta);
+    }
+
+   return (amount0, amount1, liquidity);
+}
+
+(int, int, int, int, cell) update_position_ticks(
+   cell tick_map,
+   int tick_lower,
+   int tick_upper,
+   int tick,
+   int liquidity_delta,
+   int fee_growth_global_0x128,
+   int fee_growth_global_1x128,
+   int max_liquidity
+) inline_ref {
+    int flipped_lower = 0;
+    int flipped_upper = 0;
+
+    if (liquidity_delta != 0){
+      flipped_lower = tick_map~tick::update(
+        tick_lower,
+        tick,
+        liquidity_delta,
+        fee_growth_global_0x128,
+        fee_growth_global_1x128,
+        0,
+        max_liquidity
+      );
+
+      flipped_upper = tick_map~tick::update(
+        tick_upper,
+        tick,
+        liquidity_delta,
+        fee_growth_global_0x128,
+        fee_growth_global_1x128,
+        -1,
+        max_liquidity
+      );
+    }
+
+    if (liquidity_delta < 0){
+      if(flipped_lower){
+        tick_map~tick::clear(tick_lower);
+      }
+      if(flipped_upper){
+        tick_map~tick::clear(tick_upper);
+      }
+    }
+    (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick_map.tick::get_fee_growth_inside(tick_lower, tick_upper, tick, fee_growth_global_0x128, fee_growth_global_1x128);
+
+    return (flipped_lower, flipped_upper, fee_growth_inside_0X128, fee_growth_inside_1X128, tick_map);
+}

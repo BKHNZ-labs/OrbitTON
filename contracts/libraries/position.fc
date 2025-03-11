@@ -97,7 +97,7 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
 }
 
 
-(int,int,int,int,int) position::simulate_update(
+(int, int, int, int, int) position::simulate_update(
     int liquidity, 
     int fee_growth_inside_0_last_x128, 
     int fee_growth_inside_1_last_x128, 
