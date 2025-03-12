@@ -39,6 +39,11 @@ export async function run(provider: NetworkProvider, args: string[]) {
       fee: Number(feeTier),
       sqrt_price_x96: encodePriceSqrt(BigInt(reserve0), BigInt(reserve1)),
       tick_spacing: Number(tickSpacing),
+      jetton_master_ref: {
+        kind: 'JettonMasterRef',
+        jetton0_master: token0Address,
+        jetton1_master: token1Address,
+      },
     },
     {
       value: toNano('0.1'),

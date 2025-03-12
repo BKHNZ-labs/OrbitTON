@@ -110,7 +110,7 @@ namespace PoolWrapper {
       let data: any[] = [];
       while (tuple.remaining > 0) {
         const item = tuple.pop();
-        if (item.type === 'slice') {
+        if (item.type === 'cell') {
           data = [...data, item.cell.beginParse().loadAddress()];
         }
       }
@@ -131,7 +131,7 @@ namespace PoolWrapper {
     }
 
     async getFeesGrowthGlobal(provider: ContractProvider): Promise<bigint[]> {
-      const result = await provider.get('get_fees_growth_global', []);
+      const result = await provider.get('get_fee_growth_global', []);
       const tuple = result.stack;
       const feeGrowth0Global = tuple.readBigNumber();
       const feeGrowth1Global = tuple.readBigNumber();

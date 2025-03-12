@@ -43,6 +43,7 @@
   if (op == op::initialize) {
     throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
     (int relative_sqrt_price_x96, slice response_address) = (in_msg_body~load_uint(160), in_msg_body~load_msg_addr());
+    cell jetton_master_ref = in_msg_body~load_ref();
     ;; make sure it is first time
     if ((storage::tick == 0) & (storage::sqrt_price_x96 == 0) & (storage::max_liquidity_per_tick == 0)) {
       int relative_tick = tick_math::get_tick_at_sqrt_ratio(relative_sqrt_price_x96);
@@ -57,8 +58,8 @@
                   begin_cell()
                     .store_slice(storage::jetton0_wallet) ;; jetton 1
                     .store_slice(storage::jetton1_wallet) ;; jetton 0
-
                     .store_slice(response_address)
+                    .store_ref(jetton_master_ref)
                     .end_cell()
             )
              .store_ref(
@@ -161,7 +162,7 @@
     int position::token_owned0 = position~load_uint(128);
     int position::token_owned1 = position~load_uint(128);
     (
-      int flipped_lower, 
+      int flipped_lower,  
       int flipped_upper,
       int fee_growth_inside_0X128,
       int fee_growth_inside_1X128,
@@ -357,17 +358,16 @@
       if(amount1 < 0) {
           amount1 = 0 - amount1;
       }
-      amount0 = amount_specified - amount0; 
-
-      builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap, storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+      int amount0_refund = amount_specified - amount0; 
+      builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap,storage::jetton0_wallet, amount0_refund, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
       send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       } else {
-         if (amount0 < 0) {
-          amount0 = 0 - amount0;
-          }
-          amount1 = amount_specified - amount1; 
-          builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
-          send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
+      if (amount0 < 0) {
+      amount0 = 0 - amount0;
+      }
+      int amount1_refund = amount_specified - amount1; 
+      builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1_refund, storage::fee, storage::tick_spacing);
+      send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       }
     
     builder msg = begin_cell()
