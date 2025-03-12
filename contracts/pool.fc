@@ -49,10 +49,7 @@
       storage::tick = relative_tick;
       storage::sqrt_price_x96 = relative_sqrt_price_x96;
       storage::max_liquidity_per_tick = tick::tick_spacing_to_max_liquidity_per_tick(storage::tick_spacing);
-      ~dump(op::initialize);
-      ~dump(my_address().slice_hash());
-      ~dump(storage::tick);
-      ~dump(storage::sqrt_price_x96);
+
       builder body = begin_cell()
             .store_uint(op::cb_create_pool, 32)
             .store_uint(query_id, 64)
@@ -112,6 +109,9 @@
       cell tick_map
     ) = update_position_ticks(storage::ticks, tick_lower, tick_upper, storage::tick, liquidity_delta,storage::fee_growth_global_0x128, storage::fee_growth_global_1x128, storage::max_liquidity_per_tick);
     storage::ticks = tick_map;
+    ~strdump("op::cb_add_liquidity::fee_growth_inside_0X128");
+    ~dump(fee_growth_inside_0X128);
+    ~dump(fee_growth_inside_1X128);
 
     (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, liquidity_delta, storage::sqrt_price_x96, storage::liquidity);
      storage::liquidity = liquidity;
@@ -150,11 +150,11 @@
    if(op == op::burn){
     int tick_lower = in_msg_body~load_int(24);
     int tick_upper = in_msg_body~load_int(24);
-    int liquidity_delta = in_msg_body~load_int(128);
+    int liquidity_delta = in_msg_body~load_uint(128);
     slice position_owner = in_msg_body~load_msg_addr();
     (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, position_owner, my_address(),  storage::position_code);
     throw_unless(error::unauthorized, compare_address(sender_address, position_address));
-    int position = in_msg_body~load_ref().begin_parse();
+    slice position = in_msg_body~load_ref().begin_parse();
     int position::liquidity = position~load_uint(128);
     int position::fee_growth_inside0 = position~load_uint(256);
     int position::fee_growth_inside1 = position~load_uint(256);
@@ -169,17 +169,55 @@
     ) = update_position_ticks(storage::ticks, tick_lower, tick_upper, storage::tick, liquidity_delta,storage::fee_growth_global_0x128, storage::fee_growth_global_1x128, storage::max_liquidity_per_tick);
     storage::ticks = tick_map;
 
-    (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, -liquidity_delta, storage::sqrt_price_x96, storage::liquidity);
+    (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, (0 - liquidity_delta), storage::sqrt_price_x96, storage::liquidity);
      storage::liquidity = liquidity;
+    builder msg = begin_cell()
+                          .store_uint(op::cb_pool_burn, 32)
+                          .store_uint(query_id, 64)
+                          .store_uint(fee_growth_inside_0X128, 256)
+                          .store_uint(fee_growth_inside_1X128, 256)
+                          .store_uint(liquidity_delta, 128)
+                          .store_ref(
+                            begin_cell()
+                              .store_int(amount0, 256)
+                              .store_int(amount1, 256)
+                              .store_slice(position_owner)
+                              .end_cell()
+                          );
 
-     
+    send_simple_message(0, sender_address, msg.end_cell(), CARRY_REMAINING_GAS);
 
-
+    save_data();
+    return ();
    }
 
-  ;; if(op == op::cb_burn){
+  if(op == op::cb_collect){
+    int tick_lower = in_msg_body~load_int(24);
+    int tick_upper = in_msg_body~load_int(24);
+    slice position_owner = in_msg_body~load_msg_addr();
+    slice receipient = in_msg_body~load_msg_addr();
+    slice ds = in_msg_body~load_ref().begin_parse();
+    int amount0 = ds~load_int(256);
+    int amount1 = ds~load_int(256);
 
-  ;; }
+    (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, position_owner, my_address(), storage::position_code);
+    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
+
+    builder msg_payto = build_pay_to_msg(query_id, position_owner, exit::collect, storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+    send_simple_message(0, storage::router_address, msg_payto.end_cell(), CARRY_REMAINING_GAS);
+    
+    builder msg_collect_event = begin_cell()
+                    .store_slice(position_owner)
+                    .store_slice(receipient)
+                    .store_int(tick_lower, 24)
+                    .store_int(tick_upper, 24)
+                    .store_int(amount0, 128)
+                    .store_int(amount1, 128);
+
+    emit_log_simple(COLLECT_EVENT, msg_collect_event.end_cell(), query_id);
+    save_data();
+    return ();
+  }
 
   if(op == op::swap){
     throw_unless(error::unauthorized, compare_address(sender_address, storage::router_address));
@@ -321,14 +359,14 @@
       }
       amount0 = amount_specified - amount0; 
 
-      builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+      builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap, storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
       send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       } else {
          if (amount0 < 0) {
           amount0 = 0 - amount0;
           }
           amount1 = amount_specified - amount1; 
-          builder msg = build_pay_to_msg(query_id, response_address, exist::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+          builder msg = build_pay_to_msg(query_id, response_address, exit::finish_swap,storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
           send_simple_message(0, storage::router_address, msg.end_cell(), CARRY_REMAINING_GAS);
       }
     
@@ -357,30 +395,6 @@
     return ();
   }
 
-  if (op == op::cb_mint_position) {
-    slice first_ref = in_msg_body~load_ref().begin_parse();
-    (int tick_lower, int tick_upper, int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128) = (first_ref~load_int(24), first_ref~load_int(24), first_ref~load_uint(128), first_ref~load_uint(256), first_ref~load_uint(256));
-    slice second_ref = in_msg_body~load_ref().begin_parse();
-    (int tokens_owed_0, int tokens_owed_1, slice owner_address) = (second_ref~load_uint(128), second_ref~load_uint(128), second_ref~load_msg_addr());
-    (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, owner_address, my_address(), storage::position_code);
-    throw_unless(error::unauthorized, compare_address(sender_address, position_address));
-    send_empty_message(0, owner_address, IGNORE_ERRORS + CARRY_REMAINING_GAS);
-
-    builder msg = begin_cell()
-                  .store_slice(owner_address)
-                  .store_slice(owner_address)
-                  .store_int(tick_lower, 24)
-                  .store_int(tick_upper, 24)
-                  .store_uint(liquidity, 128)
-                  .store_uint(tokens_owed_0, 128)
-                  .store_uint(tokens_owed_1, 128);
-
-
-    emit_log_simple(MINT_EVENT, msg.end_cell(), query_id);
-    return ();
-  }
-
-  
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
 

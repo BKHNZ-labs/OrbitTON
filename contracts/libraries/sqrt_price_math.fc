@@ -120,9 +120,7 @@ int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
   if (sqrt_ratio_a_x96 > sqrt_ratio_b_x96) {
     (sqrt_ratio_a_x96, sqrt_ratio_b_x96) = (sqrt_ratio_b_x96, sqrt_ratio_a_x96);
   }
-  ~strdump("sqrtPrice");
-  ~dump(sqrt_ratio_a_x96);
-  ~dump(sqrt_ratio_b_x96);
+ 
   int numerator1 = liquidity << fixed_point_96::resolution;
   int numerator2 = sqrt_ratio_b_x96 - sqrt_ratio_a_x96;
   throw_unless(error::unexpected_error, sqrt_ratio_a_x96 > 0);
@@ -132,7 +130,7 @@ int sqrt_price_math::get_amount0_delta(int sqrt_ratio_a_x96, int sqrt_ratio_b_x9
       sqrt_ratio_a_x96
     );
   }
-  return full_math::mul_div(numerator1, numerator2, sqrt_ratio_b_x96) ~/ sqrt_ratio_a_x96;
+  return full_math::mul_div(numerator1, numerator2, sqrt_ratio_b_x96) / sqrt_ratio_a_x96;
 }
 
 ;;; @notice Gets the amount1 delta between two prices
@@ -168,4 +166,10 @@ int sqrt_price_math::get_amount0_delta_special(int sqrt_ratio_a_x96, int sqrt_ra
 int sqrt_price_math::get_amount1_delta_special(int sqrt_ratio_a_x96, int sqrt_ratio_b_x96, int liquidity) inline_ref {
   return liquidity < 0 ? - sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, - liquidity, 0)
                        : sqrt_price_math::get_amount1_delta(sqrt_ratio_a_x96, sqrt_ratio_b_x96, liquidity, -1);
+
+
+
+
+
+
 }

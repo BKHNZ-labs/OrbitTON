@@ -42,6 +42,9 @@
 ) inline_ref {
     int flipped_lower = 0;
     int flipped_upper = 0;
+    ~strdump("update_position_ticks");
+    ~dump(fee_growth_global_0x128);
+    ~dump(fee_growth_global_1x128);
 
     if (liquidity_delta != 0){
       flipped_lower = tick_map~tick::update(

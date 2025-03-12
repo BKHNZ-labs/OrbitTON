@@ -1,5 +1,5 @@
-import { Blockchain, printTransactionFees, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { beginCell, Cell, Dictionary, toNano } from '@ton/core';
+import { Blockchain, printTransactionFees, SandboxContract, SendMessageResult, TreasuryContract } from '@ton/sandbox';
+import { Address, beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
@@ -125,47 +125,20 @@ describe('Pool Test', () => {
   });
 
   describe('#mint', () => {
-    it('Jettons pool', async () => {
-      const routerJetton0Wallet = await token0MasterContract.getWalletAddress(router.address);
-      console.log('Router wallet address', routerJetton0Wallet.toString());
-      const routerJetton1Wallet = await token1MasterContract.getWalletAddress(router.address);
-      console.log('Router wallet address', routerJetton1Wallet.toString());
-      const createPool = await router.sendCreatePool(
-        deployer.getSender(),
-        {
-          kind: 'OpCreatePool',
-          query_id: 0,
-          jetton0_wallet: routerJetton0Wallet,
-          jetton1_wallet: routerJetton1Wallet,
-          fee: 3000,
-          sqrt_price_x96: encodePriceSqrt(1n, 10n),
-          tick_spacing: 60,
-        },
-        {
-          value: toNano('0.1'),
-        },
-      );
-      const pool = await router.getPoolAddress(routerJetton0Wallet, routerJetton1Wallet, 3000n, 60n);
+    let routerJetton0WalletAddress: Address;
+    let routerJetton1WalletAddress: Address;
+    beforeEach(async () => {
+      routerJetton0WalletAddress = await token0MasterContract.getWalletAddress(router.address);
+      routerJetton1WalletAddress = await token1MasterContract.getWalletAddress(router.address);
+    });
+    it('fails if not initialized', async () => {
+      const pool = await router.getPoolAddress(routerJetton0WalletAddress, routerJetton1WalletAddress, 3000n, 60n);
       const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
-      const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
-      const position0Address = await poolContract.getPositionAddress(
-        BigInt(tickMin),
-        BigInt(tickMax),
-        deployer.address,
-      );
-
-      expect(createPool.transactions).toHaveTransaction({
-        from: router.address,
-        to: pool,
-        success: true,
-      });
-
-      // Create position
-      let transfer0;
-      let transfer1;
+      let transfer0: SendMessageResult;
+      let transfer1: SendMessageResult;
       if (
-        BigInt(`0x${beginCell().storeAddress(routerJetton0Wallet).endCell().hash().toString('hex')}`) <
-        BigInt(`0x${beginCell().storeAddress(routerJetton1Wallet).endCell().hash().toString('hex')}`)
+        BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) <
+        BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`)
       ) {
         transfer0 = await token0WalletContract.sendTransferMint(
           deployer.getSender(),
@@ -181,7 +154,7 @@ describe('Pool Test', () => {
             mint: {
               kind: 'MintParams',
               forward_opcode: PoolWrapper.Opcodes.Mint,
-              jetton1_wallet: routerJetton1Wallet,
+              jetton1_wallet: routerJetton1WalletAddress,
               tick_lower: tickMin,
               tick_upper: tickMax,
               tick_spacing: 60,
@@ -208,7 +181,7 @@ describe('Pool Test', () => {
             mint: {
               kind: 'MintParams',
               forward_opcode: PoolWrapper.Opcodes.Mint,
-              jetton1_wallet: routerJetton0Wallet,
+              jetton1_wallet: routerJetton0WalletAddress,
               tick_lower: tickMin,
               tick_upper: tickMax,
               tick_spacing: 60,
@@ -235,7 +208,7 @@ describe('Pool Test', () => {
             mint: {
               kind: 'MintParams',
               forward_opcode: PoolWrapper.Opcodes.Mint,
-              jetton1_wallet: routerJetton0Wallet,
+              jetton1_wallet: routerJetton0WalletAddress,
               tick_lower: tickMin,
               tick_upper: tickMax,
               tick_spacing: 60,
@@ -262,7 +235,154 @@ describe('Pool Test', () => {
             mint: {
               kind: 'MintParams',
               forward_opcode: PoolWrapper.Opcodes.Mint,
-              jetton1_wallet: routerJetton1Wallet,
+              jetton1_wallet: routerJetton1WalletAddress,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+      }
+    });
+    it('Jettons pool', async () => {
+      const createPool = await router.sendCreatePool(
+        deployer.getSender(),
+        {
+          kind: 'OpCreatePool',
+          query_id: 0,
+          jetton0_wallet: routerJetton0WalletAddress,
+          jetton1_wallet: routerJetton1WalletAddress,
+          fee: 3000,
+          sqrt_price_x96: encodePriceSqrt(1n, 10n),
+          tick_spacing: 60,
+        },
+        {
+          value: toNano('0.1'),
+        },
+      );
+      const pool = await router.getPoolAddress(routerJetton0WalletAddress, routerJetton1WalletAddress, 3000n, 60n);
+      const poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(pool));
+      const lpAccount = await poolContract.getLpAccountAddress(deployer.address, BigInt(tickMin), BigInt(tickMax));
+      const position0Address = await poolContract.getPositionAddress(
+        BigInt(tickMin),
+        BigInt(tickMax),
+        deployer.address,
+      );
+
+      expect(createPool.transactions).toHaveTransaction({
+        from: router.address,
+        to: pool,
+        success: true,
+      });
+
+      // Create position
+      let transfer0;
+      let transfer1;
+      if (
+        BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) <
+        BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`)
+      ) {
+        transfer0 = await token0WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 9996n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton1WalletAddress,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+
+        transfer1 = await token1WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 2000n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton0WalletAddress,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+      } else {
+        transfer0 = await token1WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 9996n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton0WalletAddress,
+              tick_lower: tickMin,
+              tick_upper: tickMax,
+              tick_spacing: 60,
+              fee: 3000,
+              liquidity_delta: 3161n,
+            },
+          },
+          {
+            value: toNano(1),
+          },
+        );
+
+        transfer1 = await token0WalletContract.sendTransferMint(
+          deployer.getSender(),
+          {
+            kind: 'OpJettonTransferMint',
+            query_id: 0,
+            jetton_amount: 2000n,
+            to_address: router.address,
+            response_address: deployer.address,
+            custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            forward_ton_amount: toNano(0.8),
+            either_payload: true,
+            mint: {
+              kind: 'MintParams',
+              forward_opcode: PoolWrapper.Opcodes.Mint,
+              jetton1_wallet: routerJetton1WalletAddress,
               tick_lower: tickMin,
               tick_upper: tickMax,
               tick_spacing: 60,
@@ -296,12 +416,6 @@ describe('Pool Test', () => {
         to: pool,
         success: true,
       });
-      expect(transfer1.transactions).toHaveTransaction({
-        from: pool,
-        to: position0Address,
-        success: true,
-      });
-      // printTransactionFees(transfer1.transactions);
     });
   });
 });

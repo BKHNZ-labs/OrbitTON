@@ -3,9 +3,9 @@ import { beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import { SqrtPriceMathTest } from '../../wrappers/tests/SqrtPriceMathTest';
-import Decimal from 'decimal.js';
 import { encodePriceSqrt, expandTo18Decimals, MaxUint128, MaxUint256 } from '../shared/utils';
 import BigNumber from 'bignumber.js';
+
 
 describe('SqrtPriceMathTest', () => {
   let code: Cell;
@@ -257,6 +257,7 @@ describe('SqrtPriceMathTest', () => {
         expandTo18Decimals(1),
         false,
       );
+      console.log(amount0Up, amount0Down);
       expect(amount0Up).toBe(amount0Down + 1n);
     });
   });

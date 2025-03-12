@@ -9,7 +9,7 @@ import {
   formatPrice,
   formatTokenAmount,
   getMaxLiquidityPerTick,
-  getMaxTick,
+  getMaxTick, 
   getMinTick,
   filterOutSuccessMessages,
   MAX_SQRT_RATIO,

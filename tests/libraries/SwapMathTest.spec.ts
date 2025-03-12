@@ -5,6 +5,10 @@ import '@ton/test-utils';
 import { SwapMathTest } from '../../wrappers/tests/SwapMathTest';
 import { encodePriceSqrt, expandTo18Decimals } from '../shared/utils';
 import { SqrtPriceMathTest } from '../../wrappers/tests/SqrtPriceMathTest';
+// @ts-ignore
+BigInt.prototype.toJSON = function() {
+  return this.toString();
+};
 
 const Q128 = BigInt(2) ** BigInt(128);
 describe('SwapMath', () => {
