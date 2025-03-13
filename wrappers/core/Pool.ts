@@ -108,9 +108,17 @@ namespace PoolWrapper {
       });
     }
 
-    async getTicks(provider: ContractProvider): Promise<Dictionary<number, TickInfo>> {
+    async getTicks(provider: ContractProvider): Promise<[number, TickInfo][]> {
       const poolState = await this.getPoolState(provider);
-      return poolState.third_ref.ticks;
+      const ticks = poolState.third_ref.ticks;
+      const allParsedTicksAndTick: [number, TickInfo][] = [];
+      ticks.keys().forEach((key) => {
+        const tick = ticks.get(key);
+        if (tick) {
+          allParsedTicksAndTick.push([key, tick]);
+        }
+      });
+      return allParsedTicksAndTick;
     }
 
     async getPoolState(provider: ContractProvider): Promise<PoolStorage> {
