@@ -886,7 +886,13 @@ describe('Pool Test', () => {
             expect( (await poolContract.getTickInfo(0n)).liquidity_gross).toEqual(160n);
             expect( (await poolContract.getTickInfo(BigInt(tickSpacing))).liquidity_gross).toEqual(150n);
             expect( (await poolContract.getTickInfo(BigInt(tickSpacing * 2))).liquidity_gross).toEqual(60n);
+            
+            const ticks = await poolContract.getTicks();
         
+            ticks.keys().forEach((key) => {
+              console.log(key);
+            });
+
           })
 
           it('removes liquidity from liquidityGross', async () => {

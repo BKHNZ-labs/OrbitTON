@@ -12,6 +12,7 @@ import {
 import { crc32, ValueOps } from '../crc32';
 import { InMsgBody, storeInMsgBody } from '../../tlb/pool/messages';
 import { loadInfo, Info } from '../../tlb/tick';
+import { loadPoolStorage, PoolStorage, TickInfo } from '../../tlb/pool';
 
 namespace PoolWrapper {
   export const Opcodes = {
@@ -105,6 +106,19 @@ namespace PoolWrapper {
         sendMode: SendMode.PAY_GAS_SEPARATELY,
         body: body.endCell(),
       });
+    }
+
+    async getTicks(provider: ContractProvider): Promise<Dictionary<number, TickInfo>> {
+      const poolState = await this.getPoolState(provider);
+      return poolState.third_ref.ticks;
+    }
+
+    async getPoolState(provider: ContractProvider): Promise<PoolStorage> {
+      const storage = await provider.getState();
+      if (storage.state.type === 'active') {
+        return loadPoolStorage(Cell.fromBoc(Buffer.from(storage.state.data ?? Buffer.from([])))[0].beginParse());
+      }   
+      throw new Error('Position is not active');
     }
 
     async getJettonsWallet(provider: ContractProvider): Promise<Address[]> {

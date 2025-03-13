@@ -23,7 +23,6 @@ pool_second#_
   liquidity:uint128
   = PoolSecond;
 
-
 hme_empty$0 {n:#} {X:Type} = HashmapE n X;
 hme_root$1 {n:#} {X:Type} root:^(Hashmap n X) = HashmapE n X;
 
@@ -31,13 +30,12 @@ tick#_
   liquidity_gross:uint128 
   liquidity_net:int128 
   fee_growth_outside_0_x128:uint256 
-  fee_growth_outside_1_x128:uint256 
-  tick_cumulative_outside:int56 
+  fee_growth_outside_1_x128:uint256  
   initialized:Bool = TickInfo;
 
 pool_third#_
   max_liquidity_per_tick:uint128
-  ticks:^(HashmapE 32 TickInfo)
+  ticks:(HashmapE 24 TickInfo)
   position_code:^Cell
   lp_account_code:^Cell
   = PoolThird;
