@@ -11,12 +11,14 @@ import {
 } from '@ton/core';
 import { crc32, ValueOps } from '../crc32';
 import { InMsgBody, storeInMsgBody } from '../../tlb/pool/messages';
+import { loadInfo, Info } from '../../tlb/tick';
 
 namespace PoolWrapper {
   export const Opcodes = {
     Mint: crc32('op::mint'),
     Swap: crc32('op::swap'),
     Burn: crc32('op::burn'),
+    
     CallBackLiquidity: crc32('op::cb_add_liquidity'),
   };
 
@@ -175,26 +177,6 @@ namespace PoolWrapper {
       return result.stack.readAddress();
     }
 
-    async getBatchTickIndex(provider: ContractProvider, tick: bigint): Promise<bigint> {
-      const result = await provider.get('get_batch_tick_index', [
-        {
-          type: 'int',
-          value: tick,
-        },
-      ]);
-      return result.stack.readBigNumber();
-    }
-
-    async getBatchTickAddress(provider: ContractProvider, batchTickIndex: bigint): Promise<Address> {
-      const result = await provider.get('get_calculate_batch_tick_address', [
-        {
-          type: 'int',
-          value: batchTickIndex,
-        },
-      ]);
-      return result.stack.readAddress();
-    }
-
     async getPositionAddress(
       provider: ContractProvider,
       tick_lower: bigint,
@@ -234,6 +216,27 @@ namespace PoolWrapper {
       const feeGrowthGlobal1X128 = result.stack.readBigNumber();
 
       return { feeGrowthGlobal0X128, feeGrowthGlobal1X128 };
+    }
+
+    async getTickInfo(provider: ContractProvider, tick: bigint): Promise<Info> {
+      const result = await provider.get('get_tick_info_raw', [
+        {
+          type: 'int',
+          value: tick,
+        },
+      ]);
+      const infoRaw = result.stack.readCellOpt();
+      if (!infoRaw) {
+        return {
+            kind: 'Info',
+           liquidity_gross: 0n,
+           liquidity_net: 0n,
+           fee_growth_outside_0_x128: 0n,
+           fee_growth_outside_1_x128: 0n,
+           initialized: false,
+        };
+      }
+        return loadInfo(infoRaw.beginParse());
     }
   }
 }

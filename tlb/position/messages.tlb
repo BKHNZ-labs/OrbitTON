@@ -1,0 +1,19 @@
+burn_position#_
+    liquidity_delta:uint128
+    = BurnPositionParams;
+
+op_burn_position#446497ac
+    query_id:uint64
+    body: BurnPositionParams
+    = BurnPositionMessage;
+
+collect#_
+    recipient:MsgAddress
+    amount_0_requested:uint128
+    amount_1_requested:uint128
+    = CollectParams;
+
+op_collect#c89aeef9
+    query_id:uint64
+    body: CollectParams
+    = CollectMessage;

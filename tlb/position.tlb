@@ -17,3 +17,8 @@ position_second#_
   owner_address:MsgAddress
   pool_address:MsgAddress
   = PositionSecond;
+
+// Include position messages by reference
+// See tlb/position/messages.tlb for full definitions
+burn_position_message$_ = BurnPositionMessage;
+collect_message$_ = CollectMessage;

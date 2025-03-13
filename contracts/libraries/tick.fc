@@ -123,10 +123,6 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing) inline_ref {
 ) {
     (slice lower, int lower_existed) = tick_map.idict_get?(24, tick_lower);
     (slice upper, int upper_existed) = tick_map.idict_get?(24, tick_upper);
-    ~strdump("lower_existed");
-    ~dump(lower_existed);
-    ~strdump("upper_existed");
-    ~dump(upper_existed);
     (
         int lower_liquidity_gross, 
         int lower_liquidity_net, 
@@ -246,10 +242,10 @@ int tick::tick_spacing_to_max_liquidity_per_tick(int tick_spacing) inline_ref {
             return (key, existed);
         }
     } else {
-      (int key, _, int existed) = ticks.idict_get_next?(24, tick);
-      if (existed) {
-          return (key, existed);
-      }
+          (int key, _, int existed) = ticks.idict_get_next?(24, tick);
+        if (existed) {
+            return (key, existed);
+        }
     }
     return (0, 0);
 }

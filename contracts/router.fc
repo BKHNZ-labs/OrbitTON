@@ -44,7 +44,7 @@
       int tick_spacing = ref_ds~load_int(24);
       int liquidity_delta = ref_ds~load_int(128);
       slice jetton0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
+      (_, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
       builder mint_msg = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
@@ -62,7 +62,7 @@
                   .store_int(liquidity_delta, 128)
                   .store_slice(from_user);
       mint_msg = mint_msg.store_ref(body_builder.end_cell());
-      send_message_with_stateinit(0, pool_address, state_init, mint_msg.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(0, pool_address, mint_msg.end_cell(), CARRY_REMAINING_GAS);
     }
 
     if (forward_opcode == op::swap) {;

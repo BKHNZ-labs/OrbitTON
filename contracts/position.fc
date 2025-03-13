@@ -34,6 +34,7 @@
     int fee_growth_inside_0_x128 = in_msg_body~load_uint(256);
     int fee_growth_inside_1_x128 = in_msg_body~load_uint(256);
     cell amount_cell = in_msg_body~load_ref();
+ 
     (int liquidity, int fee_growth_inside_0_last_x128, int fee_growth_inside_1_last_x128, int tokens_owed_0, int tokens_owed_1) = position::simulate_update(
       storage::liquidity, 
       storage::fee_growth_inside0_last_x128, 
@@ -48,7 +49,7 @@
     storage::fee_growth_inside1_last_x128 = fee_growth_inside_1_last_x128;
     storage::token_owed0 = tokens_owed_0;
     storage::token_owed1 = tokens_owed_1;
-
+  
     builder msg = begin_cell()
                   .store_slice(storage::owner_address)
                   .store_slice(storage::owner_address)
@@ -63,6 +64,7 @@
   }
 
   if (op == op::burn_position) {
+    ~dump("op::burn_position");
     throw_unless(error::unauthorized, compare_address(storage::owner_address, sender_address));
     int liquidity_delta = in_msg_body~load_uint(128);
     builder msg = begin_cell()
@@ -73,15 +75,21 @@
                     .store_uint(liquidity_delta, 128)
                     .store_slice(storage::owner_address)
                     .store_ref(
-                          begin_cell()
+      begin_cell()
                             .store_uint(storage::liquidity, 128)
                             .store_uint(storage::fee_growth_inside0_last_x128, 256)
                             .store_uint(storage::fee_growth_inside1_last_x128, 256)
                             .store_uint(storage::token_owed0, 128)
                             .store_uint(storage::token_owed1, 128)
                             .end_cell()
-                    );
-
+    );
+    ~strdump("op::burn_position");
+    ~dump(liquidity_delta);
+    ~dump(storage::liquidity);
+    ~dump(storage::fee_growth_inside0_last_x128);
+    ~dump(storage::fee_growth_inside1_last_x128);
+    ~dump(storage::token_owed0);
+    ~dump(storage::token_owed1);
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return ();
@@ -156,11 +164,11 @@
                     .store_slice(storage::owner_address)
                     .store_slice(receipient)
                     .store_ref(
-                          begin_cell()
+      begin_cell()
                             .store_int(amount0, 128)
                             .store_int(amount1, 128)
                             .end_cell()
-                    );
+    );
 
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
 
