@@ -15,8 +15,8 @@ import { loadPositionStorage } from '../../tlb/position';
     export const Opcodes = {
      BurnPosition: crc32('op::burn_position'),
      Collect: crc32('op::collect'),
+     CallBackPoolBurn: crc32('op::cb_pool_burn'),
     };
-  
   
     export class Position implements Contract {
       static workchain = 0;

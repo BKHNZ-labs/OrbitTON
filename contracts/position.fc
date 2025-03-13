@@ -64,7 +64,6 @@
   }
 
   if (op == op::burn_position) {
-    ~dump("op::burn_position");
     throw_unless(error::unauthorized, compare_address(storage::owner_address, sender_address));
     int liquidity_delta = in_msg_body~load_uint(128);
     builder msg = begin_cell()
