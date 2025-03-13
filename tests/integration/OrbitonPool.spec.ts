@@ -12,6 +12,7 @@ import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../../wrappers/core/JettonWallet';
 import BigNumber from 'bignumber.js';
 import PositionWrapper from '../../wrappers/core/Position';
+import { TickInfo } from '../../tlb/pool';
 
 describe('Pool Test', () => {
   let poolCode: Cell;
@@ -888,11 +889,14 @@ describe('Pool Test', () => {
             expect( (await poolContract.getTickInfo(BigInt(tickSpacing * 2))).liquidity_gross).toEqual(60n);
             
             const ticks = await poolContract.getTicks();
-        
+            const allParsedTicksAndTick: [number, TickInfo][] = [];
             ticks.keys().forEach((key) => {
-              console.log(key);
+              const tick = ticks.get(key);
+              if (tick) {
+                allParsedTicksAndTick.push([key, tick]);
+              }
             });
-
+            console.log(allParsedTicksAndTick);
           })
 
           it('removes liquidity from liquidityGross', async () => {
