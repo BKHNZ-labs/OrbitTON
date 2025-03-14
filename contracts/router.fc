@@ -204,6 +204,7 @@
   }
 
   if (op == op::update_lp_account_code) {
+    ~dump(null());
     throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
     storage::lp_account_code = in_msg_body~load_ref();
     save_data();
