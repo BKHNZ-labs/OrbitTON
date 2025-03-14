@@ -19,7 +19,7 @@ namespace PoolWrapper {
     Mint: crc32('op::mint'),
     Swap: crc32('op::swap'),
     Burn: crc32('op::burn'),
-    
+
     CallBackLiquidity: crc32('op::cb_add_liquidity'),
     CallbackCollect: crc32('op::cb_collect'),
   };
@@ -125,7 +125,7 @@ namespace PoolWrapper {
       const storage = await provider.getState();
       if (storage.state.type === 'active') {
         return loadPoolStorage(Cell.fromBoc(Buffer.from(storage.state.data ?? Buffer.from([])))[0].beginParse());
-      }   
+      }
       throw new Error('Position is not active');
     }
 
@@ -163,8 +163,8 @@ namespace PoolWrapper {
       return [feeGrowth0Global, feeGrowth1Global];
     }
 
-    async getFeesGrowthGlobalAtTick(provider: ContractProvider, tickId: bigint): Promise<bigint[]> {
-      const result = await provider.get('get_fee_growth_global_at_tick', [
+    async getFeesGrowthOutsideAtTick(provider: ContractProvider, tickId: bigint): Promise<[bigint, bigint, boolean]> {
+      const result = await provider.get('get_fee_growth_outside_at_tick', [
         {
           type: 'int',
           value: tickId,
@@ -173,7 +173,8 @@ namespace PoolWrapper {
       const tuple = result.stack;
       const feeGrowth0Global = tuple.readBigNumber();
       const feeGrowth1Global = tuple.readBigNumber();
-      return [feeGrowth0Global, feeGrowth1Global];
+      const existed = tuple.readBoolean();
+      return [feeGrowth0Global, feeGrowth1Global, existed];
     }
 
     async getLpAccountAddress(
@@ -251,15 +252,15 @@ namespace PoolWrapper {
       const infoRaw = result.stack.readCellOpt();
       if (!infoRaw) {
         return {
-            kind: 'Info',
-           liquidity_gross: 0n,
-           liquidity_net: 0n,
-           fee_growth_outside_0_x128: 0n,
-           fee_growth_outside_1_x128: 0n,
-           initialized: false,
+          kind: 'Info',
+          liquidity_gross: 0n,
+          liquidity_net: 0n,
+          fee_growth_outside_0_x128: 0n,
+          fee_growth_outside_1_x128: 0n,
+          initialized: false,
         };
       }
-        return loadInfo(infoRaw.beginParse());
+      return loadInfo(infoRaw.beginParse());
     }
   }
 }
