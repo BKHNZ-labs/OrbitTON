@@ -108,17 +108,18 @@
       int fee_growth_inside_1X128,
       cell tick_map
     ) = update_position_ticks(storage::ticks, tick_lower, tick_upper, storage::tick, liquidity_delta,storage::fee_growth_global_0x128, storage::fee_growth_global_1x128, storage::max_liquidity_per_tick);
-    storage::ticks = tick_map;
+   
 
     (int amount0, int amount1, int liquidity) = calculate_amounts(tick_lower, tick_upper, storage::tick, liquidity_delta, storage::sqrt_price_x96, storage::liquidity);
-    storage::liquidity = liquidity;
-
+  
     if((amount0 > jetton_0_amount) | (amount1 > jetton_1_amount)){
       ;; refunds to user
       builder low_amount_body = build_pay_to_msg(query_id, recipient, error::LOW_AMOUNT, storage::jetton0_wallet, jetton_0_amount, storage::jetton1_wallet, jetton_1_amount, storage::fee, storage::tick_spacing); 
       send_simple_message(0, storage::router_address, low_amount_body.end_cell(), CARRY_REMAINING_GAS);
       return ();
-    } 
+    }
+    storage::ticks = tick_map;
+    storage::liquidity = liquidity;
   
     int refund_amount0 = jetton_0_amount - amount0;
     int refund_amount1 = jetton_1_amount - amount1;
@@ -133,7 +134,6 @@
     ;; send batch storage::tick
     remaining_gas -=  GAS::CB_ADD_LIQUIDITY;
     (cell state_init, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, recipient, my_address(),  storage::position_code);
-
     builder mint_body = begin_cell()
                         .store_uint(op::mint_position, 32)
                         .store_uint(query_id, 64)
@@ -264,10 +264,22 @@
       }
 
       int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::tick_next);
+      ~strdump("step::sqrt_price_next_x96");
+      ~dump(state::tick);
+      ~dump(step::tick_next);
+      ~dump(step::sqrt_price_next_x96);
+
       int sqrt_target_price = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
 
       (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_target_price, state::liquidity, state::amount_specified_remaining, storage::fee);
+      ~strdump(
+        "swap_math::compute_swap_step"
+      );
+      ~dump(state::sqrt_price_x96);
+      ~dump(step::amount_in);
+      ~dump(step::amount_out);
 
+      
       if(exact_input){
         state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
         state::amount_calculated -= step::amount_out;
@@ -284,6 +296,10 @@
 
       if (state::liquidity > 0) {
         state::fee_growth_global_x128 += full_math::mul_div(step::fee_amount, fixed_point_128::q128, state::liquidity);
+        ~strdump("fee_growth_global_x128");
+        ~dump(step::fee_amount);
+        ~dump(state::liquidity);
+        ~dump(state::fee_growth_global_x128);
       }
 
       if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
@@ -311,6 +327,10 @@
     } else {
       storage::sqrt_price_x96 = state::sqrt_price_x96;
     }
+    ~strdump("storage::sqrt_price_x96");
+    ~dump(storage::sqrt_price_x96);
+    ~strdump("state::fee_growth_global_x128");
+    ~dump(state::fee_growth_global_x128);
 
     ;; update liquidity if it changed
     if (cache::liquidity_start != state::liquidity) {

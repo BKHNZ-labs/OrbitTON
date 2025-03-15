@@ -1,1 +1,0 @@
-const constants::batch_index_range = 32768; ;; max entries of dict
