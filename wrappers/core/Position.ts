@@ -55,6 +55,15 @@ namespace PositionWrapper {
       };
     }
 
+    async getFeeGrowthInside(provider: ContractProvider) {
+      const storage = await this.getStorage(provider);
+      const firstRef = storage.first_ref;
+      return {
+        feeGrowthInside0LastX128: firstRef.fee_growth_inside0_last_x128,
+        feeGrowthInside1LastX128: firstRef.fee_growth_inside1_last_x128,
+      };
+    }
+
     async sendBurnPosition(provider: ContractProvider, via: Sender, value: bigint, liquidityDelta: bigint) {
       const burnParams: BurnPositionParams = {
         kind: 'BurnPositionParams',

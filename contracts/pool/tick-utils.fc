@@ -74,6 +74,6 @@
       }
     }
     (int fee_growth_inside_0X128, int fee_growth_inside_1X128) = tick_map.tick::get_fee_growth_inside(tick_lower, tick_upper, tick, fee_growth_global_0x128, fee_growth_global_1x128);
-
+    
     return (flipped_lower, flipped_upper, fee_growth_inside_0X128, fee_growth_inside_1X128, tick_map);
 }

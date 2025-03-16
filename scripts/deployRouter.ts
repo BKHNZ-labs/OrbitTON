@@ -5,7 +5,6 @@ import RouterWrapper from '../wrappers/core/Router';
 
 export async function run(provider: NetworkProvider) {
   const routerCode = await compile('Router');
-  // const batchTickCode = await compile('BatchTick');
   const lpAccountCode = await compile('LpAccount');
 
   const router = provider.open(

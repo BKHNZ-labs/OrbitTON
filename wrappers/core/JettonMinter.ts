@@ -13,6 +13,8 @@ import { TupleItemSlice } from '@ton/core';
 import { ValueOps } from '../@types';
 import { JETTON_MINTER_BOC, JETTON_WALLET_BOC } from '../helpers';
 
+
+
 namespace JettonMinterWrapper {
   export abstract class JettonMinterOpCodes {
     static transfer = 0xf8a7ea5;
@@ -21,7 +23,6 @@ namespace JettonMinterWrapper {
     static excesses = 0xd53276db;
     static burn = 0x595f07bc;
     static burn_notification = 0x7bdd97de;
-
     static provide_wallet_address = 0x2c76b973;
     static take_wallet_address = 0xd1735400;
     static mint = 0x15;

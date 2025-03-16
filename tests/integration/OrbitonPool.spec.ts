@@ -3,7 +3,14 @@ import { Address, beginCell, Cell, Dictionary, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
-import { encodePriceSqrt, expandTo18Decimals, getMaxTick, getMinTick } from '../shared/utils';
+import {
+  encodePriceSqrt,
+  expandTo18Decimals,
+  getMaxTick,
+  getMinTick,
+  MAX_SQRT_RATIO,
+  MIN_SQRT_RATIO,
+} from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 import { loadInfo } from '../../tlb/tick';
@@ -1026,7 +1033,7 @@ describe('Pool Test', () => {
                 to_address: router.address,
                 response_address: deployer.address,
                 custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                forward_ton_amount: toNano(0.05),
+                forward_ton_amount: toNano(0.8),
                 either_payload: true,
                 mint: {
                   kind: 'MintParams',
@@ -1040,7 +1047,7 @@ describe('Pool Test', () => {
                 },
               },
               {
-                value: toNano(0.1),
+                value: toNano(1),
               },
             );
             await token1WalletContract.sendTransferMint(
@@ -1052,7 +1059,7 @@ describe('Pool Test', () => {
                 to_address: router.address,
                 response_address: deployer.address,
                 custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                forward_ton_amount: toNano(0.35),
+                forward_ton_amount: toNano(0.8),
                 either_payload: true,
                 mint: {
                   kind: 'MintParams',
@@ -1066,7 +1073,7 @@ describe('Pool Test', () => {
                 },
               },
               {
-                value: toNano(0.4),
+                value: toNano(1),
               },
             );
 
@@ -1960,12 +1967,9 @@ describe('Pool Test', () => {
     let poolAddress: Address;
 
     beforeEach(async () => {
+      console.log('initialize at zero tick');
       routerJetton0WalletAddress = await token0MasterContract.getWalletAddress(router.address);
       routerJetton1WalletAddress = await token1MasterContract.getWalletAddress(router.address);
-    });
-
-    beforeEach(async () => {
-      console.log('initialize at zero tick');
       await router.sendCreatePool(
         deployer.getSender(),
         {
@@ -2114,6 +2118,8 @@ describe('Pool Test', () => {
       routerJetton1WalletContract = blockchain.openContract(
         JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton1WalletAddress),
       );
+      poolAddress = await router.getPoolAddress(routerJetton0WalletAddress, routerJetton1WalletAddress, 3000n, 60n);
+      poolContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(poolAddress));
     });
 
     async function checkTickIsClear(tick: bigint) {
@@ -2133,9 +2139,116 @@ describe('Pool Test', () => {
     it('does not clear the position fee growth snapshot if no more liquidity', async () => {
       // some activity that would make the ticks non-zero
       // await mint(other.address, minTick, maxTick, expandTo18Decimals(1))
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickMin,
+            tick_upper: tickMax,
+            tick_spacing: 60,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1), // Maximum leverage
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickMin,
+            tick_upper: tickMax,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1), // Maximum leverage
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
       // await swapExact0For1(expandTo18Decimals(1), wallet.address)
+      await token0WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(1),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(2.0),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton1WalletContract!.address,
+            //eslint-di
+            sqrt_price_limit: MIN_SQRT_RATIO + 1n,
+            tick_spacing: 60,
+            zero_for_one: -1,
+          },
+        },
+        {
+          value: toNano(2.5),
+        },
+      );
       // await swapExact1For0(expandTo18Decimals(1), wallet.address)
+      await token1WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(1),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(2.0),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton0WalletContract.address,
+            //eslint-di
+            sqrt_price_limit: MAX_SQRT_RATIO - 1n,
+            tick_spacing: 60,
+            zero_for_one: 0,
+          },
+        },
+        {
+          value: toNano(2.5),
+        },
+      );
       // await pool.connect(other).burn(minTick, maxTick, expandTo18Decimals(1))
+      const positionAddress = await poolContract.getPositionAddress(BigInt(tickMin), BigInt(tickMax), deployer.address);
+      const positionContract = blockchain.openContract(PositionWrapper.Position.createFromAddress(positionAddress));
+      await positionContract.sendBurnPosition(deployer.getSender(), toNano(1), expandTo18Decimals(1));
       // const {
       //   liquidity,
       //   tokensOwed0,
@@ -2148,44 +2261,579 @@ describe('Pool Test', () => {
       // expect(tokensOwed1).to.not.eq(0)
       // expect(feeGrowthInside0LastX128).to.eq('340282366920938463463374607431768211')
       // expect(feeGrowthInside1LastX128).to.eq('340282366920938576890830247744589365')
+      const { tokenOwed0, tokenOwed1 } = await positionContract.getTokensOwed();
+      expect(tokenOwed0).not.toEqual(0n);
+      expect(tokenOwed1).not.toEqual(0n);
+      const { feeGrowthInside0LastX128, feeGrowthInside1LastX128 } = await positionContract.getFeeGrowthInside();
+      expect(feeGrowthInside0LastX128).toEqual(340282366920938463463374607431768211n);
+      expect(feeGrowthInside1LastX128).toEqual(340282366920938463463374607431768211n);
     });
 
-    // it('clears the tick if its the last position using it', async () => {
-    //   const tickLower = minTick + tickSpacing
-    //   const tickUpper = maxTick - tickSpacing
-    //   // some activity that would make the ticks non-zero
-    //   await pool.advanceTime(10)
-    //   await mint(wallet.address, tickLower, tickUpper, 1)
-    //   await swapExact0For1(expandTo18Decimals(1), wallet.address)
-    //   await pool.burn(tickLower, tickUpper, 1)
-    //   await checkTickIsClear(tickLower)
-    //   await checkTickIsClear(tickUpper)
-    // })
+    it('clears the tick if its the last position using it', async () => {
+      const tickLower = tickMin + tickSpacing;
+      const tickUpper = tickMax - tickSpacing;
 
-    // it('clears only the lower tick if upper is still used', async () => {
-    //   const tickLower = minTick + tickSpacing
-    //   const tickUpper = maxTick - tickSpacing
-    //   // some activity that would make the ticks non-zero
-    //   await pool.advanceTime(10)
-    //   await mint(wallet.address, tickLower, tickUpper, 1)
-    //   await mint(wallet.address, tickLower + tickSpacing, tickUpper, 1)
-    //   await swapExact0For1(expandTo18Decimals(1), wallet.address)
-    //   await pool.burn(tickLower, tickUpper, 1)
-    //   await checkTickIsClear(tickLower)
-    //   await checkTickIsNotClear(tickUpper)
-    // })
+      // Mint a position with the specified ticks
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
 
-    // it('clears only the upper tick if lower is still used', async () => {
-    //   const tickLower = minTick + tickSpacing
-    //   const tickUpper = maxTick - tickSpacing
-    //   // some activity that would make the ticks non-zero
-    //   await pool.advanceTime(10)
-    //   await mint(wallet.address, tickLower, tickUpper, 1)
-    //   await mint(wallet.address, tickLower, tickUpper - tickSpacing, 1)
-    //   await swapExact0For1(expandTo18Decimals(1), wallet.address)
-    //   await pool.burn(tickLower, tickUpper, 1)
-    //   await checkTickIsNotClear(tickLower)
-    //   await checkTickIsClear(tickUpper)
-    // })
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      // Perform a swap to generate some fees
+      await token0WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(1),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(2.0),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton1WalletContract!.address,
+            sqrt_price_limit: MIN_SQRT_RATIO + 1n,
+            tick_spacing: tickSpacing,
+            zero_for_one: -1,
+          },
+        },
+        {
+          value: toNano(2.5),
+        },
+      );
+
+      // Get the position address and contract
+      const positionAddress = await poolContract.getPositionAddress(
+        BigInt(tickLower),
+        BigInt(tickUpper),
+        deployer.address,
+      );
+      const positionContract = blockchain.openContract(PositionWrapper.Position.createFromAddress(positionAddress));
+
+      // Burn all liquidity from the position
+      await positionContract.sendBurnPosition(deployer.getSender(), toNano(1), expandTo18Decimals(1));
+
+      // Check that both ticks are cleared
+      await checkTickIsClear(BigInt(tickLower));
+      await checkTickIsClear(BigInt(tickUpper));
+    });
+
+    it('clears only the lower tick if upper is still used', async () => {
+      const tickLower = tickMin + tickSpacing;
+      const tickUpper = tickMax - tickSpacing;
+
+      // First position: tickLower to tickUpper
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      // Second position: (tickLower + tickSpacing) to tickUpper
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickLower + tickSpacing,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickLower + tickSpacing,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      // Perform a swap to generate some fees
+      await token0WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(1),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(2.0),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton1WalletContract!.address,
+            sqrt_price_limit: MIN_SQRT_RATIO + 1n,
+            tick_spacing: tickSpacing,
+            zero_for_one: -1,
+          },
+        },
+        {
+          value: toNano(2.5),
+        },
+      );
+
+      // Get the first position address and contract
+      const positionAddress = await poolContract.getPositionAddress(
+        BigInt(tickLower),
+        BigInt(tickUpper),
+        deployer.address,
+      );
+      const positionContract = blockchain.openContract(PositionWrapper.Position.createFromAddress(positionAddress));
+
+      // Burn all liquidity from the first position
+      await positionContract.sendBurnPosition(deployer.getSender(), toNano(1), expandTo18Decimals(1));
+
+      // Check that the lower tick is cleared but the upper tick is not
+      await checkTickIsClear(BigInt(tickLower));
+      await checkTickIsNotClear(BigInt(tickUpper));
+    });
+
+    it('clears only the upper tick if lower is still used', async () => {
+      const tickLower = tickMin + tickSpacing;
+      const tickUpper = tickMax - tickSpacing;
+
+      // First position: tickLower to tickUpper
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      // Second position: tickLower to (tickUpper - tickSpacing)
+      await token0WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton1WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper - tickSpacing,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      await token1WalletContract.sendTransferMint(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferMint',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(5),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(0.8),
+          either_payload: true,
+          mint: {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickLower,
+            tick_upper: tickUpper - tickSpacing,
+            tick_spacing: tickSpacing,
+            fee: 3000,
+            liquidity_delta: expandTo18Decimals(1),
+          },
+        },
+        {
+          value: toNano(1),
+        },
+      );
+
+      // Perform a swap to generate some fees
+      await token0WalletContract.sendTransferSwap(
+        deployer.getSender(),
+        {
+          kind: 'OpJettonTransferSwap',
+          query_id: 0,
+          jetton_amount: expandTo18Decimals(1),
+          to_address: router.address,
+          response_address: deployer.address,
+          custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+          forward_ton_amount: toNano(2.0),
+          either_payload: true,
+          swap: {
+            kind: 'SwapParams',
+            forward_opcode: PoolWrapper.Opcodes.Swap,
+            fee: 3000,
+            jetton1_wallet: routerJetton1WalletContract!.address,
+            sqrt_price_limit: MIN_SQRT_RATIO + 1n,
+            tick_spacing: tickSpacing,
+            zero_for_one: -1,
+          },
+        },
+        {
+          value: toNano(2.5),
+        },
+      );
+
+      // Get the first position address and contract
+      const positionAddress = await poolContract.getPositionAddress(
+        BigInt(tickLower),
+        BigInt(tickUpper),
+        deployer.address,
+      );
+      const positionContract = blockchain.openContract(PositionWrapper.Position.createFromAddress(positionAddress));
+
+      // Burn all liquidity from the first position
+      await positionContract.sendBurnPosition(deployer.getSender(), toNano(1), expandTo18Decimals(1));
+
+      // Check that the upper tick is cleared but the lower tick is not
+      await checkTickIsNotClear(BigInt(tickLower));
+      await checkTickIsClear(BigInt(tickUpper));
+    });
   });
+
+  // describe('#collect', () => {
+  //   let routerJetton0WalletAddress: Address;
+  //   let routerJetton1WalletAddress: Address;
+  //   let poolAddress: Address;
+  //   beforeEach(async () => {
+  //     routerJetton0WalletAddress = await token0MasterContract.getWalletAddress(router.address);
+  //     routerJetton1WalletAddress = await token1MasterContract.getWalletAddress(router.address);
+  //     await router.sendCreatePool(
+  //       deployer.getSender(),
+  //       {
+  //         kind: 'OpCreatePool',
+  //         query_id: 0,
+  //         jetton0_wallet: routerJetton0WalletAddress,
+  //         jetton1_wallet: routerJetton1WalletAddress,
+  //         fee: FeeAmount.LOW,
+  //         sqrt_price_x96: encodePriceSqrt(1n, 1n),
+  //         tick_spacing: TICK_SPACINGS[FeeAmount.LOW],
+  //         jetton_master_ref: {
+  //           kind: 'JettonMasterRef',
+  //           jetton0_master: token0MasterContract.address,
+  //           jetton1_master: token1MasterContract.address,
+  //         },
+  //       },
+  //       {
+  //         value: toNano('0.1'),
+  //       },
+  //     );
+  //     if (
+  //       BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) >
+  //       BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`)
+  //     ) {
+  //       const tmp = routerJetton0WalletAddress;
+  //        routerJetton0WalletAddress = routerJetton1WalletAddress;
+  //        routerJetton1WalletAddress = tmp;
+  //        const tokenTmp = token0WalletContract;
+  //        token0WalletContract = token1WalletContract;
+  //        token1WalletContract = tokenTmp;
+  //     }
+  //   })
+
+  //   it('works with multiple LPs', async () => {
+  //     // await mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))
+  //     // await mint(wallet.address, minTick + tickSpacing, maxTick - tickSpacing, expandTo18Decimals(2))
+
+  //     // await swapExact0For1(expandTo18Decimals(1), wallet.address)
+
+  //     // // poke positions
+  //     // await pool.burn(minTick, maxTick, 0)
+  //     // await pool.burn(minTick + tickSpacing, maxTick - tickSpacing, 0)
+
+  //     // const { tokensOwed0: tokensOwed0Position0 } = await pool.positions(
+  //     //   getPositionKey(wallet.address, minTick, maxTick)
+  //     // )
+  //     // const { tokensOwed0: tokensOwed0Position1 } = await pool.positions(
+  //     //   getPositionKey(wallet.address, minTick + tickSpacing, maxTick - tickSpacing)
+  //     // )
+
+  //     // expect(tokensOwed0Position0).to.be.eq('166666666666667')
+  //     // expect(tokensOwed0Position1).to.be.eq('333333333333334')
+  //   })
+
+  //   describe('works across large increases', () => {
+  //     beforeEach(async () => {
+  //       // await mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))
+  //     })
+
+  //     // type(uint128).max * 2**128 / 1e18
+  //     // https://www.wolframalpha.com/input/?i=%282**128+-+1%29+*+2**128+%2F+1e18
+  //     // const magicNumber = BigNumber.from('115792089237316195423570985008687907852929702298719625575994')
+
+  //     it('works just before the cap binds', async () => {
+  //       // await pool.setFeeGrowthGlobal0X128(magicNumber)
+  //       // await pool.burn(minTick, maxTick, 0)
+
+  //       // const { tokensOwed0, tokensOwed1 } = await pool.positions(getPositionKey(wallet.address, minTick, maxTick))
+
+  //       // expect(tokensOwed0).to.be.eq(MaxUint128.sub(1))
+  //       // expect(tokensOwed1).to.be.eq(0)
+  //     })
+
+  //     it('works just after the cap binds', async () => {
+  //       // await pool.setFeeGrowthGlobal0X128(magicNumber.add(1))
+  //       // await pool.burn(minTick, maxTick, 0)
+
+  //       // const { tokensOwed0, tokensOwed1 } = await pool.positions(getPositionKey(wallet.address, minTick, maxTick))
+
+  //       // expect(tokensOwed0).to.be.eq(MaxUint128)
+  //       // expect(tokensOwed1).to.be.eq(0)
+  //     })
+
+  //     it('works well after the cap binds', async () => {
+  //       // await pool.setFeeGrowthGlobal0X128(constants.MaxUint256)
+  //       // await pool.burn(minTick, maxTick, 0)
+
+  //       // const { tokensOwed0, tokensOwed1 } = await pool.positions(getPositionKey(wallet.address, minTick, maxTick))
+
+  //       // expect(tokensOwed0).to.be.eq(MaxUint128)
+  //       // expect(tokensOwed1).to.be.eq(0)
+  //     })
+  //   })
+
+  //   describe('works across overflow boundaries', () => {
+  //     beforeEach(async () => {
+  //       // await pool.setFeeGrowthGlobal0X128(constants.MaxUint256)
+  //       // await pool.setFeeGrowthGlobal1X128(constants.MaxUint256)
+  //       // await mint(wallet.address, minTick, maxTick, expandTo18Decimals(10))
+  //     })
+
+  //     it('token0', async () => {
+  //       // await swapExact0For1(expandTo18Decimals(1), wallet.address)
+  //       // await pool.burn(minTick, maxTick, 0)
+  //       // const { amount0, amount1 } = await pool.callStatic.collect(
+  //       //   wallet.address,
+  //       //   minTick,
+  //       //   maxTick,
+  //       //   MaxUint128,
+  //       //   MaxUint128
+  //       // )
+  //       // expect(amount0).to.be.eq('499999999999999')
+  //       // expect(amount1).to.be.eq(0)
+  //     })
+  //     it('token1', async () => {
+  //       // await swapExact1For0(expandTo18Decimals(1), wallet.address)
+  //       // await pool.burn(minTick, maxTick, 0)
+  //       // const { amount0, amount1 } = await pool.callStatic.collect(
+  //       //   wallet.address,
+  //       //   minTick,
+  //       //   maxTick,
+  //       //   MaxUint128,
+  //       //   MaxUint128
+  //       // )
+  //       // expect(amount0).to.be.eq(0)
+  //       // expect(amount1).to.be.eq('499999999999999')
+  //     })
+  //     it('token0 and token1', async () => {
+  //       // await swapExact0For1(expandTo18Decimals(1), wallet.address)
+  //       // await swapExact1For0(expandTo18Decimals(1), wallet.address)
+  //       // await pool.burn(minTick, maxTick, 0)
+  //       // const { amount0, amount1 } = await pool.callStatic.collect(
+  //       //   wallet.address,
+  //       //   minTick,
+  //       //   maxTick,
+  //       //   MaxUint128,
+  //       //   MaxUint128
+  //       // )
+  //       // expect(amount0).to.be.eq('499999999999999')
+  //       // expect(amount1).to.be.eq('500000000000000')
+  //     })
+  //   })
+  // })
 });
