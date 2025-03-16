@@ -6,6 +6,7 @@ import JettonWalletWrapper from '../wrappers/core/JettonWallet';
 import { createPairAddress, isContractDeployed, isToken0 } from './helpers';
 import RouterWrapper from '../wrappers/core/Router';
 import PoolWrapper from '../wrappers/core/Pool';
+import { setTimeout } from 'timers/promises';
 
 export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
@@ -45,72 +46,60 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const poolInfo = await pool.getPoolInfo();
   // const beforePositionSeq = await pool.getPositionSeqno();
 
-  await jettonWallet0Contract.sendTransferMint(
-    provider.sender(),
-    {
-      kind: 'OpJettonTransferMint',
-      query_id: 0,
-      jetton_amount: BigInt(jettonAmount0),
-      to_address: routerAddress,
-      response_address: userAddress,
-      custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-      forward_ton_amount: toNano(0.8),
-      either_payload: true,
-      mint: {
-        kind: 'MintParams',
-        forward_opcode: PoolWrapper.Opcodes.Mint,
-        jetton1_wallet: routerJetton1Wallet,
-        tick_lower: Number(tickMin),
-        tick_upper: Number(tickMax),
-        tick_spacing: Number(poolInfo.tickSpacing),
-        fee: Number(poolInfo.fee),
-        liquidity_delta: BigInt(liquidity),
+  await Promise.all([
+    jettonWallet1Contract.sendTransferMint(
+      provider.sender(),
+      {
+        kind: 'OpJettonTransferMint',
+        query_id: 0,
+        jetton_amount: BigInt(jettonAmount1),
+        to_address: routerAddress,
+        response_address: userAddress,
+        custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+        forward_ton_amount: toNano(0.4),
+        either_payload: true,
+        mint: {
+          kind: 'MintParams',
+          forward_opcode: PoolWrapper.Opcodes.Mint,
+          jetton1_wallet: routerJetton0Wallet,
+          tick_lower: Number(tickMin),
+          tick_upper: Number(tickMax),
+          tick_spacing: Number(poolInfo.tickSpacing),
+          fee: Number(poolInfo.fee),
+          liquidity_delta: BigInt(liquidity),
+        },
       },
-    },
-    {
-      value: toNano(1),
-    },
-  );
-
-  const lpAccount = await pool.getLpAccountAddress(userAddress, BigInt(tickMin), BigInt(tickMax));
-  await provider.waitForDeploy(lpAccount, 100, 5000);
-  ui.write(`LP account address: ${lpAccount.toString()}`);
-
-  await jettonWallet1Contract.sendTransferMint(
-    provider.sender(),
-    {
-      kind: 'OpJettonTransferMint',
-      query_id: 0,
-      jetton_amount: BigInt(jettonAmount1),
-      to_address: routerAddress,
-      response_address: userAddress,
-      custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-      forward_ton_amount: toNano(0.8),
-      either_payload: true,
-      mint: {
-        kind: 'MintParams',
-        forward_opcode: PoolWrapper.Opcodes.Mint,
-        jetton1_wallet: routerJetton0Wallet,
-        tick_lower: Number(tickMin),
-        tick_upper: Number(tickMax),
-        tick_spacing: Number(poolInfo.tickSpacing),
-        fee: Number(poolInfo.fee),
-        liquidity_delta: BigInt(liquidity),
+      {
+        value: toNano(0.6),
       },
-    },
-    {
-      value: toNano(1),
-    },
-  );
-
-  // let afterPositionSeq = await pool.getPositionSeqno();
-  // let attempts = 1;
-  // while (beforePositionSeq === afterPositionSeq) {
-  //   ui.setActionPrompt(`Attempt ${attempts}`);
-  //   await sleep(2000);
-  //   afterPositionSeq = await pool.getPositionSeqno();
-  //   attempts++;
-  // }
+    ),
+    // jettonWallet0Contract.sendTransferMint(
+    //   provider.sender(),
+    //   {
+    //     kind: 'OpJettonTransferMint',
+    //     query_id: 0,
+    //     jetton_amount: BigInt(jettonAmount0),
+    //     to_address: routerAddress,
+    //     response_address: userAddress,
+    //     custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+    //     forward_ton_amount: toNano(0.4),
+    //     either_payload: true,
+    //     mint: {
+    //       kind: 'MintParams',
+    //       forward_opcode: PoolWrapper.Opcodes.Mint,
+    //       jetton1_wallet: routerJetton1Wallet,
+    //       tick_lower: Number(tickMin),
+    //       tick_upper: Number(tickMax),
+    //       tick_spacing: Number(poolInfo.tickSpacing),
+    //       fee: Number(poolInfo.fee),
+    //       liquidity_delta: BigInt(liquidity),
+    //     },
+    //   },
+    //   {
+    //     value: toNano(0.6),
+    //   },
+    // ),
+  ]);
 
   // ui.clearActionPrompt();
   ui.write(`Position added successfully!`);
