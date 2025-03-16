@@ -3,7 +3,14 @@ import { Address, beginCell, Cell, Dictionary, Slice, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
-import { encodePriceSqrt, expandTo18Decimals, getMaxTick, getMinTick, MAX_SQRT_RATIO, MIN_SQRT_RATIO } from '../shared/utils';
+import {
+  encodePriceSqrt,
+  expandTo18Decimals,
+  getMaxTick,
+  getMinTick,
+  MAX_SQRT_RATIO,
+  MIN_SQRT_RATIO,
+} from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
 import RouterWrapper from '../../wrappers/core/Router';
@@ -52,7 +59,7 @@ describe('pTON Pool Test', () => {
       balance: expandTo18Decimals(50),
     });
     tonWalletContract = await blockchain.treasury('ton_holder');
-    
+
     // Deploy router contract
     router = blockchain.openContract(
       RouterWrapper.RouterTest.create(routerCode, {
@@ -75,7 +82,7 @@ describe('pTON Pool Test', () => {
       PTonMinterWrapper.PTonMinterV2.createPtonMinterFromConfig({
         walletCode: Cell.fromBoc(Buffer.from(PTON_WALLET_BOC, 'hex'))[0],
         content: beginCell().endCell(),
-        id: 0
+        id: 0,
       }),
     );
 
@@ -88,7 +95,9 @@ describe('pTON Pool Test', () => {
       ownerAddress: router.address,
     });
     const routerPTONWallet = await pTONMasterContract.getWalletAddress(router.address);
-    routerPTONWalletContract = blockchain.openContract(PTonWalletWrapper.PTonWalletV2.createFromAddress(routerPTONWallet));
+    routerPTONWalletContract = blockchain.openContract(
+      PTonWalletWrapper.PTonWalletV2.createFromAddress(routerPTONWallet),
+    );
 
     // deploy token0 master contract
     token0MasterContract = blockchain.openContract(
@@ -106,7 +115,9 @@ describe('pTON Pool Test', () => {
       deploy: true,
       success: true,
     });
-    token0WalletContract = blockchain.openContract(JettonWalletWrapper.JettonWallet.createFromAddress(await token0MasterContract.getWalletAddress(deployer.address)));
+    token0WalletContract = blockchain.openContract(
+      JettonWalletWrapper.JettonWallet.createFromAddress(await token0MasterContract.getWalletAddress(deployer.address)),
+    );
     // Fund the deployer's TON wallet
     await tonWalletContract.send({
       to: deployer.address,
@@ -125,7 +136,6 @@ describe('pTON Pool Test', () => {
         value: toNano(1),
       },
     );
-
   });
 
   it('should deploy successfully', async () => {
@@ -142,12 +152,13 @@ describe('pTON Pool Test', () => {
       // support token0 and token1
       routerJetton0WalletAddress = await token0MasterContract.getWalletAddress(router.address);
       routerJetton1WalletAddress = await pTONMasterContract.getWalletAddress(router.address);
-      isPTonIsZero = BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) >
-      BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`)
+      isPTonIsZero =
+        BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) >
+        BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`);
     });
 
     describe('after initialization', () => {
-      beforeEach(async() => {
+      beforeEach(async () => {
         console.log('initialize the pool at price of 10:1');
         const createPool = await router.sendCreatePool(
           deployer.getSender(),
@@ -180,9 +191,7 @@ describe('pTON Pool Test', () => {
         // Create position
         let transfer0;
         let transfer1;
-        if (
-          !isPTonIsZero
-        ) {
+        if (!isPTonIsZero) {
           transfer0 = await token0WalletContract.sendTransferMint(
             deployer.getSender(),
             {
@@ -209,30 +218,7 @@ describe('pTON Pool Test', () => {
               value: toNano(1),
             },
           );
-          const mintParams:MintParams = {
-                kind: 'MintParams',
-                forward_opcode: PoolWrapper.Opcodes.Mint,
-                jetton1_wallet: routerJetton0WalletAddress,
-                tick_lower: tickMin,
-                tick_upper: tickMax,
-                tick_spacing: 60,
-                fee: 3000,
-                liquidity_delta: 3161n,
-          };
-          let cell1 = beginCell();
-          storeMintParams(mintParams)(cell1);
-          transfer1 = await routerPTONWalletContract.sendTonTransfer(
-            deployer.getSender(),
-            {
-              tonAmount: 2000n,
-              refundAddress: deployer.address,
-              fwdPayload: cell1.endCell(),
-              gas: toNano(1),
-            },
-          );
-          
-        } else {
-          const mintParams:MintParams = {
+          const mintParams: MintParams = {
             kind: 'MintParams',
             forward_opcode: PoolWrapper.Opcodes.Mint,
             jetton1_wallet: routerJetton0WalletAddress,
@@ -241,18 +227,34 @@ describe('pTON Pool Test', () => {
             tick_spacing: 60,
             fee: 3000,
             liquidity_delta: 3161n,
-      };
+          };
           let cell1 = beginCell();
           storeMintParams(mintParams)(cell1);
-          transfer0 = await routerPTONWalletContract.sendTonTransfer(
-            deployer.getSender(),
-            {
-              tonAmount: 10000n,
-              refundAddress: deployer.address,
-              fwdPayload: cell1.endCell(),
-              gas: toNano(1),
-            },
-          );
+          transfer1 = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+            tonAmount: 2000n,
+            refundAddress: deployer.address,
+            fwdPayload: cell1.endCell(),
+            gas: toNano(1),
+          });
+        } else {
+          const mintParams: MintParams = {
+            kind: 'MintParams',
+            forward_opcode: PoolWrapper.Opcodes.Mint,
+            jetton1_wallet: routerJetton0WalletAddress,
+            tick_lower: tickMin,
+            tick_upper: tickMax,
+            tick_spacing: 60,
+            fee: 3000,
+            liquidity_delta: 3161n,
+          };
+          let cell1 = beginCell();
+          storeMintParams(mintParams)(cell1);
+          transfer0 = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+            tonAmount: 10000n,
+            refundAddress: deployer.address,
+            fwdPayload: cell1.endCell(),
+            gas: toNano(1),
+          });
           transfer1 = await token0WalletContract.sendTransferMint(
             deployer.getSender(),
             {
@@ -303,12 +305,14 @@ describe('pTON Pool Test', () => {
           success: true,
         });
       });
-      describe('success cases', ()=>{
-        it('initial balances', async()=>{
+      describe('success cases', () => {
+        it('initial balances', async () => {
           const pRouterTonBalance = await routerPTONWalletContract.getBalance();
-          const routerJettonContract = blockchain.openContract(JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton0WalletAddress));
-       
-          if(isPTonIsZero){
+          const routerJettonContract = blockchain.openContract(
+            JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton0WalletAddress),
+          );
+
+          if (isPTonIsZero) {
             expect(pRouterTonBalance.amount).toEqual(9996n);
             expect((await routerJettonContract.getBalance()).amount).toEqual(1000n);
           } else {
@@ -317,10 +321,10 @@ describe('pTON Pool Test', () => {
           }
         });
 
-        it('initial tick', async()=>{
-          const  {tick} = await poolContract.getPoolInfo();
+        it('initial tick', async () => {
+          const { tick } = await poolContract.getPoolInfo();
           expect(tick).toEqual(-23028n);
-        })
+        });
       });
     });
   });
@@ -334,8 +338,9 @@ describe('pTON Pool Test', () => {
       console.log('initialize at zero tick');
       routerJetton0WalletAddress = await token0MasterContract.getWalletAddress(router.address);
       routerJetton1WalletAddress = await pTONMasterContract.getWalletAddress(router.address);
-      isPTonIsZero = BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) >
-      BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`)
+      isPTonIsZero =
+        BigInt(`0x${beginCell().storeAddress(routerJetton0WalletAddress).endCell().hash().toString('hex')}`) >
+        BigInt(`0x${beginCell().storeAddress(routerJetton1WalletAddress).endCell().hash().toString('hex')}`);
       await router.sendCreatePool(
         deployer.getSender(),
         {
@@ -360,9 +365,7 @@ describe('pTON Pool Test', () => {
       // Create position
       let transfer0;
       let transfer1;
-      if (
-        !isPTonIsZero
-      ) {
+      if (!isPTonIsZero) {
         transfer0 = await token0WalletContract.sendTransferMint(
           deployer.getSender(),
           {
@@ -390,7 +393,7 @@ describe('pTON Pool Test', () => {
           },
         );
 
-        const mintParams:MintParams = {
+        const mintParams: MintParams = {
           kind: 'MintParams',
           forward_opcode: PoolWrapper.Opcodes.Mint,
           jetton1_wallet: routerJetton0WalletAddress,
@@ -398,24 +401,20 @@ describe('pTON Pool Test', () => {
           tick_upper: tickMax,
           fee: 3000,
           tick_spacing: 60,
-          liquidity_delta: expandTo18Decimals(2)
+          liquidity_delta: expandTo18Decimals(2),
         };
 
         let cell1 = beginCell();
         storeMintParams(mintParams)(cell1);
 
-        transfer1 = await routerPTONWalletContract.sendTonTransfer(
-          deployer.getSender(),
-          {
-            tonAmount: expandTo18Decimals(5),
-            refundAddress: deployer.address,
-            fwdPayload: cell1.endCell(),
-            gas: toNano(1),
-          },
-        );
-         
+        transfer1 = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+          tonAmount: expandTo18Decimals(5),
+          refundAddress: deployer.address,
+          fwdPayload: cell1.endCell(),
+          gas: toNano(1),
+        });
       } else {
-        const mintParams:MintParams = {
+        const mintParams: MintParams = {
           kind: 'MintParams',
           forward_opcode: PoolWrapper.Opcodes.Mint,
           jetton1_wallet: routerJetton0WalletAddress,
@@ -423,19 +422,16 @@ describe('pTON Pool Test', () => {
           tick_upper: tickMax,
           fee: 3000,
           tick_spacing: 60,
-          liquidity_delta: expandTo18Decimals(2)
+          liquidity_delta: expandTo18Decimals(2),
         };
         let cell1 = beginCell();
         storeMintParams(mintParams)(cell1);
-        transfer0 = await routerPTONWalletContract.sendTonTransfer(
-          deployer.getSender(),
-          {
-            tonAmount: expandTo18Decimals(5),
-            refundAddress: deployer.address,
-            fwdPayload: cell1.endCell(),
-            gas: toNano(1),
-          },
-        );
+        transfer0 = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+          tonAmount: expandTo18Decimals(5),
+          refundAddress: deployer.address,
+          fwdPayload: cell1.endCell(),
+          gas: toNano(1),
+        });
 
         transfer1 = await token0WalletContract.sendTransferMint(
           deployer.getSender(),
@@ -497,7 +493,7 @@ describe('pTON Pool Test', () => {
           value: toNano(1),
         },
       );
-      const mintParams:MintParams = {
+      const mintParams: MintParams = {
         kind: 'MintParams',
         forward_opcode: PoolWrapper.Opcodes.Mint,
         jetton1_wallet: routerJetton0WalletAddress,
@@ -505,21 +501,18 @@ describe('pTON Pool Test', () => {
         tick_upper: tickMax,
         fee: 3000,
         tick_spacing: 60,
-        liquidity_delta: expandTo18Decimals(1)
+        liquidity_delta: expandTo18Decimals(1),
       };
       let cell1 = beginCell();
       storeMintParams(mintParams)(cell1);
 
-      const sendTonPosition = await routerPTONWalletContract.sendTonTransfer(
-        deployer.getSender(),
-        {
-          tonAmount: expandTo18Decimals(5),
-          refundAddress: deployer.address,
-          fwdPayload: cell1.endCell(),
-          gas: toNano(1),
-        },
-      );
-   
+      const sendTonPosition = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+        tonAmount: expandTo18Decimals(5),
+        refundAddress: deployer.address,
+        fwdPayload: cell1.endCell(),
+        gas: toNano(1),
+      });
+
       // await swapExactJettonForTon(expandTo18Decimals(1), wallet.address)
       const jettonToTonSwap = await token0WalletContract.sendTransferSwap(
         deployer.getSender(),
@@ -538,7 +531,7 @@ describe('pTON Pool Test', () => {
             fee: 3000,
             jetton1_wallet: routerPTONWalletContract.address,
             //eslint-di
-            sqrt_price_limit: isPTonIsZero ? MAX_SQRT_RATIO - 1n  : MIN_SQRT_RATIO + 1n,
+            sqrt_price_limit: isPTonIsZero ? MAX_SQRT_RATIO - 1n : MIN_SQRT_RATIO + 1n,
             tick_spacing: 60,
             zero_for_one: isPTonIsZero ? 0 : -1,
           },
@@ -549,38 +542,31 @@ describe('pTON Pool Test', () => {
       );
       printTransactionFees(jettonToTonSwap.transactions);
       // await swapExactTonForJetton(expandTo18Decimals(1), wallet.address)
-      const swapParams:SwapParams =  {
+      const swapParams: SwapParams = {
         kind: 'SwapParams',
         forward_opcode: PoolWrapper.Opcodes.Swap,
         jetton1_wallet: routerJetton0WalletAddress,
         fee: 3000,
         tick_spacing: 60,
         zero_for_one: isPTonIsZero ? -1 : 0,
-        sqrt_price_limit: isPTonIsZero ? MIN_SQRT_RATIO + 1n : MAX_SQRT_RATIO - 1n
-      }
+        sqrt_price_limit: isPTonIsZero ? MIN_SQRT_RATIO + 1n : MAX_SQRT_RATIO - 1n,
+      };
 
       let cell2 = beginCell();
       storeSwapParams(swapParams)(cell2);
 
-      const tonToJettonSwap = await routerPTONWalletContract.sendTonTransfer(
-        deployer.getSender(),
-        {
-          tonAmount: expandTo18Decimals(1),
-          refundAddress: deployer.address,
-          fwdPayload: cell2.endCell(),
-          gas: toNano(1),
-        },
-      );
-      console.log("tonToJettonSwap.transactions")
+      const tonToJettonSwap = await routerPTONWalletContract.sendTonTransfer(deployer.getSender(), {
+        tonAmount: expandTo18Decimals(1),
+        refundAddress: deployer.address,
+        fwdPayload: cell2.endCell(),
+        gas: toNano(1),
+      });
+      console.log('tonToJettonSwap.transactions');
       printTransactionFees(tonToJettonSwap.transactions);
       // await pool.connect(other).burn(minTick, maxTick, expandTo18Decimals(1))
       const positionAddress = await poolContract.getPositionAddress(BigInt(tickMin), BigInt(tickMax), deployer.address);
       const positionContract = blockchain.openContract(PositionWrapper.Position.createFromAddress(positionAddress));
-      await positionContract.sendBurnPosition(
-        deployer.getSender(),
-        toNano(1),
-        expandTo18Decimals(1)
-      );
+      await positionContract.sendBurnPosition(deployer.getSender(), toNano(1), expandTo18Decimals(1));
       // const {
       //   liquidity,
       //   tokensOwed0,
@@ -600,7 +586,5 @@ describe('pTON Pool Test', () => {
       expect(feeGrowthInside0LastX128).toEqual(340282366920938463463374607431768211n);
       expect(feeGrowthInside1LastX128).toEqual(340282366920938463463374607431768211n);
     });
-
   });
-
-}); 
+});
