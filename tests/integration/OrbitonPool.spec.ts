@@ -2273,9 +2273,6 @@ describe('Pool Test', () => {
       const { feeGrowthInside0LastX128, feeGrowthInside1LastX128 } = await positionContract.getFeeGrowthInside();
       expect(feeGrowthInside0LastX128).toEqual(340282366920938463463374607431768211n);
       expect(feeGrowthInside1LastX128).toEqual(340282366920938463463374607431768211n);
-     
-    
-      
     })
 
     it('clears the tick if its the last position using it', async () => {
