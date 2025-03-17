@@ -8,6 +8,7 @@
 #include "router/opcodes.fc";
 #include "router/utils.fc";
 #include "pool/opcodes.fc";
+#include "pool/constants.fc";
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -101,12 +102,12 @@
     int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
-      body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      ;;body0 = body0.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     if (token1_amount > 0) {
       var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
-      body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      ;; body1 = body1.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     return ();
@@ -118,12 +119,14 @@
     int fee = in_msg_body~load_uint(24);
     int tick_spacing = in_msg_body~load_int(24);
     int sqrt_price_x96 = in_msg_body~load_uint(160);
+    cell jetton_master_ref = in_msg_body~load_ref();
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     builder msg = begin_cell()
                     .store_uint(op::initialize, 32)
                     .store_uint(query_id, 64)
                     .store_uint(sqrt_price_x96, 160)
-                    .store_slice(sender_address);
+                    .store_slice(sender_address)
+                    .store_ref(jetton_master_ref);
     send_message_with_stateinit(0, pool_address, state_init, msg.end_cell(), CARRY_REMAINING_GAS);
     storage::pool_seqno = storage::pool_seqno + 1;
     save_data();
@@ -131,23 +134,39 @@
   }
   
   if (op == op::cb_create_pool) {
-    slice token0_address = in_msg_body~load_msg_addr();
-    slice token1_address = in_msg_body~load_msg_addr();
-    int fee = in_msg_body~load_uint(24);
-    int tick_spacing = in_msg_body~load_int(24);
-    slice response_address = in_msg_body~load_msg_addr();
+    slice body_address = in_msg_body~load_ref().begin_parse();
+    slice token0_address = body_address~load_msg_addr();
+    slice token1_address = body_address~load_msg_addr();
+    slice response_address = body_address~load_msg_addr();
+    cell jetton_master_ref = body_address~load_ref();
+    slice body_params = in_msg_body~load_ref().begin_parse();
+    int fee = body_params~load_uint(24);
+    int tick_spacing = body_params~load_int(24);
+    int tick = body_params~load_int(24);
+    int sqrt_price_x96 = body_params~load_uint(160);
     (cell state_init, slice pool_address) = get_pool_state_init_and_address(token0_address, token1_address, fee, tick_spacing);
     if (compare_address(sender_address, pool_address)) {
       storage::pool_seqno = storage::pool_seqno + 1;
       ;; emit event
       cell data = begin_cell()
-                    .store_slice(sender_address)
-                    .store_slice(token0_address)
-                    .store_slice(token1_address)
-                    .store_uint(fee, 24)
-                    .store_int(tick_spacing, 24)
+                  .store_ref(
+                      begin_cell()
+                        .store_slice(response_address)
+                        .store_slice(token0_address)
+                        .store_slice(token1_address)
+                        .store_ref(jetton_master_ref)
+                        .end_cell()
+                    )
+                  .store_ref(
+                      begin_cell()
+                        .store_uint(fee, 24)
+                        .store_int(tick_spacing, 24)
+                        .store_int(tick, 24)
+                        .store_uint(sqrt_price_x96, 160)
+                        .end_cell()
+                    )
                     .end_cell();
-      emit_log_simple(storage::pool_seqno - 1, data, query_id);
+      emit_log_simple(INITIALIZE_EVENT, data, query_id);
       save_data();
     }
     send_empty_message(0, response_address, CARRY_REMAINING_GAS + IGNORE_ERRORS);
@@ -173,13 +192,6 @@
   if (op == op::update_pool_code) {
     throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
     storage::pool_code = in_msg_body~load_ref();
-    save_data();
-    return ();
-  }
-
-  if (op == op::update_batch_tick_code) {
-    throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
-    storage::batch_tick_code = in_msg_body~load_ref();
     save_data();
     return ();
   }
@@ -214,11 +226,6 @@ int get_is_locked() method_id {
 cell get_pool_code() method_id {
   load_data();
   return storage::pool_code;
-}
-
-cell get_batch_tick_code() method_id {
-  load_data();
-  return storage::batch_tick_code;
 }
 
 cell get_position_code() method_id {

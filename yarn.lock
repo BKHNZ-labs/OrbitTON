@@ -1031,6 +1031,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@orbiton_labs/v3-contracts-sdk@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@orbiton_labs/v3-contracts-sdk@workspace:."
+  dependencies:
+    "@orbs-network/ton-access": ^2.3.3
+    "@ton-community/tlb-codegen": ^1.1.0
+    "@ton/blueprint": ^0.24.0
+    "@ton/core": ~0
+    "@ton/crypto": ^3.3.0
+    "@ton/sandbox": ^0.22.0
+    "@ton/test-utils": ^0.4.2
+    "@ton/ton": ^15.0.0
+    "@types/jest": ^29.5.13
+    "@types/node": ^22.5.5
+    "@uniswap/v3-sdk": ^3.19.0
+    bignumber.js: ^9.1.2
+    decimal.js: ^10.4.3
+    jest: ^29.7.0
+    jsbi: ^4.3.0
+    prettier: ^3.3.3
+    ts-jest: ^29.2.5
+    ts-node: ^10.9.2
+    typescript: ^5.6.2
+  languageName: unknown
+  linkType: soft
+
 "@orbs-network/ton-access@npm:^2.3.3":
   version: 2.3.3
   resolution: "@orbs-network/ton-access@npm:2.3.3"
@@ -4654,32 +4680,6 @@ __metadata:
   checksum: 28d476ee6c1049d68368c0dc922e7225e3b5600c3ede88fade8052837f9ed342625fdaa84a6209302587c8ddd9b664f71f0759833cbdb3a4cf81344057e63c63
   languageName: node
   linkType: hard
-
-"orbiton-contracts@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "orbiton-contracts@workspace:."
-  dependencies:
-    "@orbs-network/ton-access": ^2.3.3
-    "@ton-community/tlb-codegen": ^1.1.0
-    "@ton/blueprint": ^0.24.0
-    "@ton/core": ~0
-    "@ton/crypto": ^3.3.0
-    "@ton/sandbox": ^0.22.0
-    "@ton/test-utils": ^0.4.2
-    "@ton/ton": ^15.0.0
-    "@types/jest": ^29.5.13
-    "@types/node": ^22.5.5
-    "@uniswap/v3-sdk": ^3.19.0
-    bignumber.js: ^9.1.2
-    decimal.js: ^10.4.3
-    jest: ^29.7.0
-    jsbi: ^4.3.0
-    prettier: ^3.3.3
-    ts-jest: ^29.2.5
-    ts-node: ^10.9.2
-    typescript: ^5.6.2
-  languageName: unknown
-  linkType: soft
 
 "os-tmpdir@npm:~1.0.2":
   version: 1.0.2

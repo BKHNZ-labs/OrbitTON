@@ -3,3 +3,11 @@ const int exist::finish_swap = 1;
 
 const GAS::REFUND = 200000000;
 const GAS::CB_ADD_LIQUIDITY = 100000000;
+
+;; Event
+const int INITIALIZE_EVENT = "INITIALIZE_EVENT"c;
+const int MINT_EVENT = "MINT_EVENT"c;
+const int SWAP_EVENT = "SWAP_EVENT"c;
+const int BURN_EVENT = "BURN_EVENT"c;
+const int COLLECT_EVENT = "COLLECT_EVENT"c;
+const int COLLECT_PROTOCOL_FEE_EVENT = "COLLECT_PROTOCOL_FEE_EVENT"c;

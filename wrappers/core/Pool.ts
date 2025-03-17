@@ -31,7 +31,6 @@ namespace PoolWrapper {
     tick: bigint;
     positionCode: Cell;
     lpAccountCode: Cell;
-    batchTickCode: Cell;
     maxLiquidity?: bigint;
   }
 
@@ -76,12 +75,10 @@ namespace PoolWrapper {
         )
         .storeRef(
           beginCell()
-            .storeUint(0n, 256)
             .storeUint(initMsg.maxLiquidity ?? 0, 128)
-            .storeRef(beginCell().storeDict(Dictionary.empty()).endCell())
+            .storeDict(Dictionary.empty())
             .storeRef(initMsg.positionCode)
             .storeRef(initMsg.lpAccountCode)
-            .storeRef(initMsg.batchTickCode)
             .endCell(),
         )
         .endCell();
@@ -113,7 +110,7 @@ namespace PoolWrapper {
       let data: any[] = [];
       while (tuple.remaining > 0) {
         const item = tuple.pop();
-        if (item.type === 'slice') {
+        if (item.type === 'cell') {
           data = [...data, item.cell.beginParse().loadAddress()];
         }
       }
@@ -134,7 +131,20 @@ namespace PoolWrapper {
     }
 
     async getFeesGrowthGlobal(provider: ContractProvider): Promise<bigint[]> {
-      const result = await provider.get('get_fees_growth_global', []);
+      const result = await provider.get('get_fee_growth_global', []);
+      const tuple = result.stack;
+      const feeGrowth0Global = tuple.readBigNumber();
+      const feeGrowth1Global = tuple.readBigNumber();
+      return [feeGrowth0Global, feeGrowth1Global];
+    }
+
+    async getFeesGrowthGlobalAtTick(provider: ContractProvider, tickId: bigint): Promise<bigint[]> {
+      const result = await provider.get('get_fee_growth_global_at_tick', [
+        {
+          type: 'int',
+          value: tickId,
+        },
+      ]);
       const tuple = result.stack;
       const feeGrowth0Global = tuple.readBigNumber();
       const feeGrowth1Global = tuple.readBigNumber();

@@ -11,12 +11,12 @@ namespace RouterWrapper {
     UpdateAccountCode: crc32('op::update_account_code'),
     UpdateBatchTickCode: crc32('op::update_batch_tick_code'),
     UpdatePositionCode: crc32('op::update_position_code'),
+    CallbackCreatePool: crc32('op::cb_create_pool'),
   };
 
   export interface InstantiateMsg {
     adminAddress: Address;
     poolCode: Cell;
-    batchTickCode: Cell;
     positionCode: Cell;
     lpAccountCode: Cell;
   }
@@ -46,13 +46,7 @@ namespace RouterWrapper {
         .storeInt(-1, 8)
         .storeUint(0, 64)
         .storeAddress(initMsg.adminAddress)
-        .storeRef(
-          beginCell()
-            .storeRef(initMsg.poolCode)
-            .storeRef(initMsg.batchTickCode)
-            .storeRef(initMsg.positionCode)
-            .storeRef(initMsg.lpAccountCode),
-        )
+        .storeRef(beginCell().storeRef(initMsg.poolCode).storeRef(initMsg.positionCode).storeRef(initMsg.lpAccountCode))
         .endCell();
       const init = { code, data };
       return new RouterTest(contractAddress(RouterTest.workchain, init), init);

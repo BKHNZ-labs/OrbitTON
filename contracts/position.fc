@@ -105,3 +105,9 @@
 
   throw(0xffff); ;; if the message contains an op that is not known to this contract, we throw
 }
+
+
+(int, int) get_fee_growth_inside() method_id {
+  load_data();
+  return (storage::fee_growth_inside0_last_x128, storage::fee_growth_inside1_last_x128);
+}

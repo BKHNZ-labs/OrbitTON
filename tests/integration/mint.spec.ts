@@ -6,7 +6,6 @@ import PoolWrapper from '../../wrappers/core/Pool';
 import { encodePriceSqrt, getMaxTick, getMinTick } from '../shared/utils';
 import { TickMathTest } from '../../wrappers/tests/TickMathTest';
 import { FeeAmount, TICK_SPACINGS } from '../libraries/TickTest.spec';
-import BatchTickWrapper from '../../wrappers/core/BatchTick';
 import { loadInfo } from '../../tlb/tick';
 import RouterWrapper from '../../wrappers/core/Router';
 import JettonMinterWrapper from '../../wrappers/core/JettonMinter';
@@ -16,7 +15,6 @@ describe('Pool Test', () => {
   let poolCode: Cell;
   let lpAccountCode: Cell;
   let tickMathCode: Cell;
-  let batchTickCode: Cell;
   let positionCode: Cell;
   let routerCode: Cell;
 
@@ -24,7 +22,6 @@ describe('Pool Test', () => {
     poolCode = await compile('Pool');
     lpAccountCode = await compile('LpAccount');
     tickMathCode = await compile('TickMathTest');
-    batchTickCode = await compile('BatchTick');
     positionCode = await compile('Position');
     routerCode = await compile('Router');
   });
@@ -46,16 +43,11 @@ describe('Pool Test', () => {
     router = blockchain.openContract(
       RouterWrapper.RouterTest.create(routerCode, {
         adminAddress: deployer.address,
-        batchTickCode: batchTickCode,
         lpAccountCode: lpAccountCode,
         positionCode: positionCode,
         poolCode: poolCode,
       }),
     );
-    // tickMath = blockchain.openContract(TickMathTest.createFromData(tickMathCode, beginCell().endCell()));
-    // await tickMath.sendDeploy(deployer.getSender(), toNano('0.05'));
-    // const sqrtPrice = encodePriceSqrt(1n, 10n);
-    // const tick = await tickMath.getTickAtSqrtRatio(sqrtPrice);
 
     token0MasterContract = blockchain.openContract(
       JettonMinterWrapper.JettonMinter.createFromConfig({
@@ -148,6 +140,11 @@ describe('Pool Test', () => {
           fee: 3000,
           sqrt_price_x96: encodePriceSqrt(1n, 10n),
           tick_spacing: 60,
+          jetton_master_ref: {
+            kind: 'JettonMasterRef',
+            jetton0_master: token0MasterContract.address,
+            jetton1_master: token1MasterContract.address,
+          },
         },
         {
           value: toNano('0.1'),
@@ -161,15 +158,14 @@ describe('Pool Test', () => {
         BigInt(tickMax),
         deployer.address,
       );
-      // console.log(await poolContract.getPoolInfo());
 
       expect(createPool.transactions).toHaveTransaction({
         from: router.address,
         to: pool,
         success: true,
       });
-      // Create position
 
+      // Create position
       let transfer0;
       let transfer1;
       if (
@@ -284,6 +280,11 @@ describe('Pool Test', () => {
           },
         );
       }
+      const { fee, liquidity, sqrtPriceX96 } = await poolContract.getPoolInfo();
+
+      expect(liquidity).toEqual(3161n);
+      expect(fee).toEqual(3000n);
+      expect(sqrtPriceX96).toEqual(encodePriceSqrt(1n, 10n));
 
       expect(transfer0.transactions).toHaveTransaction({
         from: pool,
@@ -305,24 +306,7 @@ describe('Pool Test', () => {
         to: position0Address,
         success: true,
       });
-      printTransactionFees(transfer1.transactions);
-
-      let batchTickIndexLower = await poolContract.getBatchTickIndex(BigInt(tickMin));
-      let batchTickLowerAddress = await poolContract.getBatchTickAddress(batchTickIndexLower);
-      let bathTickLowerContract = blockchain.openContract(
-        BatchTickWrapper.BatchTickTest.createFromAddress(batchTickLowerAddress),
-      );
-      let batchTickIndexUpper = await poolContract.getBatchTickIndex(BigInt(tickMax));
-      let batchTickUpperAddress = await poolContract.getBatchTickAddress(batchTickIndexUpper);
-      let bathTickUpperContract = blockchain.openContract(
-        BatchTickWrapper.BatchTickTest.createFromAddress(batchTickUpperAddress),
-      );
-      let sliceLower = await bathTickLowerContract.getTick(BigInt(tickMin));
-      let { liquidity_gross: liquidity_gross_lower } = loadInfo(sliceLower.beginParse());
-      let sliceUpper = await bathTickUpperContract.getTick(BigInt(tickMax));
-      let { liquidity_gross: liquidity_gross_upper } = loadInfo(sliceUpper.beginParse());
-      expect(liquidity_gross_lower).toBe(3161n);
-      expect(liquidity_gross_upper).toBe(3161n);
+      // printTransactionFees(transfer1.transactions);
     });
   });
 });

@@ -37,7 +37,6 @@ describe('Router Test', () => {
     routerContract = blockchain.openContract(
       RouterWrapper.RouterTest.create(code, {
         adminAddress: deployer.address,
-        batchTickCode: beginCell().endCell(),
         lpAccountCode: beginCell().endCell(),
         positionCode: await compile('Position'),
         poolCode: await compile('Pool'),
@@ -129,6 +128,11 @@ describe('Router Test', () => {
         fee: 3000,
         sqrt_price_x96: encodePriceSqrt(1n, 10n),
         tick_spacing: 60,
+        jetton_master_ref: {
+          kind: 'JettonMasterRef',
+          jetton0_master: token0MasterContract.address,
+          jetton1_master: token1MasterContract.address,
+        },
       },
       {
         value: toNano('0.1'),

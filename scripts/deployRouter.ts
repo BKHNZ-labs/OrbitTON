@@ -5,13 +5,13 @@ import RouterWrapper from '../wrappers/core/Router';
 
 export async function run(provider: NetworkProvider) {
   const routerCode = await compile('Router');
-  const batchTickCode = await compile('BatchTick');
+  // const batchTickCode = await compile('BatchTick');
   const lpAccountCode = await compile('LpAccount');
 
   const router = provider.open(
     RouterWrapper.RouterTest.create(routerCode, {
       adminAddress: provider.sender().address!,
-      batchTickCode: batchTickCode,
+      // batchTickCode: batchTickCode,
       lpAccountCode: lpAccountCode,
       positionCode: await compile('Position'),
       poolCode: await compile('Pool'),

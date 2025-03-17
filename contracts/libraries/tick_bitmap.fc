@@ -77,3 +77,18 @@ int tick_bitmap::calculate_last_index_from_that_word(int tick, int tick_spacing,
     return next;
   }
 }
+
+;; (int , int) tick_bitmap::next_initialized_tick(cell ticks, int tick, int tickSpacing, int lte){
+;;   if(lte){
+;;     (int next_tick, slice _, int existed) = ticks.idict_get_next?(24, tick);
+;;     if(existed){
+;;       return (next_tick, existed);
+;;     }
+;;   } else {
+;;     (int next_tick, slice _, int existed) = ticks.idict_get_prev?(24, tick);
+;;     if(existed){
+;;       return (next_tick, existed);
+;;     }
+;;   }
+;;   return (0, 0);
+;; }

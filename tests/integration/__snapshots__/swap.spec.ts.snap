@@ -4,14 +4,14 @@ exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000 token0 f
 {
   "amount0Before": "1",
   "amount0Delta": "1000000000000000000",
-  "amount1Before": "26087635650665564424699143612505016738",
-  "amount1Delta": "-26087635650665564420687107504180041533",
-  "executionPrice": "2.6088e+19",
-  "feeGrowthGlobal0X128Delta": "510423550381413479995299567101531162",
+  "amount1Before": "26087635650665564424700",
+  "amount1Delta": "-26087635650665564424699",
+  "executionPrice": "26087.6357",
+  "feeGrowthGlobal0X128Delta": "510423550381539044188693393394549179782468662529622",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.0241",
+  "poolPriceAfter": "4.0241e-30",
   "poolPriceBefore": "1.7014e+38",
-  "tickAfter": 13923,
+  "tickAfter": -676887,
   "tickBefore": 880340,
 }
 `;
@@ -19,15 +19,15 @@ exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000 token0 f
 exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
   "amount0Before": "1",
-  "amount0Delta": "1000000000000000000",
-  "amount1Before": "26087635650665564424699143612505016738",
-  "amount1Delta": "-26087635650665564420687107504180041533",
-  "executionPrice": "2.6088e+19",
-  "feeGrowthGlobal0X128Delta": "510423550381413479995299567101531162",
+  "amount0Delta": "2838",
+  "amount1Before": "26087635650665564424700",
+  "amount1Delta": "-26087635650665564423284",
+  "executionPrice": "9192260623913165824.0000",
+  "feeGrowthGlobal0X128Delta": "1531270651144223085585185733442956951",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.0241",
+  "poolPriceAfter": "0.50000",
   "poolPriceBefore": "1.7014e+38",
-  "tickAfter": 13923,
+  "tickAfter": -6932,
   "tickBefore": 880340,
 }
 `;
@@ -36,24 +36,24 @@ exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000 token1 f
 {
   "amount0Before": "1",
   "amount0Delta": "0",
-  "amount1Before": "26087635650665564424699143612505016738",
+  "amount1Before": "26087635650665564424700",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "-Infinity",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317",
-  "poolPriceAfter": "1.7014e+38",
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317184000000000000",
+  "poolPriceAfter": "1.7015e+38",
   "poolPriceBefore": "1.7014e+38",
-  "tickAfter": 880340,
+  "tickAfter": 880341,
   "tickBefore": 880340,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1",
-  "poolBalance1": "26087635650665564424699143612505016738",
+  "poolBalance1": "26087635650665564424700",
   "poolPriceBefore": "1.7014e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 880340,
 }
 `;
@@ -62,14 +62,14 @@ exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000e-15 toke
 {
   "amount0Before": "1",
   "amount0Delta": "1000",
-  "amount1Before": "26087635650665564424699143612505016738",
-  "amount1Delta": "-26083549850867114346332688477747755628",
-  "executionPrice": "2.6084e+34",
-  "feeGrowthGlobal0X128Delta": "2381976568446569244235",
+  "amount1Before": "26087635650665564424700",
+  "amount1Delta": "-26087635650665564420687",
+  "executionPrice": "26087635650665566208.0000",
+  "feeGrowthGlobal0X128Delta": "510423550381407695195061911147652317",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.1734e+30",
+  "poolPriceAfter": "4.0241",
   "poolPriceBefore": "1.7014e+38",
-  "tickAfter": 705098,
+  "tickAfter": 13923,
   "tickBefore": 880340,
 }
 `;
@@ -78,11 +78,11 @@ exports[`OrbitTonPool swap tests close to max price swap exactly 1.0000e-15 toke
 {
   "amount0Before": "1",
   "amount0Delta": "0",
-  "amount1Before": "26087635650665564424699143612505016738",
+  "amount1Before": "26087635650665564424700",
   "amount1Delta": "1000",
   "executionPrice": "-Infinity",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381407695195",
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317",
   "poolPriceAfter": "1.7014e+38",
   "poolPriceBefore": "1.7014e+38",
   "tickAfter": 880340,
@@ -141,11 +141,11 @@ exports[`OrbitTonPool swap tests close to max price swap token0 for exactly 1.00
 exports[`OrbitTonPool swap tests close to max price swap token0 for token1 to price 0.40000 1`] = `
 {
   "amount0Before": "1",
-  "amount0Delta": "3171793039286238109",
-  "amount1Before": "26087635650665564424699143612505016738",
-  "amount1Delta": "-26087635650665564423434232548437664977",
-  "executionPrice": "8.2249e+18",
-  "feeGrowthGlobal0X128Delta": "1618957864187523123655042148763283097",
+  "amount0Delta": "3173",
+  "amount1Before": "26087635650665564424700",
+  "amount1Delta": "-26087635650665564423434",
+  "executionPrice": "8221757217354417152.0000",
+  "feeGrowthGlobal0X128Delta": "1701411834604692317316873037158841057",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
   "poolPriceBefore": "1.7014e+38",
@@ -157,11 +157,11 @@ exports[`OrbitTonPool swap tests close to max price swap token0 for token1 to pr
 exports[`OrbitTonPool swap tests close to max price swap token0 for token1 to price 2.5000 1`] = `
 {
   "amount0Before": "1",
-  "amount0Delta": "1268717215714495281",
-  "amount1Before": "26087635650665564424699143612505016738",
-  "amount1Delta": "-26087635650665564421536865952336637378",
-  "executionPrice": "2.0562e+19",
-  "feeGrowthGlobal0X128Delta": "647583145675012618257449376796101507",
+  "amount0Delta": "1269",
+  "amount1Before": "26087635650665564424700",
+  "amount1Delta": "-26087635650665564421536",
+  "executionPrice": "20557632506434646016.0000",
+  "feeGrowthGlobal0X128Delta": "680564733841876926926749214863536422",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "2.5000",
   "poolPriceBefore": "1.7014e+38",
@@ -214,93 +214,93 @@ exports[`OrbitTonPool swap tests close to max price swap token1 for exactly 1.00
 
 exports[`OrbitTonPool swap tests close to max price swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1",
-  "poolBalance1": "26087635650665564424699143612505016738",
+  "poolBalance1": "26087635650665564424700",
   "poolPriceBefore": "1.7014e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 880340,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to max price swap token1 for token0 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1",
-  "poolBalance1": "26087635650665564424699143612505016738",
+  "poolBalance1": "26087635650665564424700",
   "poolPriceBefore": "1.7014e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 880340,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000 token0 for token1 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
+  "amount0Before": "26037782196502120275426",
   "amount0Delta": "1000000000000000000",
   "amount1Before": "1",
   "amount1Delta": "0",
   "executionPrice": "0.0000",
-  "feeGrowthGlobal0X128Delta": "170141183460469231731687303715884105728",
+  "feeGrowthGlobal0X128Delta": "511142820506415061807543996579504901400971034541162",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.0000000000000000000000000000000000000059000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "tickAfter": -880303,
+  "poolPriceAfter": "5.8995e-39",
+  "poolPriceBefore": "5.9000e-39",
+  "tickAfter": -880304,
   "tickBefore": -880303,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
-  "poolBalance0": "26037782196502120275425782622539039026",
+  "computeErr": "42",
+  "poolBalance0": "26037782196502120275426",
   "poolBalance1": "1",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "5.9000e-39",
   "tickBefore": -880303,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000 token1 for token0 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
-  "amount0Delta": "-26037782196502120271413746514214063808",
+  "amount0Before": "26037782196502120275426",
+  "amount0Delta": "-26037782196502120275426",
   "amount1Before": "1",
   "amount1Delta": "1000000000000000000",
-  "executionPrice": "0.000000000000000000038406",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381413820277666488039994629",
-  "poolPriceAfter": "0.24850",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "tickAfter": -13924,
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317184000000000000",
+  "poolPriceAfter": "2.4850e+29",
+  "poolPriceBefore": "5.9000e-39",
+  "tickAfter": 676886,
   "tickBefore": -880303,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
-  "amount0Delta": "-26037782196502120271413746514214063808",
+  "amount0Before": "26037782196502120275426",
+  "amount0Delta": "-26037782196502120274012",
   "amount1Before": "1",
-  "amount1Delta": "1000000000000000000",
-  "executionPrice": "0.000000000000000000038406",
+  "amount1Delta": "2838",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381413820277666488039994629",
-  "poolPriceAfter": "0.24850",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "tickAfter": -13924,
+  "feeGrowthGlobal1X128Delta": "1531270651144223085585185733442956951",
+  "poolPriceAfter": "2.0000",
+  "poolPriceBefore": "5.9000e-39",
+  "tickAfter": 6931,
   "tickBefore": -880303,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000e-15 token0 for token1 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
+  "amount0Before": "26037782196502120275426",
   "amount0Delta": "1000",
   "amount1Before": "1",
   "amount1Delta": "0",
   "executionPrice": "0.0000",
-  "feeGrowthGlobal0X128Delta": "170141183460469231731687",
+  "feeGrowthGlobal0X128Delta": "170141183460469231731687303715884105728",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.0000000000000000000000000000000000000059000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
+  "poolPriceAfter": "5.9000e-39",
+  "poolPriceBefore": "5.9000e-39",
   "tickAfter": -880303,
   "tickBefore": -880303,
 }
@@ -308,16 +308,16 @@ exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000e-15 toke
 
 exports[`OrbitTonPool swap tests close to min price swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
-  "amount0Delta": "-26033697540846965126433148994127431276",
+  "amount0Before": "26037782196502120275426",
+  "amount0Delta": "-26037782196502120271414",
   "amount1Before": "1",
   "amount1Delta": "1000",
-  "executionPrice": "0.000000000000000000000000000000000038412",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "2381976568446569244235",
-  "poolPriceAfter": "0.00000000000000000000000000000023974",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "tickAfter": -705093,
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317",
+  "poolPriceAfter": "0.24850",
+  "poolPriceBefore": "5.9000e-39",
+  "tickAfter": -13924,
   "tickBefore": -880303,
 }
 `;
@@ -366,20 +366,20 @@ exports[`OrbitTonPool swap tests close to min price swap token0 for exactly 1.00
 
 exports[`OrbitTonPool swap tests close to min price swap token0 for token1 to price 0.40000 1`] = `
 {
-  "poolBalance0": "26037782196502120275425782622539039026",
+  "computeErr": "42",
+  "poolBalance0": "26037782196502120275426",
   "poolBalance1": "1",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "5.9000e-39",
   "tickBefore": -880303,
 }
 `;
 
 exports[`OrbitTonPool swap tests close to min price swap token0 for token1 to price 2.5000 1`] = `
 {
-  "poolBalance0": "26037782196502120275425782622539039026",
+  "computeErr": "42",
+  "poolBalance0": "26037782196502120275426",
   "poolBalance1": "1",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "5.9000e-39",
   "tickBefore": -880303,
 }
 `;
@@ -434,15 +434,15 @@ exports[`OrbitTonPool swap tests close to min price swap token1 for exactly 1.00
 
 exports[`OrbitTonPool swap tests close to min price swap token1 for token0 to price 0.40000 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
-  "amount0Delta": "-26037782196502120272263504962370659661",
+  "amount0Before": "26037782196502120275426",
+  "amount0Delta": "-26037782196502120272264",
   "amount1Before": "1",
-  "amount1Delta": "1268717215714495283",
-  "executionPrice": "0.000000000000000000048726",
+  "amount1Delta": "1269",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "647583145675012958539816297734564973",
+  "feeGrowthGlobal1X128Delta": "680564733841876926926749214863536422",
   "poolPriceAfter": "0.40000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
+  "poolPriceBefore": "5.9000e-39",
   "tickAfter": -9164,
   "tickBefore": -880303,
 }
@@ -450,15 +450,15 @@ exports[`OrbitTonPool swap tests close to min price swap token1 for token0 to pr
 
 exports[`OrbitTonPool swap tests close to min price swap token1 for token0 to price 2.5000 1`] = `
 {
-  "amount0Before": "26037782196502120275425782622539039026",
-  "amount0Delta": "-26037782196502120274160871558471687260",
+  "amount0Before": "26037782196502120275426",
+  "amount0Delta": "-26037782196502120274161",
   "amount1Before": "1",
-  "amount1Delta": "3171793039286238112",
-  "executionPrice": "0.00000000000000000012182",
+  "amount1Delta": "3173",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "1618957864187523634078592530170978294",
+  "feeGrowthGlobal1X128Delta": "1701411834604692317316873037158841057",
   "poolPriceAfter": "2.5000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000059000",
+  "poolPriceBefore": "5.9000e-39",
   "tickAfter": 9163,
   "tickBefore": -880303,
 }
@@ -499,7 +499,7 @@ exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity s
 exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-662207357859531772",
+  "amount0Delta": "-662207357859531773",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.5101",
@@ -547,10 +547,10 @@ exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity s
 exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-989",
+  "amount0Delta": "-990",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000",
-  "executionPrice": "1.0111",
+  "executionPrice": "1.0101",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "1701411834604692317316",
   "poolPriceAfter": "1.0000",
@@ -626,10 +626,10 @@ exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity s
 
 exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -684,10 +684,10 @@ exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity s
 
 exports[`OrbitTonPool swap tests high fee, 1:1 price, 2e18 max range liquidity swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -712,14 +712,14 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.000
 {
   "amount0Before": "0",
   "amount0Delta": "1000000000000000000",
-  "amount1Before": "36796311329002736532545403775337522448",
-  "amount1Delta": "-36796311329002736528533367667012547243",
-  "executionPrice": "3.6796e+19",
-  "feeGrowthGlobal0X128Delta": "510423550381413479995299567101531162",
+  "amount1Before": "36796311329002736532546",
+  "amount1Delta": "-36796311329002736532545",
+  "executionPrice": "36796.3113",
+  "feeGrowthGlobal0X128Delta": "510423550381539044188693393394549179782468662529622",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.0241",
+  "poolPriceAfter": "4.0241e-30",
   "poolPriceBefore": "3.4026e+38",
-  "tickAfter": 13923,
+  "tickAfter": -676887,
   "tickBefore": 887271,
 }
 `;
@@ -727,35 +727,35 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.000
 exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
   "amount0Before": "0",
-  "amount0Delta": "1000000000000000000",
-  "amount1Before": "36796311329002736532545403775337522448",
-  "amount1Delta": "-36796311329002736528533367667012547243",
-  "executionPrice": "3.6796e+19",
-  "feeGrowthGlobal0X128Delta": "510423550381413479995299567101531162",
+  "amount0Delta": "2838",
+  "amount1Before": "36796311329002736532546",
+  "amount1Delta": "-36796311329002736531131",
+  "executionPrice": "12965578340029153280.0000",
+  "feeGrowthGlobal0X128Delta": "1531270651144223085585185733442956951",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.0241",
+  "poolPriceAfter": "0.50000",
   "poolPriceBefore": "3.4026e+38",
-  "tickAfter": 13923,
+  "tickAfter": -6932,
   "tickBefore": 887271,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.0000 token1 for token0 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
-  "poolBalance1": "36796311329002736532545403775337522448",
+  "poolBalance1": "36796311329002736532546",
   "poolPriceBefore": "3.4026e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 887271,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
-  "poolBalance1": "36796311329002736532545403775337522448",
+  "poolBalance1": "36796311329002736532546",
   "poolPriceBefore": "3.4026e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 887271,
 }
 `;
@@ -764,24 +764,24 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.000
 {
   "amount0Before": "0",
   "amount0Delta": "1000",
-  "amount1Before": "36796311329002736532545403775337522448",
-  "amount1Delta": "-36792225529204286454178948640580261338",
-  "executionPrice": "3.6792e+34",
-  "feeGrowthGlobal0X128Delta": "2381976568446569244235",
+  "amount1Before": "36796311329002736532546",
+  "amount1Delta": "-36796311329002736528533",
+  "executionPrice": "36796311329002737664.0000",
+  "feeGrowthGlobal0X128Delta": "510423550381407695195061911147652317",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "4.1734e+30",
+  "poolPriceAfter": "4.0241",
   "poolPriceBefore": "3.4026e+38",
-  "tickAfter": 705098,
+  "tickAfter": 13923,
   "tickBefore": 887271,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the max ratio swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
-  "poolBalance1": "36796311329002736532545403775337522448",
+  "poolBalance1": "36796311329002736532546",
   "poolPriceBefore": "3.4026e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 887271,
 }
 `;
@@ -837,11 +837,11 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap token0 for ex
 exports[`OrbitTonPool swap tests initialized at the max ratio swap token0 for token1 to price 0.40000 1`] = `
 {
   "amount0Before": "0",
-  "amount0Delta": "3171793039286238109",
-  "amount1Before": "36796311329002736532545403775337522448",
-  "amount1Delta": "-36796311329002736531280492711270170687",
-  "executionPrice": "1.1601e+19",
-  "feeGrowthGlobal0X128Delta": "1618957864187523123655042148763283097",
+  "amount0Delta": "3173",
+  "amount1Before": "36796311329002736532546",
+  "amount1Delta": "-36796311329002736531280",
+  "executionPrice": "11596694399307511808.0000",
+  "feeGrowthGlobal0X128Delta": "1701411834604692317316873037158841057",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
   "poolPriceBefore": "3.4026e+38",
@@ -853,11 +853,11 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap token0 for to
 exports[`OrbitTonPool swap tests initialized at the max ratio swap token0 for token1 to price 2.5000 1`] = `
 {
   "amount0Before": "0",
-  "amount0Delta": "1268717215714495281",
-  "amount1Before": "36796311329002736532545403775337522448",
-  "amount1Delta": "-36796311329002736529383126115169143088",
-  "executionPrice": "2.9003e+19",
-  "feeGrowthGlobal0X128Delta": "647583145675012618257449376796101507",
+  "amount0Delta": "1269",
+  "amount1Before": "36796311329002736532546",
+  "amount1Delta": "-36796311329002736529383",
+  "executionPrice": "28996305223800422400.0000",
+  "feeGrowthGlobal0X128Delta": "680564733841876926926749214863536422",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "2.5000",
   "poolPriceBefore": "3.4026e+38",
@@ -898,98 +898,98 @@ exports[`OrbitTonPool swap tests initialized at the max ratio swap token1 for ex
 
 exports[`OrbitTonPool swap tests initialized at the max ratio swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
-  "poolBalance1": "36796311329002736532545403775337522448",
+  "poolBalance1": "36796311329002736532546",
   "poolPriceBefore": "3.4026e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 887271,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the max ratio swap token1 for token0 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
-  "poolBalance1": "36796311329002736532545403775337522448",
+  "poolBalance1": "36796311329002736532546",
   "poolPriceBefore": "3.4026e+38",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 887271,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000 token0 for token1 1`] = `
 {
-  "poolBalance0": "36796311322104302062438284732106019258",
+  "computeErr": "42",
+  "poolBalance0": "13283468387279653044541",
   "poolBalance1": "0",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "2.9390e-39",
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
-  "poolBalance0": "36796311322104302062438284732106019258",
+  "computeErr": "42",
+  "poolBalance0": "13283468387279653044541",
   "poolBalance1": "0",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "2.9390e-39",
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000 token1 for token0 1`] = `
 {
-  "amount0Before": "36796311322104302062438284732106019258",
-  "amount0Delta": "-36796311322104302058426248623781044040",
+  "amount0Before": "13283468387279653044541",
+  "amount0Delta": "-13283468387279653044540",
   "amount1Before": "0",
   "amount1Delta": "1000000000000000000",
-  "executionPrice": "0.000000000000000000027177",
+  "executionPrice": "0.0001",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381413820277666488039994629",
-  "poolPriceAfter": "0.24850",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "tickAfter": -13924,
+  "feeGrowthGlobal1X128Delta": "1413915652026060097493246291267734950648199445983379",
+  "poolPriceAfter": "1.9068e+30",
+  "poolPriceBefore": "2.9390e-39",
+  "tickAfter": 697264,
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
-  "amount0Before": "36796311322104302062438284732106019258",
-  "amount0Delta": "-36796311322104302058426248623781044040",
+  "amount0Before": "13283468387279653044541",
+  "amount0Delta": "-13283468387279653044030",
   "amount1Before": "0",
-  "amount1Delta": "1000000000000000000",
-  "executionPrice": "0.000000000000000000027177",
+  "amount1Delta": "1026",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381413820277666488039994629",
-  "poolPriceAfter": "0.24850",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "tickAfter": -13924,
+  "feeGrowthGlobal1X128Delta": "1885220869368080129990995055023646600",
+  "poolPriceAfter": "2.0000",
+  "poolPriceBefore": "2.9390e-39",
+  "tickAfter": 6931,
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000e-15 token0 for token1 1`] = `
 {
-  "poolBalance0": "36796311322104302062438284732106019258",
+  "computeErr": "42",
+  "poolBalance0": "13283468387279653044541",
   "poolBalance1": "0",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "2.9390e-39",
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
-  "amount0Before": "36796311322104302062438284732106019258",
-  "amount0Delta": "-36792226666449146913445651103694411508",
+  "amount0Before": "13283468387279653044541",
+  "amount0Delta": "-13283468387279653044017",
   "amount1Before": "0",
   "amount1Delta": "1000",
-  "executionPrice": "0.000000000000000000000000000000000027180",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "2381976568446569244235",
-  "poolPriceAfter": "0.00000000000000000000000000000023974",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "tickAfter": -705093,
+  "feeGrowthGlobal1X128Delta": "1413915652026060097493246291267734950",
+  "poolPriceAfter": "1.9068",
+  "poolPriceBefore": "2.9390e-39",
+  "tickAfter": 6454,
   "tickBefore": -887272,
 }
 `;
@@ -1026,20 +1026,20 @@ exports[`OrbitTonPool swap tests initialized at the min ratio swap token0 for ex
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap token0 for token1 to price 0.40000 1`] = `
 {
-  "poolBalance0": "36796311322104302062438284732106019258",
+  "computeErr": "42",
+  "poolBalance0": "13283468387279653044541",
   "poolBalance1": "0",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "2.9390e-39",
   "tickBefore": -887272,
 }
 `;
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap token0 for token1 to price 2.5000 1`] = `
 {
-  "poolBalance0": "36796311322104302062438284732106019258",
+  "computeErr": "42",
+  "poolBalance0": "13283468387279653044541",
   "poolBalance1": "0",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "poolPriceBefore": "2.9390e-39",
   "tickBefore": -887272,
 }
 `;
@@ -1094,15 +1094,15 @@ exports[`OrbitTonPool swap tests initialized at the min ratio swap token1 for ex
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap token1 for token0 to price 0.40000 1`] = `
 {
-  "amount0Before": "36796311322104302062438284732106019258",
-  "amount0Delta": "-36796311322104302059276007071937639893",
+  "amount0Before": "13283468387279653044541",
+  "amount0Delta": "-13283468387279653043399",
   "amount1Before": "0",
-  "amount1Delta": "1268717215714495283",
-  "executionPrice": "0.000000000000000000034479",
+  "amount1Delta": "459",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "647583145675012958539816297734564973",
+  "feeGrowthGlobal1X128Delta": "942610434684040064995497527511823300",
   "poolPriceAfter": "0.40000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
+  "poolPriceBefore": "2.9390e-39",
   "tickAfter": -9164,
   "tickBefore": -887272,
 }
@@ -1110,15 +1110,15 @@ exports[`OrbitTonPool swap tests initialized at the min ratio swap token1 for to
 
 exports[`OrbitTonPool swap tests initialized at the min ratio swap token1 for token0 to price 2.5000 1`] = `
 {
-  "amount0Before": "36796311322104302062438284732106019258",
-  "amount0Delta": "-36796311322104302061173373668038667492",
+  "amount0Before": "13283468387279653044541",
+  "amount0Delta": "-13283468387279653044084",
   "amount1Before": "0",
-  "amount1Delta": "3171793039286238112",
-  "executionPrice": "0.000000000000000000086199",
+  "amount1Delta": "1146",
+  "executionPrice": "0.0000",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "1618957864187523634078592530170978294",
+  "feeGrowthGlobal1X128Delta": "1885220869368080129990995055023646600",
   "poolPriceAfter": "2.5000",
-  "poolPriceBefore": "0.0000000000000000000000000000000000000029390",
+  "poolPriceBefore": "2.9390e-39",
   "tickAfter": 9163,
   "tickBefore": -887272,
 }
@@ -1129,9 +1129,9 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
   "amount0Before": "2000000000000000000",
   "amount0Delta": "1000000000000000000",
   "amount1Before": "2000000000000000000",
-  "amount1Delta": "-666444407401233536",
+  "amount1Delta": "-666444407401233538",
   "executionPrice": "0.6664",
-  "feeGrowthGlobal0X128Delta": "85070591730234956148210572796405514",
+  "feeGrowthGlobal0X128Delta": "85070591730234615865843651857942052",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.44459",
   "poolPriceBefore": "1.0000",
@@ -1143,11 +1143,11 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "828841545518949575",
+  "amount0Delta": "828841545518949573",
   "amount1Before": "2000000000000000000",
-  "amount1Delta": "-585786437626904950",
+  "amount1Delta": "-585786437626904951",
   "executionPrice": "0.7068",
-  "feeGrowthGlobal0X128Delta": "70510040727899606087499539976421836",
+  "feeGrowthGlobal0X128Delta": "70510040727899265805132619037958374",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.50000",
   "poolPriceBefore": "1.0000",
@@ -1159,12 +1159,12 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-666444407401233536",
+  "amount0Delta": "-666444407401233539",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.5005",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "85070591730234956148210572796405515",
+  "feeGrowthGlobal1X128Delta": "85070591730234615865843651857942052",
   "poolPriceAfter": "2.2493",
   "poolPriceBefore": "1.0000",
   "tickAfter": 8106,
@@ -1175,12 +1175,12 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-585786437626904950",
+  "amount0Delta": "-585786437626904951",
   "amount1Before": "2000000000000000000",
-  "amount1Delta": "828841545518949574",
+  "amount1Delta": "828841545518949573",
   "executionPrice": "1.4149",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "70510040727899435946316079507190105",
+  "feeGrowthGlobal1X128Delta": "70510040727899265805132619037958374",
   "poolPriceAfter": "2.0000",
   "poolPriceBefore": "1.0000",
   "tickAfter": 6931,
@@ -1207,10 +1207,10 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-998",
+  "amount0Delta": "-999",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000",
-  "executionPrice": "1.0020",
+  "executionPrice": "1.0010",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "170141183460469231731",
   "poolPriceAfter": "1.0000",
@@ -1286,10 +1286,10 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -1344,10 +1344,10 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -1355,12 +1355,12 @@ exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity sw
 exports[`OrbitTonPool swap tests low fee, 1:1 price, 2e18 max range liquidity swap token1 for token0 to price 2.5000 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-735088935932648266",
+  "amount0Delta": "-735088935932648267",
   "amount1Before": "2000000000000000000",
-  "amount1Delta": "1162859089713235954",
+  "amount1Delta": "1162859089713235950",
   "executionPrice": "1.5819",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "98925110860787308007692432636113978",
+  "feeGrowthGlobal1X128Delta": "98925110860786967725325511697650515",
   "poolPriceAfter": "2.5000",
   "poolPriceBefore": "1.0000",
   "tickAfter": 9163,
@@ -1374,10 +1374,10 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
   "amount0Delta": "1000700370186095",
   "amount1Before": "999700069986003",
   "amount1Delta": "-999700069986002",
-  "executionPrice": "0.99900",
+  "executionPrice": "0.9990",
   "feeGrowthGlobal0X128Delta": "85130172636557991529041720559172",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.0000000000000000000000000000000000000029390",
+  "poolPriceAfter": "2.9390e-39",
   "poolPriceBefore": "1.0000",
   "tickAfter": -887272,
   "tickBefore": 0,
@@ -1400,10 +1400,26 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 }
 `;
 
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap exactly 1.0000 token0 for token1 to price 1 1`] = `
+{
+  "amount0Before": "999700069986003",
+  "amount0Delta": "1000700370186095",
+  "amount1Before": "999700069986003",
+  "amount1Delta": "-999700069986002",
+  "executionPrice": "0.9990",
+  "feeGrowthGlobal0X128Delta": "85130172636557991529041720559172",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "1",
+  "poolPriceBefore": "1",
+  "tickAfter": -6932,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "999700069986003",
-  "amount0Delta": "-999700069986002",
+  "amount0Delta": "-999700069986003",
   "amount1Before": "999700069986003",
   "amount1Delta": "1000700370186095",
   "executionPrice": "1.0010",
@@ -1416,10 +1432,26 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 }
 `;
 
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap exactly 1.0000 token1 for token0 to price 2 1`] = `
+{
+  "amount0Before": "999700069986003",
+  "amount0Delta": "-999700069986003",
+  "amount1Before": "999700069986003",
+  "amount1Delta": "1000700370186095",
+  "executionPrice": "1.0010",
+  "feeGrowthGlobal0X128Delta": "0",
+  "feeGrowthGlobal1X128Delta": "85130172636557991529041720559172",
+  "poolPriceAfter": "2",
+  "poolPriceBefore": "1",
+  "tickAfter": 6931,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
   "amount0Before": "999700069986003",
-  "amount0Delta": "-999700069986002",
+  "amount0Delta": "-999700069986003",
   "amount1Before": "999700069986003",
   "amount1Delta": "1000700370186095",
   "executionPrice": "1.0010",
@@ -1451,10 +1483,10 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "999700069986003",
-  "amount0Delta": "-998",
+  "amount0Delta": "-999",
   "amount1Before": "999700069986003",
   "amount1Delta": "1000",
-  "executionPrice": "1.0020",
+  "executionPrice": "1.0010",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "170141183460469231731",
   "poolPriceAfter": "1.0000",
@@ -1512,6 +1544,22 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 }
 `;
 
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token0 for token1 to price 0 1`] = `
+{
+  "amount0Before": "999700069986003",
+  "amount0Delta": "1000700370186095",
+  "amount1Before": "999700069986003",
+  "amount1Delta": "-999700069986002",
+  "executionPrice": "0.9990",
+  "feeGrowthGlobal0X128Delta": "85130172636557991529041720559172",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "0",
+  "poolPriceBefore": "1",
+  "tickAfter": -9164,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token0 for token1 to price 0.40000 1`] = `
 {
   "amount0Before": "999700069986003",
@@ -1530,10 +1578,20 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "999700069986003",
   "poolBalance1": "999700069986003",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token0 for token1 to price 3 1`] = `
+{
+  "computeErr": "42",
+  "poolBalance0": "999700069986003",
+  "poolBalance1": "999700069986003",
+  "poolPriceBefore": "1",
   "tickBefore": 0,
 }
 `;
@@ -1586,12 +1644,22 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 }
 `;
 
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token1 for token0 to price 0 1`] = `
+{
+  "computeErr": "42",
+  "poolBalance0": "999700069986003",
+  "poolBalance1": "999700069986003",
+  "poolPriceBefore": "1",
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "999700069986003",
   "poolBalance1": "999700069986003",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -1599,7 +1667,7 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token1 for token0 to price 2.5000 1`] = `
 {
   "amount0Before": "999700069986003",
-  "amount0Delta": "-999700069986002",
+  "amount0Delta": "-999700069986003",
   "amount1Before": "999700069986003",
   "amount1Delta": "1000700370186095",
   "executionPrice": "1.0010",
@@ -1612,78 +1680,94 @@ exports[`OrbitTonPool swap tests low fee, large liquidity around current price (
 }
 `;
 
+exports[`OrbitTonPool swap tests low fee, large liquidity around current price (stable swap) swap token1 for token0 to price 3 1`] = `
+{
+  "amount0Before": "999700069986003",
+  "amount0Delta": "-999700069986003",
+  "amount1Before": "999700069986003",
+  "amount1Delta": "1000700370186095",
+  "executionPrice": "1.0010",
+  "feeGrowthGlobal0X128Delta": "0",
+  "feeGrowthGlobal1X128Delta": "85130172636557991529041720559172",
+  "poolPriceAfter": "3",
+  "poolPriceBefore": "1",
+  "tickAfter": 9163,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000 token0 for token1 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
+  "amount0Before": "11505743598341114571255",
   "amount0Delta": "1000000000000000000",
-  "amount1Before": "11505743598341114571255423385506404",
-  "amount1Delta": "-996999999999999318",
-  "executionPrice": "0.99700",
-  "feeGrowthGlobal0X128Delta": "88725000000017597125",
+  "amount1Before": "11505743598341114571255",
+  "amount1Delta": "-996913615068358862",
+  "executionPrice": "0.9969",
+  "feeGrowthGlobal0X128Delta": "88725000000000000000006155386194",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "1.0000",
+  "poolPriceAfter": "0.99983",
   "poolPriceBefore": "1.0000",
-  "tickAfter": -1,
+  "tickAfter": -2,
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
+  "amount0Before": "11505743598341114571255",
   "amount0Delta": "1000000000000000000",
-  "amount1Before": "11505743598341114571255423385506404",
-  "amount1Delta": "-996999999999999318",
-  "executionPrice": "0.99700",
-  "feeGrowthGlobal0X128Delta": "88725000000017597125",
+  "amount1Before": "11505743598341114571255",
+  "amount1Delta": "-996913615068358862",
+  "executionPrice": "0.9969",
+  "feeGrowthGlobal0X128Delta": "88725000000000000000006155386194",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "1.0000",
+  "poolPriceAfter": "0.99983",
   "poolPriceBefore": "1.0000",
-  "tickAfter": -1,
+  "tickAfter": -2,
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000 token1 for token0 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
-  "amount0Delta": "-996999999999999232",
-  "amount1Before": "11505743598341114571255423385506404",
+  "amount0Before": "11505743598341114571255",
+  "amount0Delta": "-996913615068358862",
+  "amount1Before": "11505743598341114571255",
   "amount1Delta": "1000000000000000000",
-  "executionPrice": "1.0030",
+  "executionPrice": "1.0031",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "88725000000020140575",
-  "poolPriceAfter": "1.0000",
+  "feeGrowthGlobal1X128Delta": "88725000000000000000006155386194",
+  "poolPriceAfter": "1.0002",
   "poolPriceBefore": "1.0000",
-  "tickAfter": 0,
+  "tickAfter": 1,
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
-  "amount0Delta": "-996999999999999232",
-  "amount1Before": "11505743598341114571255423385506404",
+  "amount0Before": "11505743598341114571255",
+  "amount0Delta": "-996913615068358862",
+  "amount1Before": "11505743598341114571255",
   "amount1Delta": "1000000000000000000",
-  "executionPrice": "1.0030",
+  "executionPrice": "1.0031",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "88725000000020140575",
-  "poolPriceAfter": "1.0000",
+  "feeGrowthGlobal1X128Delta": "88725000000000000000006155386194",
+  "poolPriceAfter": "1.0002",
   "poolPriceBefore": "1.0000",
-  "tickAfter": 0,
+  "tickAfter": 1,
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000e-15 token0 for token1 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
+  "amount0Before": "11505743598341114571255",
   "amount0Delta": "1000",
-  "amount1Before": "11505743598341114571255423385506404",
-  "amount1Delta": "0",
-  "executionPrice": "0.0000",
-  "feeGrowthGlobal0X128Delta": "29575000",
+  "amount1Before": "11505743598341114571255",
+  "amount1Delta": "-996",
+  "executionPrice": "0.9960",
+  "feeGrowthGlobal0X128Delta": "88725000000000000",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "1.0000",
   "poolPriceBefore": "1.0000",
@@ -1694,13 +1778,13 @@ exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with defa
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
-  "amount0Delta": "0",
-  "amount1Before": "11505743598341114571255423385506404",
+  "amount0Before": "11505743598341114571255",
+  "amount0Delta": "-997",
+  "amount1Before": "11505743598341114571255",
   "amount1Delta": "1000",
-  "executionPrice": "-Infinity",
+  "executionPrice": "1.0030",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "29575000",
+  "feeGrowthGlobal1X128Delta": "88725000000000000",
   "poolPriceAfter": "1.0000",
   "poolPriceBefore": "1.0000",
   "tickAfter": 0,
@@ -1758,26 +1842,26 @@ exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with defa
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap token0 for token1 to price 0.40000 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
-  "amount0Delta": "6706554036096900675845906992672697",
-  "amount1Before": "11505743598341114571255423385506404",
-  "amount1Delta": "-4228872409409224753601131225116702",
-  "executionPrice": "0.63056",
-  "feeGrowthGlobal0X128Delta": "595039006852697512464428097924911949",
+  "amount0Before": "11505743598341114571255",
+  "amount0Delta": "50000000000000000000",
+  "amount1Before": "11505743598341114571255",
+  "amount1Delta": "-49634950683939184034",
+  "executionPrice": "0.9927",
+  "feeGrowthGlobal0X128Delta": "4436250000000000000000307769309733",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.40000",
+  "poolPriceAfter": "0.99139",
   "poolPriceBefore": "1.0000",
-  "tickAfter": -9164,
+  "tickAfter": -87,
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap token0 for token1 to price 2.5000 1`] = `
 {
-  "poolBalance0": "11505743598341114571255423385623647",
-  "poolBalance1": "11505743598341114571255423385506404",
+  "computeErr": "42",
+  "poolBalance0": "11505743598341114571255",
+  "poolBalance1": "11505743598341114571255",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -1832,26 +1916,26 @@ exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with defa
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap token1 for token0 to price 0.40000 1`] = `
 {
-  "poolBalance0": "11505743598341114571255423385623647",
-  "poolBalance1": "11505743598341114571255423385506404",
+  "computeErr": "42",
+  "poolBalance0": "11505743598341114571255",
+  "poolBalance1": "11505743598341114571255",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
 
 exports[`OrbitTonPool swap tests max full range liquidity at 1:1 price with default fee swap token1 for token0 to price 2.5000 1`] = `
 {
-  "amount0Before": "11505743598341114571255423385623647",
-  "amount0Delta": "-4228872409409224753601131224936259",
-  "amount1Before": "11505743598341114571255423385506404",
-  "amount1Delta": "6706554036096900675845906992220230",
-  "executionPrice": "1.5859",
+  "amount0Before": "11505743598341114571255",
+  "amount0Delta": "-49634950683939184035",
+  "amount1Before": "11505743598341114571255",
+  "amount1Delta": "50000000000000000000",
+  "executionPrice": "1.0074",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "595039006852697512464428097884749099",
-  "poolPriceAfter": "2.5000",
+  "feeGrowthGlobal1X128Delta": "4436250000000000000000307769309733",
+  "poolPriceAfter": "1.0087",
   "poolPriceBefore": "1.0000",
-  "tickAfter": 9163,
+  "tickAfter": 86,
   "tickBefore": 0,
 }
 `;
@@ -1878,7 +1962,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidi
   "amount0Delta": "824893095908431542",
   "amount1Before": "1994009290088178439",
   "amount1Delta": "-579795727715083389",
-  "executionPrice": "0.70287",
+  "executionPrice": "0.7029",
   "feeGrowthGlobal0X128Delta": "421044862698692740725170743495410672",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.50000",
@@ -1926,7 +2010,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidi
   "amount0Delta": "1000",
   "amount1Before": "1994009290088178439",
   "amount1Delta": "-991",
-  "executionPrice": "0.99100",
+  "executionPrice": "0.9910",
   "feeGrowthGlobal0X128Delta": "510423550381407695195",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.99402",
@@ -2006,7 +2090,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidi
   "amount0Delta": "1159748196632793863",
   "amount1Before": "1994009290088178439",
   "amount1Delta": "-729098226020826705",
-  "executionPrice": "0.62867",
+  "executionPrice": "0.6287",
   "feeGrowthGlobal0X128Delta": "591962792073745646583043420635066071",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
@@ -2018,10 +2102,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidi
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidity around current price swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1994009290088178439",
   "poolBalance1": "1994009290088178439",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2076,10 +2160,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidi
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 0 liquidity, all liquidity around current price swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1994009290088178439",
   "poolBalance1": "1994009290088178439",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2135,7 +2219,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-665331998665331998",
+  "amount0Delta": "-665331998665331999",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.5030",
@@ -2183,10 +2267,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "2000000000000000000",
-  "amount0Delta": "-996",
+  "amount0Delta": "-997",
   "amount1Before": "2000000000000000000",
   "amount1Delta": "1000",
-  "executionPrice": "1.0040",
+  "executionPrice": "1.0030",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "510423550381407695195",
   "poolPriceAfter": "1.0000",
@@ -2262,10 +2346,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2320,10 +2404,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, 2e18 max range liquidity swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "2000000000000000000",
   "poolBalance1": "2000000000000000000",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2366,7 +2450,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
   "amount0Delta": "1000000000000000000",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "-795933705287758544",
-  "executionPrice": "0.79593",
+  "executionPrice": "0.7959",
   "feeGrowthGlobal0X128Delta": "256749882580179971840679703106063897",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.63923",
@@ -2379,7 +2463,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "3994009290088178439",
-  "amount0Delta": "-795933705287758544",
+  "amount0Delta": "-795933705287758546",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.2564",
@@ -2395,7 +2479,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
   "amount0Before": "3994009290088178439",
-  "amount0Delta": "-795933705287758544",
+  "amount0Delta": "-795933705287758546",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.2564",
@@ -2427,10 +2511,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "3994009290088178439",
-  "amount0Delta": "-996",
+  "amount0Delta": "-997",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "1000",
-  "executionPrice": "1.0040",
+  "executionPrice": "1.0030",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "510423550381407695195",
   "poolPriceAfter": "1.0000",
@@ -2494,7 +2578,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
   "amount0Delta": "2325523181756544449",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "-1464187161953474971",
-  "executionPrice": "0.62962",
+  "executionPrice": "0.6296",
   "feeGrowthGlobal0X128Delta": "595039006852697724928157455230309818",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
@@ -2506,10 +2590,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "3994009290088178439",
   "poolBalance1": "3994009290088178439",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2564,10 +2648,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "3994009290088178439",
   "poolBalance1": "3994009290088178439",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -2575,7 +2659,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity aro
 exports[`OrbitTonPool swap tests medium fee, 1:1 price, additional liquidity around current price swap token1 for token0 to price 2.5000 1`] = `
 {
   "amount0Before": "3994009290088178439",
-  "amount0Delta": "-1464187161953474971",
+  "amount0Delta": "-1464187161953474973",
   "amount1Before": "3994009290088178439",
   "amount1Delta": "2325523181756544449",
   "executionPrice": "1.5883",
@@ -2606,10 +2690,10 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 to price 0.50000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "6324555320336758664",
   "poolBalance1": "632455532033675867",
   "poolPriceBefore": "0.10000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": -23028,
 }
 `;
@@ -2617,12 +2701,12 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "6324555320336758664",
-  "amount0Delta": "-3869747612262812753",
+  "amount0Delta": "-3869747612262812757",
   "amount1Before": "632455532033675867",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "0.2584",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381407865336245371616884047",
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317",
   "poolPriceAfter": "0.66378",
   "poolPriceBefore": "0.10000",
   "tickAfter": -4099,
@@ -2633,12 +2717,12 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
   "amount0Before": "6324555320336758664",
-  "amount0Delta": "-3869747612262812753",
+  "amount0Delta": "-3869747612262812757",
   "amount1Before": "632455532033675867",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "0.2584",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "510423550381407865336245371616884047",
+  "feeGrowthGlobal1X128Delta": "510423550381407695195061911147652317",
   "poolPriceAfter": "0.66378",
   "poolPriceBefore": "0.10000",
   "tickAfter": -4099,
@@ -2665,7 +2749,7 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "6324555320336758664",
-  "amount0Delta": "-9969",
+  "amount0Delta": "-9970",
   "amount1Before": "632455532033675867",
   "amount1Delta": "1000",
   "executionPrice": "0.1003",
@@ -2722,20 +2806,20 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap token0 for token1 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "6324555320336758664",
   "poolBalance1": "632455532033675867",
   "poolPriceBefore": "0.10000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": -23028,
 }
 `;
 
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "6324555320336758664",
   "poolBalance1": "632455532033675867",
   "poolPriceBefore": "0.10000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": -23028,
 }
 `;
@@ -2791,12 +2875,12 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap token1 for token0 to price 0.40000 1`] = `
 {
   "amount0Before": "6324555320336758664",
-  "amount0Delta": "-3162277660168379331",
+  "amount0Delta": "-3162277660168379332",
   "amount1Before": "632455532033675867",
-  "amount1Delta": "634358607857247611",
+  "amount1Delta": "634358607857247610",
   "executionPrice": "0.2006",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "323791572837503501799197590655727195",
+  "feeGrowthGlobal1X128Delta": "323791572837503501799197590655727196",
   "poolPriceAfter": "0.40000",
   "poolPriceBefore": "0.10000",
   "tickAfter": -9164,
@@ -2807,12 +2891,12 @@ exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 1:10 price, 2e18 max range liquidity swap token1 for token0 to price 2.5000 1`] = `
 {
   "amount0Before": "6324555320336758664",
-  "amount0Delta": "-5059644256269406930",
+  "amount0Delta": "-5059644256269406931",
   "amount1Before": "632455532033675867",
-  "amount1Delta": "2537434431428990440",
+  "amount1Delta": "2537434431428990438",
   "executionPrice": "0.5015",
   "feeGrowthGlobal0X128Delta": "0",
-  "feeGrowthGlobal1X128Delta": "1295166291350014177337973823092140516",
+  "feeGrowthGlobal1X128Delta": "1295166291350014007196790362622908787",
   "poolPriceAfter": "2.5000",
   "poolPriceBefore": "0.10000",
   "tickAfter": 9163,
@@ -2825,9 +2909,9 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
   "amount0Before": "632455532033675867",
   "amount0Delta": "1000000000000000000",
   "amount1Before": "6324555320336758664",
-  "amount1Delta": "-3869747612262812754",
+  "amount1Delta": "-3869747612262812756",
   "executionPrice": "3.8697",
-  "feeGrowthGlobal0X128Delta": "510423550381407865336245371616884048",
+  "feeGrowthGlobal0X128Delta": "510423550381407695195061911147652317",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "1.5065",
   "poolPriceBefore": "10.000",
@@ -2841,9 +2925,9 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
   "amount0Before": "632455532033675867",
   "amount0Delta": "1000000000000000000",
   "amount1Before": "6324555320336758664",
-  "amount1Delta": "-3869747612262812754",
+  "amount1Delta": "-3869747612262812756",
   "executionPrice": "3.8697",
-  "feeGrowthGlobal0X128Delta": "510423550381407865336245371616884048",
+  "feeGrowthGlobal0X128Delta": "510423550381407695195061911147652317",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "1.5065",
   "poolPriceBefore": "10.000",
@@ -2870,10 +2954,10 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
 
 exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidity swap exactly 1.0000 token1 for token0 to price 2.0000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "632455532033675867",
   "poolBalance1": "6324555320336758664",
   "poolPriceBefore": "10.000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 23027,
 }
 `;
@@ -2897,10 +2981,10 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
 exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidity swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "632455532033675867",
-  "amount0Delta": "-99",
+  "amount0Delta": "-100",
   "amount1Before": "6324555320336758664",
   "amount1Delta": "1000",
-  "executionPrice": "10.1010",
+  "executionPrice": "10.0000",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "510423550381407695195",
   "poolPriceAfter": "10.000",
@@ -2963,9 +3047,9 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
   "amount0Before": "632455532033675867",
   "amount0Delta": "2537434431428990438",
   "amount1Before": "6324555320336758664",
-  "amount1Delta": "-5059644256269406930",
+  "amount1Delta": "-5059644256269406931",
   "executionPrice": "1.9940",
-  "feeGrowthGlobal0X128Delta": "1295166291350014007196790362622908786",
+  "feeGrowthGlobal0X128Delta": "1295166291350014007196790362622908787",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
   "poolPriceBefore": "10.000",
@@ -3034,20 +3118,20 @@ exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidit
 
 exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidity swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "632455532033675867",
   "poolBalance1": "6324555320336758664",
   "poolPriceBefore": "10.000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 23027,
 }
 `;
 
 exports[`OrbitTonPool swap tests medium fee, 10:1 price, 2e18 max range liquidity swap token1 for token0 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "632455532033675867",
   "poolBalance1": "6324555320336758664",
   "poolPriceBefore": "10.000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 23027,
 }
 `;
@@ -3061,7 +3145,7 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 
   "executionPrice": "NaN",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.0000000000000000000000000000000000000029390",
+  "poolPriceAfter": "2.9390e-39",
   "poolPriceBefore": "1.0000",
   "tickAfter": -887272,
   "tickBefore": 0,
@@ -3087,7 +3171,7 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 
 exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 1.0000 token1 for token0 1`] = `
 {
   "amount0Before": "1995041008271423675",
-  "amount0Delta": "-665331998665331998",
+  "amount0Delta": "-665331998665331999",
   "amount1Before": "0",
   "amount1Delta": "1000000000000000000",
   "executionPrice": "1.5030",
@@ -3125,7 +3209,7 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 
   "executionPrice": "NaN",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "0",
-  "poolPriceAfter": "0.0000000000000000000000000000000000000029390",
+  "poolPriceAfter": "2.9390e-39",
   "poolPriceBefore": "1.0000",
   "tickAfter": -887272,
   "tickBefore": 0,
@@ -3135,10 +3219,10 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 
 exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap exactly 1.0000e-15 token1 for token0 1`] = `
 {
   "amount0Before": "1995041008271423675",
-  "amount0Delta": "-996",
+  "amount0Delta": "-997",
   "amount1Before": "0",
   "amount1Delta": "1000",
-  "executionPrice": "1.0040",
+  "executionPrice": "1.0030",
   "feeGrowthGlobal0X128Delta": "0",
   "feeGrowthGlobal1X128Delta": "510423550381407695195",
   "poolPriceAfter": "1.0000",
@@ -3214,10 +3298,10 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap token0 f
 
 exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1995041008271423675",
   "poolBalance1": "0",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -3272,10 +3356,10 @@ exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap token1 f
 
 exports[`OrbitTonPool swap tests medium fee, token0 liquidity only swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "1995041008271423675",
   "poolBalance1": "0",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
   "tickBefore": 0,
 }
 `;
@@ -3302,7 +3386,7 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 
   "amount0Delta": "1000000000000000000",
   "amount1Before": "1995041008271423675",
   "amount1Delta": "-665331998665331998",
-  "executionPrice": "0.66533",
+  "executionPrice": "0.6653",
   "feeGrowthGlobal0X128Delta": "510423550381407695195061911147652317",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.44533",
@@ -3318,11 +3402,27 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 
   "amount0Delta": "830919884399388263",
   "amount1Before": "1995041008271423675",
   "amount1Delta": "-585786437626904951",
-  "executionPrice": "0.70499",
+  "executionPrice": "0.7050",
   "feeGrowthGlobal0X128Delta": "424121077477644648929101317621422688",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.50000",
   "poolPriceBefore": "1.0000",
+  "tickAfter": -6932,
+  "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 1.0000 token0 for token1 to price 0.500000 1`] = `
+{
+  "amount0Before": "0",
+  "amount0Delta": "830919884399388263",
+  "amount1Before": "1995041008271423675",
+  "amount1Delta": "-585786437626904951",
+  "executionPrice": "0.7050",
+  "feeGrowthGlobal0X128Delta": "424121077477644648929101317621422688",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "0.500000",
+  "poolPriceBefore": "1.00000",
   "tickAfter": -6932,
   "tickBefore": 0,
 }
@@ -3360,13 +3460,29 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 
 }
 `;
 
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 1.0000 token1 for token0 to price 2.00000 1`] = `
+{
+  "amount0Before": "0",
+  "amount0Delta": "0",
+  "amount1Before": "1995041008271423675",
+  "amount1Delta": "0",
+  "executionPrice": "NaN",
+  "feeGrowthGlobal0X128Delta": "0",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "2.00000",
+  "poolPriceBefore": "1.00000",
+  "tickAfter": 6931,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap exactly 1.0000e-15 token0 for token1 1`] = `
 {
   "amount0Before": "0",
   "amount0Delta": "1000",
   "amount1Before": "1995041008271423675",
   "amount1Delta": "-996",
-  "executionPrice": "0.99600",
+  "executionPrice": "0.9960",
   "feeGrowthGlobal0X128Delta": "510423550381407695195",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "1.0000",
@@ -3446,7 +3562,7 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token0 f
   "amount0Delta": "1165774985123750584",
   "amount1Before": "1995041008271423675",
   "amount1Delta": "-735088935932648267",
-  "executionPrice": "0.63056",
+  "executionPrice": "0.6306",
   "feeGrowthGlobal0X128Delta": "595039006852697554786973994761078087",
   "feeGrowthGlobal1X128Delta": "0",
   "poolPriceAfter": "0.40000",
@@ -3456,12 +3572,38 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token0 f
 }
 `;
 
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token0 for token1 to price 0.400000 1`] = `
+{
+  "amount0Before": "0",
+  "amount0Delta": "1165774985123750584",
+  "amount1Before": "1995041008271423675",
+  "amount1Delta": "-735088935932648267",
+  "executionPrice": "0.6306",
+  "feeGrowthGlobal0X128Delta": "595039006852697554786973994761078087",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "0.400000",
+  "poolPriceBefore": "1.00000",
+  "tickAfter": -9164,
+  "tickBefore": 0,
+}
+`;
+
 exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token0 for token1 to price 2.5000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
   "poolBalance1": "1995041008271423675",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token0 for token1 to price 2.50000 1`] = `
+{
+  "computeErr": "42",
+  "poolBalance0": "0",
+  "poolBalance1": "1995041008271423675",
+  "poolPriceBefore": "1.00000",
   "tickBefore": 0,
 }
 `;
@@ -3516,10 +3658,20 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 f
 
 exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 for token0 to price 0.40000 1`] = `
 {
+  "computeErr": "42",
   "poolBalance0": "0",
   "poolBalance1": "1995041008271423675",
   "poolPriceBefore": "1.0000",
-  "swapError": "VM Exception while processing transaction: revert SPL",
+  "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 for token0 to price 0.400000 1`] = `
+{
+  "computeErr": "42",
+  "poolBalance0": "0",
+  "poolBalance1": "1995041008271423675",
+  "poolPriceBefore": "1.00000",
   "tickBefore": 0,
 }
 `;
@@ -3537,5 +3689,34 @@ exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 f
   "poolPriceBefore": "1.0000",
   "tickAfter": 9163,
   "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests medium fee, token1 liquidity only swap token1 for token0 to price 2.50000 1`] = `
+{
+  "amount0Before": "0",
+  "amount0Delta": "0",
+  "amount1Before": "1995041008271423675",
+  "amount1Delta": "0",
+  "executionPrice": "NaN",
+  "feeGrowthGlobal0X128Delta": "0",
+  "feeGrowthGlobal1X128Delta": "0",
+  "poolPriceAfter": "2.50000",
+  "poolPriceBefore": "1.00000",
+  "tickAfter": 9163,
+  "tickBefore": 0,
+}
+`;
+
+exports[`OrbitTonPool swap tests swap tests low fee, 1:1 price, 2e18 max range liquidity swap exactly 1.0000 token0 for token1 1 1`] = `
+{
+  "amount0Before": "2000000000000000000",
+  "amount0Delta": "0",
+  "amount1Before": "2000000000000000000",
+  "amount1Delta": "-666444407401233538",
+  "priceAfter": "0.44459",
+  "priceBefore": "1.0000",
+  "tickAfter": -8107n,
+  "tickBefore": 0n,
 }
 `;
