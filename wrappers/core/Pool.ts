@@ -129,6 +129,58 @@ namespace PoolWrapper {
       throw new Error('Position is not active');
     }
 
+    async getSimulateSwap(
+      provider: ContractProvider,
+      amountSpecified: bigint,
+      zeroForOne: bigint,
+      sqrtPriceLimitX96: bigint,
+      responseAddress: Address,
+    ): Promise<{
+      amount0: bigint;
+      amount1: bigint;
+      sqrtPriceX96: bigint;
+      liquidity: bigint;
+      tick: bigint;
+      protocolFees0: bigint;
+      protocolFees1: bigint;
+    }> {
+      const result = await provider.get('simulate_swap', [
+        {
+          type: 'int',
+          value: amountSpecified,
+        },
+        {
+          type: 'int',
+          value: zeroForOne,
+        },
+        {
+          type: 'int',
+          value: sqrtPriceLimitX96,
+        },
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(responseAddress).endCell(),
+        },
+      ]);
+      const tuple = result.stack;
+      const amount0 = tuple.readBigNumber();
+      const amount1 = tuple.readBigNumber();
+      const sqrtPriceX96 = tuple.readBigNumber();
+      const liquidity = tuple.readBigNumber();
+      const tick = tuple.readBigNumber();
+      const protocolFees0 = tuple.readBigNumber();
+      const protocolFees1 = tuple.readBigNumber();
+      return {
+        amount0,
+        amount1,
+        sqrtPriceX96,
+        liquidity,
+        tick,
+        protocolFees0,
+        protocolFees1,
+      };
+    }
+
     async getJettonsWallet(provider: ContractProvider): Promise<Address[]> {
       const result = await provider.get('get_jettons_wallet', []);
       const tuple = result.stack;

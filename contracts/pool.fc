@@ -461,3 +461,135 @@ slice get_calculate_position_address(int tick_lower, int tick_upper, slice owner
   load_data();
   return storage::ticks.idict_get?(24, tick);
 }
+
+
+(int, int, int, int, int, int, int) simulate_swap(int amount_specified, int zero_for_one, int sqrt_price_limit_x96, slice response_address) method_id {
+  load_data();
+  int is_unspl = zero_for_one ? 
+  (((sqrt_price_limit_x96 < storage::sqrt_price_x96) & (sqrt_price_limit_x96 > tick_math::MIN_SQRT_RATIO)) == -1)
+  : (((sqrt_price_limit_x96 > storage::sqrt_price_x96) & (sqrt_price_limit_x96 < tick_math::MAX_SQRT_RATIO)) == -1);
+  int exact_input = amount_specified > 0;
+  throw_unless(error::SPL, is_unspl);
+  ;; init cache
+  int cache::liquidity_start = storage::liquidity; ;; u129
+  int cache::fee_protocol = zero_for_one ? (storage::protocol_fee % 16) : (storage::protocol_fee >> 4); ;; u8
+  ;; init state
+  int state::amount_specified_remaining = amount_specified; ;; i256
+  int state::amount_calculated = 0; ;; i256
+  int state::sqrt_price_x96 = storage::sqrt_price_x96; ;; u160
+  int state::tick = storage::tick; ;;  i24
+  int state::fee_growth_global_x128 = zero_for_one ? storage::fee_growth_global_0x128 : storage::fee_growth_global_1x128; ;; u256
+  int state::protocol_fee = 0; ;; u128
+  int state::liquidity = cache::liquidity_start; ;; u128
+
+  while ((state::amount_specified_remaining > 0) & (state::sqrt_price_x96 != sqrt_price_limit_x96)) {
+    ;; init step
+    int step::sqrt_price_start_x96 = state::sqrt_price_x96;
+    int step::amount_in = 0;
+    int step::amount_out = 0;
+    int step::fee_amount = 0;
+    ;; get next tick 
+    (int step::tick_next, int step::initialized) = storage::ticks.tick::next_tick_initialized(state::tick, zero_for_one);
+
+    if(~ step::initialized) {
+      if(zero_for_one){
+        step::tick_next = tick_math::MIN_TICK;
+      } else {
+        step::tick_next = tick_math::MAX_TICK;
+      }
+    }
+
+    int step::sqrt_price_next_x96 = tick_math::get_sqrt_ratio_at_tick(step::tick_next);
+    int sqrt_target_price = (zero_for_one ? step::sqrt_price_next_x96 < sqrt_price_limit_x96 : step::sqrt_price_next_x96 > sqrt_price_limit_x96) ? sqrt_price_limit_x96 : step::sqrt_price_next_x96;
+
+    (state::sqrt_price_x96, step::amount_in, step::amount_out, step::fee_amount) = swap_math::compute_swap_step(state::sqrt_price_x96, sqrt_target_price, state::liquidity, state::amount_specified_remaining, storage::fee);
+    if(exact_input){
+      state::amount_specified_remaining -= (step::amount_in + step::fee_amount);
+      state::amount_calculated -= step::amount_out;
+    } else {
+      state::amount_specified_remaining += step::amount_out;
+      state::amount_calculated = state::amount_calculated + step::amount_in + step::fee_amount;
+    }
+
+    if (cache::fee_protocol > 0) {
+      int delta = step::fee_amount / cache::fee_protocol;
+      step::fee_amount -= delta;
+      state::protocol_fee += delta;
+    }
+
+    if (state::liquidity > 0) {
+      state::fee_growth_global_x128 += full_math::mul_div(step::fee_amount, fixed_point_128::q128, state::liquidity);
+    }
+
+    if (state::sqrt_price_x96 == step::sqrt_price_next_x96) {
+      if (step::initialized) {
+        int cross_fee_growth_global_0_x128 = zero_for_one ? state::fee_growth_global_x128 : storage::fee_growth_global_0x128;
+        int cross_fee_growth_global_1_x128 = zero_for_one ? storage::fee_growth_global_1x128 : state::fee_growth_global_x128;
+        int liquidity_net = storage::ticks~tick::cross(
+          step::tick_next, 
+          cross_fee_growth_global_0_x128,
+          cross_fee_growth_global_1_x128);
+        if (zero_for_one) {
+          liquidity_net = 0 - liquidity_net;
+        }
+        state::liquidity = liquidity_math::add_delta(state::liquidity, liquidity_net);
+      }
+      state::tick = zero_for_one ? step::tick_next - 1 : step::tick_next + 1;
+    } elseif (state::sqrt_price_x96 != step::sqrt_price_start_x96) {
+      state::tick = tick_math::get_tick_at_sqrt_ratio(state::sqrt_price_x96);
+    }
+  }
+
+  if(state::tick != storage::tick){
+    storage::sqrt_price_x96 = state::sqrt_price_x96;
+    storage::tick = state::tick;
+  } else {
+    storage::sqrt_price_x96 = state::sqrt_price_x96;
+  }
+
+  if (cache::liquidity_start != state::liquidity) {
+    storage::liquidity = state::liquidity;
+  }
+
+  int protocol_fees_token0 = 0;
+  int protocol_fees_token1 = 0;
+  if (zero_for_one) {
+    storage::fee_growth_global_0x128 = state::fee_growth_global_x128;
+    if (state::protocol_fee > 0) {
+      storage::collected_protocol_fee0 += state::protocol_fee;
+    }
+    protocol_fees_token0 = state::protocol_fee;
+  } else {
+    storage::fee_growth_global_1x128 = state::fee_growth_global_x128;
+    if (state::protocol_fee > 0) {
+      storage::collected_protocol_fee1 += state::protocol_fee;
+    }
+    protocol_fees_token1 = state::protocol_fee;
+  }
+
+  (int amount0, int amount1) = zero_for_one == exact_input
+          ? (amount_specified - state::amount_specified_remaining, state::amount_calculated)
+          : (state::amount_calculated, amount_specified - state::amount_specified_remaining);
+
+  if (zero_for_one){
+    if(amount1 < 0) {
+      amount1 = 0 - amount1;
+    }
+    int amount0_refund = amount_specified - amount0; 
+  } else {
+    if (amount0 < 0) {
+      amount0 = 0 - amount0;
+    }
+    int amount1_refund = amount_specified - amount1; 
+  }
+  
+  return (
+    amount0,
+    amount1,
+    state::sqrt_price_x96,
+    state::liquidity,
+    state::tick,
+    protocol_fees_token0,
+    protocol_fees_token1
+  );
+}
