@@ -14,7 +14,7 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
   const userAddress = provider.sender().address!;
   const pool = provider.open(
-    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQCtpowhg8efNm364J51zDiKNT_CNnApUU-bor5Jpd7HzhR3')),
+    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQBUjRZNBUUsGzdOjH4tL4asTU6Li3xaNIcCS-W-wig2ayUv')),
   );
   console.log('Pool info:', await pool.getPoolInfo());
   console.log('Tick info:', await pool.getTicks());

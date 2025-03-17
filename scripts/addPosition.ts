@@ -1,12 +1,24 @@
-import { Address, beginCell, Dictionary, toNano } from '@ton/core';
+import { Address, beginCell, Dictionary, toNano, ContractProvider } from '@ton/core';
 // import { Counter } from '../wrappers/Counter';
-import { NetworkProvider, sleep } from '@ton/blueprint';
+import { NetworkProvider } from '@ton/blueprint';
 import JettonMinterWrapper from '../wrappers/core/JettonMinter';
 import JettonWalletWrapper from '../wrappers/core/JettonWallet';
 import { createPairAddress, isContractDeployed, isToken0 } from './helpers';
 import RouterWrapper from '../wrappers/core/Router';
 import PoolWrapper from '../wrappers/core/Pool';
 import { setTimeout } from 'timers/promises';
+import { waitSeqno } from './utils';
+import { WalletContractV4 } from '@ton/ton';
+
+async function getSeqno(provider: ContractProvider) {
+  let state = await provider.getState();
+  if (state.state.type === 'active') {
+    let res = await provider.get('seqno', []);
+    return res.stack.readNumber();
+  } else {
+    return 0;
+  }
+}
 
 export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
@@ -46,61 +58,70 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const poolInfo = await pool.getPoolInfo();
   // const beforePositionSeq = await pool.getPositionSeqno();
 
-  await Promise.all([
-    jettonWallet1Contract.sendTransferMint(
-      provider.sender(),
-      {
-        kind: 'OpJettonTransferMint',
-        query_id: 0,
-        jetton_amount: BigInt(jettonAmount1),
-        to_address: routerAddress,
-        response_address: userAddress,
-        custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-        forward_ton_amount: toNano(0.4),
-        either_payload: true,
-        mint: {
-          kind: 'MintParams',
-          forward_opcode: PoolWrapper.Opcodes.Mint,
-          jetton1_wallet: routerJetton0Wallet,
-          tick_lower: Number(tickMin),
-          tick_upper: Number(tickMax),
-          tick_spacing: Number(poolInfo.tickSpacing),
-          fee: Number(poolInfo.fee),
-          liquidity_delta: BigInt(liquidity),
-        },
+  const seqno = await getSeqno(provider.provider(userAddress));
+  await jettonWallet1Contract.sendTransferMint(
+    provider.sender(),
+    {
+      kind: 'OpJettonTransferMint',
+      query_id: 0,
+      jetton_amount: BigInt(jettonAmount1),
+      to_address: routerAddress,
+      response_address: userAddress,
+      custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+      forward_ton_amount: toNano(0.4),
+      either_payload: true,
+      mint: {
+        kind: 'MintParams',
+        forward_opcode: PoolWrapper.Opcodes.Mint,
+        jetton1_wallet: routerJetton0Wallet,
+        tick_lower: Number(tickMin),
+        tick_upper: Number(tickMax),
+        tick_spacing: Number(poolInfo.tickSpacing),
+        fee: Number(poolInfo.fee),
+        liquidity_delta: BigInt(liquidity),
       },
-      {
-        value: toNano(0.6),
-      },
-    ),
-    // jettonWallet0Contract.sendTransferMint(
-    //   provider.sender(),
-    //   {
-    //     kind: 'OpJettonTransferMint',
-    //     query_id: 0,
-    //     jetton_amount: BigInt(jettonAmount0),
-    //     to_address: routerAddress,
-    //     response_address: userAddress,
-    //     custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-    //     forward_ton_amount: toNano(0.4),
-    //     either_payload: true,
-    //     mint: {
-    //       kind: 'MintParams',
-    //       forward_opcode: PoolWrapper.Opcodes.Mint,
-    //       jetton1_wallet: routerJetton1Wallet,
-    //       tick_lower: Number(tickMin),
-    //       tick_upper: Number(tickMax),
-    //       tick_spacing: Number(poolInfo.tickSpacing),
-    //       fee: Number(poolInfo.fee),
-    //       liquidity_delta: BigInt(liquidity),
-    //     },
-    //   },
-    //   {
-    //     value: toNano(0.6),
-    //   },
-    // ),
-  ]);
+    },
+    {
+      value: toNano(0.6),
+    },
+  );
 
-  // ui.clearActionPrompt();
+  let currentSeqno = await getSeqno(provider.provider(userAddress));
+  while (currentSeqno == seqno) {
+    console.log('waiting for transaction to confirm...');
+    await setTimeout(3000);
+    currentSeqno = await getSeqno(provider.provider(userAddress));
+    console.log('currentSeqno', currentSeqno);
+  }
+  console.log('transaction confirmed!');
+
+  await jettonWallet0Contract.sendTransferMint(
+    provider.sender(),
+    {
+      kind: 'OpJettonTransferMint',
+      query_id: 0,
+      jetton_amount: BigInt(jettonAmount0),
+      to_address: routerAddress,
+      response_address: userAddress,
+      custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+      forward_ton_amount: toNano(0.4),
+      either_payload: true,
+      mint: {
+        kind: 'MintParams',
+        forward_opcode: PoolWrapper.Opcodes.Mint,
+        jetton1_wallet: routerJetton1Wallet,
+        tick_lower: Number(tickMin),
+        tick_upper: Number(tickMax),
+        tick_spacing: Number(poolInfo.tickSpacing),
+        fee: Number(poolInfo.fee),
+        liquidity_delta: BigInt(liquidity),
+      },
+    },
+    {
+      value: toNano(0.6),
+    },
+  );
+
+  ui.clearActionPrompt();
   ui.write(`Position added successfully!`);
 }
