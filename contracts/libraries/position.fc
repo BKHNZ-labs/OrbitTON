@@ -97,7 +97,7 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
 }
 
 
-(int,int,int,int,int) position::simulate_update(
+(int, int, int, int, int) position::simulate_update(
     int liquidity, 
     int fee_growth_inside_0_last_x128, 
     int fee_growth_inside_1_last_x128, 
@@ -124,9 +124,10 @@ cell position::update(slice self, int liquidity_delta, int fee_growth_inside_0_x
     }
     fee_growth_inside_0_last_x128 = fee_growth_inside_0_x128;
     fee_growth_inside_1_last_x128 = fee_growth_inside_1_x128;
+
     if ((tokens_owed_0_new > 0) | (tokens_owed_1_new > 0)) {
         tokens_owed_0 += tokens_owed_0_new;
-        tokens_owed_1 += tokens_owed_0_new;
+        tokens_owed_1 += tokens_owed_1_new;
     }
 
     return (liquidity, fee_growth_inside_0_last_x128, fee_growth_inside_1_last_x128, tokens_owed_0, tokens_owed_1);

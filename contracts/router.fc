@@ -44,7 +44,7 @@
       int tick_spacing = ref_ds~load_int(24);
       int liquidity_delta = ref_ds~load_int(128);
       slice jetton0_wallet = sender_address;
-      (cell state_init, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
+      (_, slice pool_address) = get_pool_state_init_and_address(jetton0_wallet, jetton1_wallet, fee, tick_spacing);
       builder mint_msg = begin_cell()
                     .store_uint(op::mint, 32)
                     .store_uint(query_id, 64);
@@ -62,7 +62,7 @@
                   .store_int(liquidity_delta, 128)
                   .store_slice(from_user);
       mint_msg = mint_msg.store_ref(body_builder.end_cell());
-      send_message_with_stateinit(0, pool_address, state_init, mint_msg.end_cell(), CARRY_REMAINING_GAS);
+      send_simple_message(0, pool_address, mint_msg.end_cell(), CARRY_REMAINING_GAS);
     }
 
     if (forward_opcode == op::swap) {;
@@ -138,7 +138,16 @@
     slice token0_address = body_address~load_msg_addr();
     slice token1_address = body_address~load_msg_addr();
     slice response_address = body_address~load_msg_addr();
-    cell jetton_master_ref = body_address~load_ref();
+    slice jetton_master_ref = body_address~load_ref().begin_parse();
+    slice token0_master_address = jetton_master_ref~load_msg_addr();
+    slice token1_master_address = jetton_master_ref~load_msg_addr();
+    if (slice_hash(token0_address) < slice_hash(token1_address)) {
+      token0_master_address = token0_master_address;
+      token1_master_address = token1_master_address;
+    } else {
+      token0_master_address = token1_master_address;
+      token1_master_address = token0_master_address;
+    }
     slice body_params = in_msg_body~load_ref().begin_parse();
     int fee = body_params~load_uint(24);
     int tick_spacing = body_params~load_int(24);
@@ -154,7 +163,12 @@
                         .store_slice(response_address)
                         .store_slice(token0_address)
                         .store_slice(token1_address)
-                        .store_ref(jetton_master_ref)
+                        .store_ref(
+                          begin_cell()
+                            .store_slice(token0_master_address)
+                            .store_slice(token1_master_address)
+                            .end_cell()
+                        )
                         .end_cell()
                     )
                   .store_ref(
@@ -204,6 +218,7 @@
   }
 
   if (op == op::update_lp_account_code) {
+    ~dump(null());
     throw_if(error::unauthorized, compare_address(sender_address, storage::admin_address) != -1);
     storage::lp_account_code = in_msg_body~load_ref();
     save_data();

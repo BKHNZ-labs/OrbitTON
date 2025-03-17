@@ -1,12 +1,8 @@
 import { Builder } from '@ton/core'
 import { Slice } from '@ton/core'
 import { beginCell } from '@ton/core'
-import { BitString } from '@ton/core'
-import { Cell } from '@ton/core'
 import { Address } from '@ton/core'
 import { ExternalAddress } from '@ton/core'
-import { Dictionary } from '@ton/core'
-import { DictionaryValue } from '@ton/core'
 export function bitLen(n: number) {
     return n.toString(2).length;
 }
@@ -43,7 +39,7 @@ export interface PositionFirst {
     readonly fee_growth_inside1_last_x128: bigint;
 }
 
-/*
+/*  
 position_second#_
   token_owed0:uint128
   token_owed1:uint128
@@ -164,3 +160,5 @@ export function storePositionSecond(positionSecond: PositionSecond): (builder: B
 
 }
 
+// Export position message types
+export * from './position/messages';

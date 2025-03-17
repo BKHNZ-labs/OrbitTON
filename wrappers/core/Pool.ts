@@ -11,13 +11,17 @@ import {
 } from '@ton/core';
 import { crc32, ValueOps } from '../crc32';
 import { InMsgBody, storeInMsgBody } from '../../tlb/pool/messages';
+import { loadInfo, Info } from '../../tlb/tick';
+import { loadPoolStorage, PoolStorage, TickInfo } from '../../tlb/pool';
 
 namespace PoolWrapper {
   export const Opcodes = {
     Mint: crc32('op::mint'),
     Swap: crc32('op::swap'),
     Burn: crc32('op::burn'),
+
     CallBackLiquidity: crc32('op::cb_add_liquidity'),
+    CallbackCollect: crc32('op::cb_collect'),
   };
 
   export interface InstantiateMsg {
@@ -104,6 +108,79 @@ namespace PoolWrapper {
       });
     }
 
+    async getTicks(provider: ContractProvider): Promise<[number, TickInfo][]> {
+      const poolState = await this.getPoolState(provider);
+      const ticks = poolState.third_ref.ticks;
+      const allParsedTicksAndTick: [number, TickInfo][] = [];
+      ticks.keys().forEach((key) => {
+        const tick = ticks.get(key);
+        if (tick) {
+          allParsedTicksAndTick.push([key, tick]);
+        }
+      });
+      return allParsedTicksAndTick;
+    }
+
+    async getPoolState(provider: ContractProvider): Promise<PoolStorage> {
+      const storage = await provider.getState();
+      if (storage.state.type === 'active') {
+        return loadPoolStorage(Cell.fromBoc(Buffer.from(storage.state.data ?? Buffer.from([])))[0].beginParse());
+      }
+      throw new Error('Position is not active');
+    }
+
+    async getSimulateSwap(
+      provider: ContractProvider,
+      amountSpecified: bigint,
+      zeroForOne: bigint,
+      sqrtPriceLimitX96: bigint,
+      responseAddress: Address,
+    ): Promise<{
+      amount0: bigint;
+      amount1: bigint;
+      sqrtPriceX96: bigint;
+      liquidity: bigint;
+      tick: bigint;
+      protocolFees0: bigint;
+      protocolFees1: bigint;
+    }> {
+      const result = await provider.get('simulate_swap', [
+        {
+          type: 'int',
+          value: amountSpecified,
+        },
+        {
+          type: 'int',
+          value: zeroForOne,
+        },
+        {
+          type: 'int',
+          value: sqrtPriceLimitX96,
+        },
+        {
+          type: 'slice',
+          cell: beginCell().storeAddress(responseAddress).endCell(),
+        },
+      ]);
+      const tuple = result.stack;
+      const amount0 = tuple.readBigNumber();
+      const amount1 = tuple.readBigNumber();
+      const sqrtPriceX96 = tuple.readBigNumber();
+      const liquidity = tuple.readBigNumber();
+      const tick = tuple.readBigNumber();
+      const protocolFees0 = tuple.readBigNumber();
+      const protocolFees1 = tuple.readBigNumber();
+      return {
+        amount0,
+        amount1,
+        sqrtPriceX96,
+        liquidity,
+        tick,
+        protocolFees0,
+        protocolFees1,
+      };
+    }
+
     async getJettonsWallet(provider: ContractProvider): Promise<Address[]> {
       const result = await provider.get('get_jettons_wallet', []);
       const tuple = result.stack;
@@ -138,8 +215,8 @@ namespace PoolWrapper {
       return [feeGrowth0Global, feeGrowth1Global];
     }
 
-    async getFeesGrowthGlobalAtTick(provider: ContractProvider, tickId: bigint): Promise<bigint[]> {
-      const result = await provider.get('get_fee_growth_global_at_tick', [
+    async getFeesGrowthOutsideAtTick(provider: ContractProvider, tickId: bigint): Promise<[bigint, bigint, boolean]> {
+      const result = await provider.get('get_fee_growth_outside_at_tick', [
         {
           type: 'int',
           value: tickId,
@@ -148,7 +225,8 @@ namespace PoolWrapper {
       const tuple = result.stack;
       const feeGrowth0Global = tuple.readBigNumber();
       const feeGrowth1Global = tuple.readBigNumber();
-      return [feeGrowth0Global, feeGrowth1Global];
+      const existed = tuple.readBoolean();
+      return [feeGrowth0Global, feeGrowth1Global, existed];
     }
 
     async getLpAccountAddress(
@@ -172,26 +250,6 @@ namespace PoolWrapper {
         },
       ]);
 
-      return result.stack.readAddress();
-    }
-
-    async getBatchTickIndex(provider: ContractProvider, tick: bigint): Promise<bigint> {
-      const result = await provider.get('get_batch_tick_index', [
-        {
-          type: 'int',
-          value: tick,
-        },
-      ]);
-      return result.stack.readBigNumber();
-    }
-
-    async getBatchTickAddress(provider: ContractProvider, batchTickIndex: bigint): Promise<Address> {
-      const result = await provider.get('get_calculate_batch_tick_address', [
-        {
-          type: 'int',
-          value: batchTickIndex,
-        },
-      ]);
       return result.stack.readAddress();
     }
 
@@ -234,6 +292,27 @@ namespace PoolWrapper {
       const feeGrowthGlobal1X128 = result.stack.readBigNumber();
 
       return { feeGrowthGlobal0X128, feeGrowthGlobal1X128 };
+    }
+
+    async getTickInfo(provider: ContractProvider, tick: bigint): Promise<Info> {
+      const result = await provider.get('get_tick_info_raw', [
+        {
+          type: 'int',
+          value: tick,
+        },
+      ]);
+      const infoRaw = result.stack.readCellOpt();
+      if (!infoRaw) {
+        return {
+          kind: 'Info',
+          liquidity_gross: 0n,
+          liquidity_net: 0n,
+          fee_growth_outside_0_x128: 0n,
+          fee_growth_outside_1_x128: 0n,
+          initialized: false,
+        };
+      }
+      return loadInfo(infoRaw.beginParse());
     }
   }
 }

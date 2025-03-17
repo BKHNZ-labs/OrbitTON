@@ -14,3 +14,4 @@ int full_math::mul_div_rounding_up(int a, int b, int denominator) inline_ref {
   (int q, int r) = muldivmodc(a, b, denominator);
   return q;
 }
+

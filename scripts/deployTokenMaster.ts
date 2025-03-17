@@ -9,10 +9,10 @@ const SNAKE_PREFIX = 0x00;
 
 // Jetton parameters
 const jettonParams = {
-  name: 'Orbiton Swap',
-  symbol: 'ORB',
-  image: 'https://pbs.twimg.com/profile_images/1871028225511702528/N23ltPQQ_400x400.jpg',
-  description: 'Just Test ORB',
+  name: 'Dedust Token',
+  symbol: 'DUST',
+  image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/23156.png',
+  description: 'Just Test Dedust',
 };
 export type JettonMetaDataKeys = 'name' | 'description' | 'image' | 'symbol';
 

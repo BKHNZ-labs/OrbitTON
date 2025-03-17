@@ -1031,32 +1031,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@orbiton_labs/v3-contracts-sdk@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "@orbiton_labs/v3-contracts-sdk@workspace:."
-  dependencies:
-    "@orbs-network/ton-access": ^2.3.3
-    "@ton-community/tlb-codegen": ^1.1.0
-    "@ton/blueprint": ^0.24.0
-    "@ton/core": ~0
-    "@ton/crypto": ^3.3.0
-    "@ton/sandbox": ^0.22.0
-    "@ton/test-utils": ^0.4.2
-    "@ton/ton": ^15.0.0
-    "@types/jest": ^29.5.13
-    "@types/node": ^22.5.5
-    "@uniswap/v3-sdk": ^3.19.0
-    bignumber.js: ^9.1.2
-    decimal.js: ^10.4.3
-    jest: ^29.7.0
-    jsbi: ^4.3.0
-    prettier: ^3.3.3
-    ts-jest: ^29.2.5
-    ts-node: ^10.9.2
-    typescript: ^5.6.2
-  languageName: unknown
-  linkType: soft
-
 "@orbs-network/ton-access@npm:^2.3.3":
   version: 2.3.3
   resolution: "@orbs-network/ton-access@npm:2.3.3"
@@ -1205,6 +1179,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ton-api/client@npm:^0.3.1":
+  version: 0.3.1
+  resolution: "@ton-api/client@npm:0.3.1"
+  dependencies:
+    core-js-pure: ^3.38.0
+  peerDependencies:
+    "@ton/core": ">=0.59.0"
+  checksum: f3d18bbd0f60d22cc33ef68ca3d8f623f805f9021d31e62f63c9042310bb9a0a488436d63acdd292c44cd4514db776b49c17e2baac3bda3df1ab14e1043e2f80
+  languageName: node
+  linkType: hard
+
 "@ton-community/func-js-bin@npm:0.4.4-newops.1":
   version: 0.4.4-newops.1
   resolution: "@ton-community/func-js-bin@npm:0.4.4-newops.1"
@@ -1274,7 +1259,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ton/core@npm:0.58.1, @ton/core@npm:~0":
+"@ton/core@npm:0.58.1":
   version: 0.58.1
   resolution: "@ton/core@npm:0.58.1"
   dependencies:
@@ -1293,6 +1278,17 @@ __metadata:
   peerDependencies:
     "@ton/crypto": ">=3.2.0"
   checksum: d7ffca426e281040f59c6219d5b253f0ffb6b03f65ee5d7e55a4d55f5a9e44ca2536ec8810e79c26f4978717a7f6efc84885ea6a83d221b680bf49c552e794ff
+  languageName: node
+  linkType: hard
+
+"@ton/core@npm:^0.59.1":
+  version: 0.59.1
+  resolution: "@ton/core@npm:0.59.1"
+  dependencies:
+    symbol.inspect: 1.0.1
+  peerDependencies:
+    "@ton/crypto": ">=3.2.0"
+  checksum: b34a9589f90f32c04bf46f79aac665019b16a81db4e28741f90dc1103d31600acfe36aa0ad4d4e43789c64ba9c016c0ce70cabe33b93c61210af81d1ef82a8f1
   languageName: node
   linkType: hard
 
@@ -2391,10 +2387,44 @@ __metadata:
   languageName: node
   linkType: hard
 
+"contracts@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "contracts@workspace:."
+  dependencies:
+    "@orbs-network/ton-access": ^2.3.3
+    "@ton-api/client": ^0.3.1
+    "@ton-community/tlb-codegen": ^1.1.0
+    "@ton/blueprint": ^0.24.0
+    "@ton/core": ^0.59.1
+    "@ton/crypto": ^3.3.0
+    "@ton/sandbox": ^0.22.0
+    "@ton/test-utils": ^0.4.2
+    "@ton/ton": ^15.0.0
+    "@types/jest": ^29.5.13
+    "@types/node": ^22.5.5
+    "@uniswap/v3-sdk": ^3.19.0
+    bignumber.js: ^9.1.2
+    decimal.js: ^10.4.3
+    jest: ^29.7.0
+    jsbi: ^4.3.0
+    prettier: ^3.3.3
+    ts-jest: ^29.2.5
+    ts-node: ^10.9.2
+    typescript: ^5.6.2
+  languageName: unknown
+  linkType: soft
+
 "convert-source-map@npm:^2.0.0":
   version: 2.0.0
   resolution: "convert-source-map@npm:2.0.0"
   checksum: 63ae9933be5a2b8d4509daca5124e20c14d023c820258e484e32dc324d34c2754e71297c94a05784064ad27615037ef677e3f0c00469fb55f409d2bb21261035
+  languageName: node
+  linkType: hard
+
+"core-js-pure@npm:^3.38.0":
+  version: 3.41.0
+  resolution: "core-js-pure@npm:3.41.0"
+  checksum: 611faf7b49d6de65ffd7b364cdc78482846cbefb43d4dc185219ebef33aa92c43a981284f45c6230d6711bf5d48c529013a6665835b6bdd149bad1c11bbd54a1
   languageName: node
   linkType: hard
 
