@@ -120,7 +120,12 @@
     }
     storage::ticks = tick_map;
     storage::liquidity = liquidity;
-  
+    ~dump(jetton_0_amount);
+    ~dump(amount0);
+    ~dump(jetton_1_amount);
+    ~dump(amount1);
+    ~dump(storage::sqrt_price_x96);
+    ;; ~dump(storage::liquidity);
     int refund_amount0 = jetton_0_amount - amount0;
     int refund_amount1 = jetton_1_amount - amount1;
     int remaining_gas = msg_value;
@@ -201,8 +206,8 @@
     slice position_owner = in_msg_body~load_msg_addr();
     slice receipient = in_msg_body~load_msg_addr();
     slice ds = in_msg_body~load_ref().begin_parse();
-    int amount0 = ds~load_int(256);
-    int amount1 = ds~load_int(256);
+    int amount0 = ds~load_int(128);
+    int amount1 = ds~load_int(128);
 
     (_, slice position_address) = get_position_state_init_and_address(tick_lower, tick_upper, position_owner, my_address(), storage::position_code);
     throw_unless(error::unauthorized, compare_address(sender_address, position_address));

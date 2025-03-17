@@ -36,6 +36,10 @@ export namespace PTonMinterWrapper {
             return new PTonMinterV2(contractAddress(workchain, init), init);
         }
 
+        static createPtonMinterFromAddress(address: Address) {
+            return new PTonMinterV2(address);
+        }
+
         async sendDeployWallet(provider: ContractProvider, via: Sender, opts: {
             value?: bigint,
             ownerAddress: Address,
