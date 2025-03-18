@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, Dictionary, toNano } from '@ton/core';
+import { Address, beginCell, Cell, Dictionary, fromNano, toNano } from '@ton/core';
 import { setupTestEnvironment, NetworkType } from './test-environment';
 import { JettonMinterWrapper, JettonWalletWrapper, PoolWrapper, RouterWrapper } from '../../wrappers';
 import { WalletContractV4 } from '@ton/ton';
@@ -126,6 +126,9 @@ describe('Pool Contract Debug Tests', () => {
             from: router.address,
             to: pool.address,
          });
+         const totalFees0 = transfer0.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
+         const totalFees1 = transfer1.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
+         console.log({totalFees0: fromNano(totalFees0), totalFees1: fromNano(totalFees1)});
 
          const data2 = await pool.getPoolInfo();
          console.log({data2})

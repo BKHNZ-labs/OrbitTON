@@ -7,6 +7,7 @@
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
+#include "common/utils.fc";
 #include "lp_account/opcodes.fc";
 #include "router/opcodes.fc";
 #include "pool/params.fc";
@@ -151,7 +152,7 @@
                               .store_uint(amount1, 128)
                               .end_cell()
     );
-    send_message_with_stateinit(remaining_gas, position_address, state_init, mint_body.end_cell(), 0);
+    send_message_with_stateinit(remaining_gas, position_address, state_init, mint_body.end_cell(), NORMAL);
     save_data();
     return ();
   }
@@ -239,6 +240,14 @@
     : (((sqrt_price_limit_x96 > storage::sqrt_price_x96) & (sqrt_price_limit_x96 < tick_math::MAX_SQRT_RATIO)) == -1);
     int exact_input = amount_specified > 0;
     throw_unless(error::SPL, is_unspl);
+    ;; if(~ is_unspl) {
+    ;;   int amount0 = zero_for_one ? amount_specified : 0;
+    ;;   int amount1 = zero_for_one ? 0 : amount_specified;
+    ;;   ;; refund to user if sqrt price limit is invalid
+    ;;   builder spl_error_body = build_pay_to_msg(query_id, response_address, error::SPL, storage::jetton0_wallet, amount0, storage::jetton1_wallet, amount1, storage::fee, storage::tick_spacing);
+    ;;   send_simple_message(0, storage::router_address, spl_error_body.end_cell(), CARRY_REMAINING_GAS);
+    ;;   return ();
+    ;; }
     ;; init cache
     int cache::liquidity_start = storage::liquidity; ;; u129
     int cache::fee_protocol = zero_for_one ? (storage::protocol_fee % 16) : (storage::protocol_fee >> 4); ;; u8

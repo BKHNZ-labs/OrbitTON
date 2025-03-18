@@ -7,6 +7,7 @@
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
+#include "common/utils.fc";
 
 ;; recv_internal is the main function of the contract and is called when it receives a message from other contracts
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -57,8 +58,15 @@
                   .store_int(storage::tick_upper, 24)
                   .store_int(liquidity_delta , 128)
                   .store_ref(amount_cell);
-                  
+
+    int min_tons_for_storage = calculate_min_tons_for_storage(my_address());
     emit_log_simple(MINT_EVENT, msg.end_cell(), query_id);
+
+    ;; Important: Reserve AFTER log emission since it consumes gas
+    raw_reserve(min_tons_for_storage, 2);
+   
+    ;; Send message with remaining TON balance to owner
+    send_simple_message(0, storage::owner_address, begin_cell().end_cell(), CARRY_ALL_BALANCE);
     save_data();
     return ();
   }
@@ -82,13 +90,7 @@
                             .store_uint(storage::token_owed1, 128)
                             .end_cell()
     );
-    ~strdump("op::burn_position");
-    ~dump(liquidity_delta);
-    ~dump(storage::liquidity);
-    ~dump(storage::fee_growth_inside0_last_x128);
-    ~dump(storage::fee_growth_inside1_last_x128);
-    ~dump(storage::token_owed0);
-    ~dump(storage::token_owed1);
+    
     send_simple_message(0, storage::pool_address, msg.end_cell(), CARRY_REMAINING_GAS);
     save_data();
     return ();
@@ -133,7 +135,15 @@
                     .store_uint(amount0, 256)
                     .store_uint(amount1, 256);
 
+    int min_tons_for_storage = calculate_min_tons_for_storage(my_address());
+
     emit_log_simple(BURN_EVENT, msg.end_cell(), query_id);
+
+    ;; Important: Reserve AFTER log emission since it consumes gas
+    raw_reserve(min_tons_for_storage, 2);
+
+    ;; Send message with remaining TON balance to owner
+    send_simple_message(0, storage::owner_address, begin_cell().end_cell(), CARRY_ALL_BALANCE);
     save_data();
     return ();
   }

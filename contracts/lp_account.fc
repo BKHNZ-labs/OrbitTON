@@ -4,7 +4,7 @@
 #include "common/messages.fc";
 #include "common/address.fc";
 #include "common/errors.fc";
-
+#include "common/utils.fc";
 global slice recipient;
 global slice pool_address;
 global int tick_lower;
@@ -78,12 +78,16 @@ global int amount1;
                     .store_int(liquidity_delta, 128)
                    .store_slice(recipient)
                    .end_cell()
-                )
-       ;
+                );
            
             send_simple_message(0, pool_address, body.end_cell(), CARRY_REMAINING_GAS);
             amount0 = 0;
             amount1 = 0;
+        } else {
+            ;; Return remaining TON minus storage fee to user
+            int min_tons_for_storage = calculate_min_tons_for_storage(my_address());
+            raw_reserve(min_tons_for_storage, 0);
+            send_simple_message(0, recipient, begin_cell().end_cell(), CARRY_ALL_BALANCE);
         }
 
         save_data();
