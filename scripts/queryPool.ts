@@ -14,10 +14,10 @@ export async function run(provider: NetworkProvider, args: string[]) {
   const ui = provider.ui();
   const userAddress = provider.sender().address!;
   const pool = provider.open(
-    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQBUjRZNBUUsGzdOjH4tL4asTU6Li3xaNIcCS-W-wig2ayUv')),
+    PoolWrapper.PoolTest.createFromAddress(Address.parse('EQANERc8W0zUtBmpuo166_bhRGP0x0ye9HD5RKThToRgNBRO')),
   );
   console.log('Pool info:', await pool.getPoolInfo());
-  console.log('Tick info:', await pool.getTicks());
+  console.log('Tick info:', await pool.getJettonsWallet());
 }
 
 //   0|index  | swapEvent {
