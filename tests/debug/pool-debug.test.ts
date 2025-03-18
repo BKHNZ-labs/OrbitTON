@@ -1,26 +1,81 @@
 import { Address, beginCell, Cell, Dictionary, fromNano, toNano } from '@ton/core';
 import { setupTestEnvironment, NetworkType } from './test-environment';
-import { JettonMinterWrapper, JettonWalletWrapper, PoolWrapper, RouterWrapper } from '../../wrappers';
-import { WalletContractV4 } from '@ton/ton';
+import { JettonMinterWrapper, JettonWalletWrapper, MIN_SQRT_RATIO, PoolWrapper, RouterWrapper } from '../../wrappers';
+import { TonClient, WalletContractV4 } from '@ton/ton';
 import { mnemonicToWalletKey } from '@ton/crypto';
 import { printTransactionFees, SandboxContract } from '@ton/sandbox';
 import '@ton/test-utils';
-import { loadOpJettonTransferMint } from '../../tlb/jetton/transfer';
+import { loadOpJettonTransferMint, loadOpJettonTransferSwap, storeSwapParams, SwapParams } from '../../tlb/jetton/transfer';
+import { PTonWalletWrapper } from '../../wrappers/core/PTonWallet';
+import PTonMinterWrapper from '../../wrappers/core/PTonMinter';
+import { TonApiClient } from '@ton-api/client';
+import { LiteClient, LiteRoundRobinEngine, LiteSingleEngine, LiteEngine } from "ton-lite-client";
+
+function intToIP(int: number) {
+    var part1 = int & 255;
+    var part2 = ((int >> 8) & 255);
+    var part3 = ((int >> 16) & 255);
+    var part4 = ((int >> 24) & 255);
+
+    return part4 + "." + part3 + "." + part2 + "." + part1;
+}
+
+let server = {
+  "ip": 822907680,
+  "port": 27842,
+  "provided":"Beavis",
+  "id": {
+    "@type": "pub.ed25519",
+    "key": "sU7QavX2F964iI9oToP9gffQpCQIoOLppeqL/pdPvpM="
+  }
+};
+
+async function getLibs() {
+    const engines: LiteEngine[] = [];
+    engines.push(new LiteSingleEngine({
+        host: `tcp://${intToIP(server.ip)}:${server.port}`,
+        publicKey: Buffer.from(server.id.key, 'base64'),
+    }));
+    const engine: LiteEngine = new LiteRoundRobinEngine(engines);
+    const client = new LiteClient({ engine });
+  
+    try {
+        const libs = await client.getLibraries([Buffer.from('b5ee9c7201010101002300084202cd88e6f3c2a9cf01bb003a2837ec0d92c19685ed1dbfffd94a545dcfdf0a14d9'.slice(-64), 'hex')])
+        return libs;
+    } finally {
+        // Close the connection to ensure Jest can exit
+        engine.close();
+    }
+}
+
+
 
 describe('Pool Contract Debug Tests', () => {
     let testWallet: SandboxContract<WalletContractV4>;
     
+    // Add cleanup hook to ensure all connections are closed
+    afterAll(async () => {
+        // Add any cleanup needed here
+        await new Promise(resolve => setTimeout(resolve, 500)); // Give time for connections to close
+    });
+    
     it('should load contract state from network', async () => {
+        const libs = await getLibs();
+        const result = libs.result[0];
+        console.log({result})
         // Replace with your contract address
-        const ROUTER_ADDRESS = Address.parse('EQBkY8koHBO51KvkrKEc_f4weiATV-4I-1pwDGxPNT1fUyIt')
+        const ROUTER_ADDRESS = Address.parse('EQCUjc3HQ5T56UY8uYm_b0FMY68uOK8OT67wVwmUXdnLMAq9')
         const POOL_ADDRESS = Address.parse('EQBUjRZNBUUsGzdOjH4tL4asTU6Li3xaNIcCS-W-wig2ayUv')
         const DUST = Address.parse('EQBXJHKfXkPHxs8Ex9yy8gu6DWm9_FgoPCMJfx-tZlDIm_Dk')
         const USDT = Address.parse('EQBMX7QVmqvs5Gtx5_eSGm1FF88YPTOou1yKEz8CRX8QTGh-')
         const network: NetworkType = 'testnet'; // or 'mainnet'
         
         // Setup test environment
-        const blockchain = await setupTestEnvironment(network, 29189748);
-        
+        const blockchain = await setupTestEnvironment(network, 29200166);
+        // Add the library to your blockchain instance
+        const libsDict = Dictionary.empty(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
+        libsDict.set(Buffer.from(result.hash), Cell.fromBoc(Buffer.from(result.data))[0]);
+        blockchain.libs = beginCell().storeDictDirect(libsDict).endCell();
         // Create test wallet
         const mnemonic = 'visa bid goose elite grab hidden dilemma blur album depend print private bird marriage ceiling address pass guide useless label manage drum conduct digital'; // Replace with your test mnemonic
         const key = await mnemonicToWalletKey(mnemonic.split(' '));
@@ -36,12 +91,15 @@ describe('Pool Contract Debug Tests', () => {
         const pool = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(POOL_ADDRESS));
         const dust = blockchain.openContract(JettonMinterWrapper.JettonMinter.createFromAddress(DUST));
         const usdt = blockchain.openContract(JettonMinterWrapper.JettonMinter.createFromAddress(USDT));
-
+        
         const routerDustWallet = blockchain.openContract(
             JettonWalletWrapper.JettonWallet.createFromAddress(await dust.getWalletAddress(router.address))
         );
         const routerUsdtWallet = blockchain.openContract(
             JettonWalletWrapper.JettonWallet.createFromAddress(await usdt.getWalletAddress(router.address))
+        );
+        const routerPTONWallet = blockchain.openContract(
+            PTonWalletWrapper.PTonWalletV2.createFromAddress(Address.parse("EQCs1HbVaBa8KrHdgnMW1SKTQuci0N2DB8B3-0QAWqYqBbkl"))
         );
 
         const userDustWallet = blockchain.openContract(
@@ -50,90 +108,42 @@ describe('Pool Contract Debug Tests', () => {
         const userUsdtWallet = blockchain.openContract(
             JettonWalletWrapper.JettonWallet.createFromAddress(await usdt.getWalletAddress(testWallet.address))
         );
-        console.log(routerUsdtWallet.address);
-        const op1 = loadOpJettonTransferMint(Cell.fromBoc(Buffer.from('b5ee9c720101020100a00001b20f8a7ea500000000000000005e8d4a50fff800c8c79250382773a957c9594239fbfc60f44026afdc11f6b4e018d89e6a7abea700193136679d7884b5d9ef5b0f43ceea73da44ca54ddd9e28e1f74387e43b63aa94811e1a301010083ecad15c4800b0b596681f848e1b058558afb6595ca297032df967618c9a65873d99e9a7fc65fffda8001860001770000078000000000000000000001bfb0e173d510', 'hex'))[0].beginParse());
-        console.log(op1)
-        console.log(routerDustWallet.address);
-        const op2 = loadOpJettonTransferMint(Cell.fromBoc(Buffer.from('b5ee9c720101020100a10001b40f8a7ea500000000000000006016a53996681800c8c79250382773a957c9594239fbfc60f44026afdc11f6b4e018d89e6a7abea700193136679d7884b5d9ef5b0f43ceea73da44ca54ddd9e28e1f74387e43b63aa94811e1a301010083ecad15c4801e20b7efaae406acd15695bc1efb59da573d833cd7624b03f67959625c6b15593fffda8001860001770000078000000000000000000001bfb0e173d510', 'hex'))[0].beginParse());
-        console.log(op2)
-        
+        console.log(loadOpJettonTransferSwap(
+          Cell.fromBoc(
+            Buffer.from("b5ee9c7201010201009e0001b20f8a7ea500000000000000005012a05f200801291b9b8e8729f3d28c7973137ede8298c75e5c715e1c9f5de0ae1328bbb3966100193136679d7884b5d9ef5b0f43ceea73da44ca54ddd9e28e1f74387e43b63aa9485f5e100101007fca2663c480159a8edaad02d785563bb04e62daa452685ce45a1bb060f80eff68800b54c540a0017700000787ffec4b1f7e8fe3528324424aeca8ea931cc4692c", "hex"))[0].beginParse()))
         const data = await pool.getPoolInfo();
         console.log({data})
+        const poolDustPTON = await router.getPoolAddress(routerDustWallet.address, routerPTONWallet.address, 3000n, 60n);
+        const poolDustPTONContract = blockchain.openContract(PoolWrapper.PoolTest.createFromAddress(poolDustPTON));
+        const poolDustPTONContractInfo = await poolDustPTONContract.getPoolInfo();
+        const swapRequest: SwapParams = {
+          kind: 'SwapParams',
+          forward_opcode: PoolWrapper.Opcodes.Swap,
+          jetton1_wallet: routerDustWallet.address,
+          fee: 3000,
+          tick_spacing: 60,
+          zero_for_one: -1,
+          sqrt_price_limit: MIN_SQRT_RATIO + 1n
+        }
+        const swapCell = beginCell();
+        storeSwapParams(swapRequest)(swapCell);
 
-        const transfer0 = await userDustWallet.sendTransferMint(
-            sender,
-            {
-              kind: 'OpJettonTransferMint',
-              query_id: 0,
-              jetton_amount: 999999999999n,
-              to_address: router.address,
-              response_address: testWallet.address,
-              custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-              forward_ton_amount: toNano(0.8),
-              either_payload: true,
-              mint: {
-                kind: 'MintParams',
-                forward_opcode: PoolWrapper.Opcodes.Mint,
-                jetton1_wallet: routerUsdtWallet.address,
-                tick_lower: -300,
-                tick_upper: 3120,
-                tick_spacing: 60,
-                fee: 3000,
-                liquidity_delta: 15382543572648n,
-              },
-            },
-            {
-              value: toNano(1),
-            },
-          );
-         printTransactionFees(transfer0.transactions);
-         expect(transfer0.transactions).toHaveTransaction({
-            success: true,
-            from: router.address,
-            to: pool.address,
-         });
-          
-        const transfer1 = await userUsdtWallet.sendTransferMint(
-            sender,
-            {
-              kind: 'OpJettonTransferMint',
-              query_id: 0,
-              jetton_amount: 1556180723329n,
-              to_address: router.address,
-              response_address: testWallet.address,
-              custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-              forward_ton_amount: toNano(0.8),
-              either_payload: true,
-              mint: {
-                kind: 'MintParams',
-                forward_opcode: PoolWrapper.Opcodes.Mint,
-                jetton1_wallet: routerDustWallet.address,
-                tick_lower: -300,
-                tick_upper: 3120,
-                tick_spacing: 60,
-                fee: 3000,
-                liquidity_delta: 15382543572648n,
-              },
-            },
-            {
-              value: toNano(1),
-            },
-          );
+        const tx = await routerPTONWallet.sendTonTransfer(
+          sender,
+          {
+            tonAmount: toNano(1.025),
+            refundAddress: testWallet.address,
+            fwdPayload: swapCell.endCell(),
+            gas: 300000000n
+          }
+        );
 
-        printTransactionFees(transfer1.transactions);
-        expect(transfer1.transactions).toHaveTransaction({
-            success: true,
-            from: router.address,
-            to: pool.address,
-         });
-         const totalFees0 = transfer0.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
-         const totalFees1 = transfer1.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
-         console.log({totalFees0: fromNano(totalFees0), totalFees1: fromNano(totalFees1)});
+        printTransactionFees(tx.transactions);
 
-         const data2 = await pool.getPoolInfo();
-         console.log({data2})
-       
-    }, 300000);
+        console.log(await poolDustPTONContract.getPoolInfo())
+
+        
+    }, 30000);
 
     it('parse value', ()=>{
         
