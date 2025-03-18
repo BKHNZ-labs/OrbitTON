@@ -1,5 +1,5 @@
 import { Blockchain, printTransactionFees, SandboxContract, SendMessageResult, TreasuryContract } from '@ton/sandbox';
-import { Address, beginCell, Cell, Dictionary, toNano } from '@ton/core';
+import { Address, beginCell, Cell, Dictionary, fromNano, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
 import PoolWrapper from '../../wrappers/core/Pool';
@@ -432,6 +432,10 @@ describe('Pool Test', () => {
           token0WalletContract = token1WalletContract;
           token1WalletContract = tokenTmp;
         }
+        
+        printTransactionFees(transfer0.transactions);
+        printTransactionFees(transfer1.transactions);
+
         routerJetton0WalletContract = blockchain.openContract(
           JettonWalletWrapper.JettonWallet.createFromAddress(routerJetton0WalletAddress),
         );
@@ -474,7 +478,7 @@ describe('Pool Test', () => {
         });
         describe('above current price', () => {
           it('transfers token0 only', async () => {
-            await token0WalletContract.sendTransferMint(
+           const transfer0 = await token0WalletContract.sendTransferMint(
               deployer.getSender(),
               {
                 kind: 'OpJettonTransferMint',
@@ -500,7 +504,7 @@ describe('Pool Test', () => {
                 value: toNano(1),
               },
             );
-            await token1WalletContract.sendTransferMint(
+            const transfer1 = await token1WalletContract.sendTransferMint(
               deployer.getSender(),
               {
                 kind: 'OpJettonTransferMint',
@@ -526,6 +530,11 @@ describe('Pool Test', () => {
                 value: toNano(1),
               },
             );
+            printTransactionFees(transfer0.transactions);
+            const totalFees0 = transfer0.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
+            printTransactionFees(transfer1.transactions);
+            const totalFees1 = transfer1.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
+            console.log({totalFees0: fromNano(totalFees0), totalFees1: fromNano(totalFees1)});
 
             const token0Balance = await routerJetton0WalletContract.getBalance();
             const token1Balance = await routerJetton1WalletContract.getBalance();

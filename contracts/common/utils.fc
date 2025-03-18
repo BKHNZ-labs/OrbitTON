@@ -21,3 +21,19 @@ const WORKCHAIN = 0;
         .store_coins(fwd_amount) ;; forward_ton_amount
         .store_uint(0, 1);
 }
+
+int calculate_min_tons_for_storage(slice address) inline {
+  int workchain = get_workchain(address);
+    
+  ;; Storage fees are different based on workchain:
+  ;; Basechain (0): 1 gas = 400 nanotons
+  ;; Masterchain (-1): 1 gas = 10000 nanotons
+    
+  int seconds = 31536000; ;; 1 year
+  slice ds = get_data().begin_parse();
+  int cells = ds.slice_refs();
+  int bits = ds.slice_bits();
+    
+  int min_storage_fee = get_storage_fee(workchain, seconds, bits, cells);
+  return min_storage_fee;
+}
