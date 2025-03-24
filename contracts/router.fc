@@ -102,12 +102,12 @@
     int gas_value = (token0_amount > 0) & (token1_amount > 0) ? msg_value / 2 : msg_value;
     if (token0_amount > 0) {
       var body0 = create_simple_transfer_body(query_id, 0, token0_amount, recipient);
-      ;;body0 = body0.store_uint(exit_code, 32); ;; append exit code
+      body0 = body0.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token0_address, body0.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     if (token1_amount > 0) {
       var body1 = create_simple_transfer_body(query_id, 0, token1_amount, recipient);
-      ;; body1 = body1.store_uint(exit_code, 32); ;; append exit code
+      body1 = body1.store_uint(exit_code, 32); ;; append exit code
       send_simple_message(gas_value, token1_address, body1.end_cell(), NORMAL + IGNORE_ERRORS);
     }
     return ();

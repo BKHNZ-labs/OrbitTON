@@ -9,9 +9,10 @@ import {
   formatPrice,
   formatTokenAmount,
   getMaxLiquidityPerTick,
-  getMaxTick, 
+  getMaxTick,
   getMinTick,
   filterOutSuccessMessages,
+  extractExitCodeFromJettonTransfer,
   MAX_SQRT_RATIO,
   MIN_SQRT_RATIO,
 } from '../shared/utils';
@@ -118,9 +119,9 @@ describe('OrbitTonPool', () => {
       zeroForOne: false,
     },
   ];
+  // .slice(-2);
 
   const POOL_SWAP_TESTS_FILTER_EXACT_OUT = DEFAULT_POOL_SWAP_TESTS.filter((test) => !test.exactOut);
-  // .slice(0, 1);
 
   const TEST_POOLS = [
     {
@@ -334,6 +335,7 @@ describe('OrbitTonPool', () => {
       ],
     },
   ];
+  // .slice(0, 1);
   // .filter((test) => test.description === "close to max price");
 
   function swapCaseToDescription(testCase: any): string {
@@ -741,7 +743,6 @@ describe('OrbitTonPool', () => {
                     forward_opcode: PoolWrapper.Opcodes.Swap,
                     fee: poolCase.feeAmount,
                     jetton1_wallet: routerJetton1WalletContract!.address,
-                    //eslint-di
                     sqrt_price_limit: testCase?.sqrtPriceLimit ?? MIN_SQRT_RATIO + 1n,
                     tick_spacing: poolCase.tickSpacing,
                     zero_for_one: testCase.zeroForOne ? -1 : 0,
@@ -783,15 +784,24 @@ describe('OrbitTonPool', () => {
             printTransactionFees(swapTx.transactions);
             const transactions = swapTx.transactions;
             const allErrorExitCode = filterOutSuccessMessages(transactions);
-            console.log(allErrorExitCode);
-            if (allErrorExitCode.length > 0) {
+            console.log('\nError exit codes:', allErrorExitCode);
+
+            // Extract exit code from jetton transfer messages
+            const exitCodes = extractExitCodeFromJettonTransfer(transactions);
+            console.log('Exit codes from jetton transfers:', exitCodes);
+
+            if (exitCodes.length > 0) {
               expect({
                 poolBalance0: poolBalance0!.amount.toString(),
                 poolBalance1: poolBalance1!.amount.toString(),
                 poolPriceBefore: formatPrice(poolInfoBefore.sqrtPriceX96),
                 tickBefore: Number(poolInfoBefore.tick),
-                computeErr: typeof allErrorExitCode[0] === 'number' && allErrorExitCode[0].toString(),
+                computeErr: exitCodes[0].toString(),
               }).toMatchSnapshot();
+              let router0AfterBalance = await routerJetton0WalletContract!.getBalance();
+              let router1AfterBalance = await routerJetton1WalletContract!.getBalance();
+              expect(router0AfterBalance.amount).toBe(poolBalance0!.amount);
+              expect(router1AfterBalance.amount).toBe(poolBalance1!.amount);
             } else {
               swapBalance0 = await swapToken0Wallet!.getBalance();
               swapBalance1 = await swapToken1Wallet!.getBalance();
@@ -804,6 +814,7 @@ describe('OrbitTonPool', () => {
               let poolInfoAfter = await poolContract!.getPoolInfo();
               let { feeGrowthGlobal0X128: feeGrowthGlobal0X128After, feeGrowthGlobal1X128: feeGrowthGlobal1X128After } =
                 await poolContract!.getFeeGrowthGlobal();
+
               const poolBalance0Delta = router0AfterBalance.amount - poolBalance0!.amount;
               const poolBalance1Delta = router1AfterBalance.amount - poolBalance1!.amount;
               const executionPrice = new Decimal(poolBalance1Delta.toString())

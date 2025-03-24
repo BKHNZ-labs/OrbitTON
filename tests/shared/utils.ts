@@ -67,11 +67,50 @@ export function formatTokenAmount(num: bigint): string {
   return new Decimal(num.toString()).dividedBy(new Decimal(10).pow(18)).toPrecision(5);
 }
 
-
-export function filterOutSuccessMessages(txs: BlockchainTransaction[]){
-  const allExitCode = txs.map((tx)=>{
+export function filterOutSuccessMessages(txs: BlockchainTransaction[]) {
+  const allExitCode = txs.map((tx) => {
     if (tx.description.type !== 'generic') return undefined;
-    return tx.description.computePhase.type === 'vm' ? tx.description.computePhase.exitCode : 'N/A'
-  })
-  return allExitCode.filter((exitCode)=>exitCode !== 0);
+    return tx.description.computePhase.type === 'vm' ? tx.description.computePhase.exitCode : 'N/A';
+  });
+  return allExitCode.filter((exitCode) => exitCode !== 0);
+}
+
+export function extractExitCodeFromJettonTransfer(transactions: BlockchainTransaction[]): number[] {
+  let foundPayTo = false;
+  const exitCodes: number[] = [];
+
+  for (let i = 0; i < transactions.length; i++) {
+    const tx = transactions[i];
+    if (!tx.inMessage?.body) continue;
+
+    const slice = tx.inMessage.body.beginParse();
+    const op = slice.loadUint(32);
+
+    // Check for pay_to operation (0x1674b0a0)
+    if (op === 0x6322546b) {
+      foundPayTo = true;
+      continue;
+    }
+
+    // Collect exit codes from all jetton transfers that come after pay_to
+    if (foundPayTo && op === 0xf8a7ea5) {
+      try {
+        slice.loadUint(64); // query_id
+        slice.loadCoins(); // jetton_amount
+        slice.loadAddress(); // to_address
+        slice.loadAddress(); // response_address
+        slice.loadBit(); // custom_payload
+        slice.loadCoins(); // forward_ton_amount
+        slice.loadBit(); // either_payload
+        const exitCode = slice.loadUint(32); // exit_code at the end
+        if (exitCode !== 0) {
+          exitCodes.push(exitCode);
+        }
+      } catch (e) {
+        // If parsing fails, continue to next transaction
+        continue;
+      }
+    }
+  }
+  return exitCodes;
 }
