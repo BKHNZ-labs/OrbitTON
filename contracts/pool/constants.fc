@@ -1,5 +1,7 @@
-const int exit::refund = 0;
-const int exit::finish_swap = 1;
+const int exit::finish_swap = 0;
+
+const int exit::refund = 1;
+
 const int exit::collect = 2;
 
 
