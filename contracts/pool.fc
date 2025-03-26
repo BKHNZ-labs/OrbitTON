@@ -85,9 +85,12 @@
     (int jetton_amount_0, int jetton_amount_1,  int tick_lower, int tick_upper, int liquidity_delta, slice recipient) = (body~load_coins(), body~load_coins(), body~load_int(24), body~load_int(24), body~load_int(128),  body~load_msg_addr());
     cell state_init = calculate_lp_account_state_init(recipient, my_address(), tick_lower, tick_upper, storage::lp_account_code);
     slice to_lp_account_address = calculate_lp_account_address(state_init);
+    int is_oneside_liquidity = ((tick_upper <= storage::tick) | (storage::tick < tick_lower)) == -1;
+
     builder body = begin_cell()
             .store_uint(op::add_liquidity, 32)
             .store_uint(query_id, 64)
+            .store_int(is_oneside_liquidity, 2)
             .store_coins(jetton_amount_0)
             .store_coins(jetton_amount_1)
             .store_int(liquidity_delta, 128);

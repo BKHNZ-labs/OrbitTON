@@ -61,11 +61,17 @@ global int amount1;
   throw_unless(error::unauthorized, compare_address(sender_address, pool_address));
 
   if(op::add_liquidity){
-     (int new_amount0, int new_amount1, int liquidity_delta) = (in_msg_body~load_coins(), in_msg_body~load_coins(), in_msg_body~load_int(128));
+     (
+      int is_oneside_liquidity, 
+      int new_amount0, 
+      int new_amount1,
+      int liquidity_delta
+      ) = (in_msg_body~load_int(2), in_msg_body~load_coins(), in_msg_body~load_coins(), in_msg_body~load_int(128));
+        
         amount0 += new_amount0;
         amount1 += new_amount1;
-
-        if (liquidity_delta & ((amount0 > 1000) & (amount1 > 1000))){
+      
+        if (((((amount0 > 1000) & (amount1 > 1000)) & (liquidity_delta > 0)) | is_oneside_liquidity) == -1){
             builder body = begin_cell()
                 .store_uint(op::cb_add_liquidity, 32)
                 .store_uint(query_id, 64)

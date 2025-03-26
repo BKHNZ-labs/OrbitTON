@@ -432,7 +432,7 @@ describe('Pool Test', () => {
           token0WalletContract = token1WalletContract;
           token1WalletContract = tokenTmp;
         }
-        
+
         printTransactionFees(transfer0.transactions);
         printTransactionFees(transfer1.transactions);
 
@@ -478,7 +478,7 @@ describe('Pool Test', () => {
         });
         describe('above current price', () => {
           it('transfers token0 only', async () => {
-           const transfer0 = await token0WalletContract.sendTransferMint(
+            const transfer0 = await token0WalletContract.sendTransferMint(
               deployer.getSender(),
               {
                 kind: 'OpJettonTransferMint',
@@ -504,37 +504,37 @@ describe('Pool Test', () => {
                 value: toNano(1),
               },
             );
-            const transfer1 = await token1WalletContract.sendTransferMint(
-              deployer.getSender(),
-              {
-                kind: 'OpJettonTransferMint',
-                query_id: 0,
-                jetton_amount: 1000000n,
-                to_address: router.address,
-                response_address: deployer.address,
-                custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                forward_ton_amount: toNano(0.8),
-                either_payload: true,
-                mint: {
-                  kind: 'MintParams',
-                  forward_opcode: PoolWrapper.Opcodes.Mint,
-                  jetton1_wallet: routerJetton0WalletAddress,
-                  tick_lower: -22980,
-                  tick_upper: 0,
-                  tick_spacing: 60,
-                  fee: 3000,
-                  liquidity_delta: 10000n,
-                },
-              },
-              {
-                value: toNano(1),
-              },
-            );
+            // const transfer1 = await token1WalletContract.sendTransferMint(
+            //   deployer.getSender(),
+            //   {
+            //     kind: 'OpJettonTransferMint',
+            //     query_id: 0,
+            //     jetton_amount: 1000000n,
+            //     to_address: router.address,
+            //     response_address: deployer.address,
+            //     custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
+            //     forward_ton_amount: toNano(0.8),
+            //     either_payload: true,
+            //     mint: {
+            //       kind: 'MintParams',
+            //       forward_opcode: PoolWrapper.Opcodes.Mint,
+            //       jetton1_wallet: routerJetton0WalletAddress,
+            //       tick_lower: -22980,
+            //       tick_upper: 0,
+            //       tick_spacing: 60,
+            //       fee: 3000,
+            //       liquidity_delta: 10000n,
+            //     },
+            //   },
+            //   {
+            //     value: toNano(1),
+            //   },
+            // );
             printTransactionFees(transfer0.transactions);
-            const totalFees0 = transfer0.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
-            printTransactionFees(transfer1.transactions);
-            const totalFees1 = transfer1.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
-            console.log({totalFees0: fromNano(totalFees0), totalFees1: fromNano(totalFees1)});
+            const totalFees0 = transfer0.transactions.reduce((acc, tx) => acc + tx.totalFees.coins, 0n);
+            // printTransactionFees(transfer1.transactions);
+            // const totalFees1 = transfer1.transactions.reduce((acc, tx) => acc + tx.totalFees.coins , 0n);
+            // console.log({totalFees0: fromNano(totalFees0), totalFees1: fromNano(totalFees1)});
 
             const token0Balance = await routerJetton0WalletContract.getBalance();
             const token1Balance = await routerJetton1WalletContract.getBalance();
@@ -1682,34 +1682,6 @@ describe('Pool Test', () => {
             // await mint(wallet.address, -46080, -23040, 10000)
             // expect(await token0.balanceOf(pool.address)).to.eq(9996)
             // expect(await token1.balanceOf(pool.address)).to.eq(1000 + 2162)
-
-            // Mint a position with 10000 liquidity that is entirely below the current price
-            await token0WalletContract.sendTransferMint(
-              deployer.getSender(),
-              {
-                kind: 'OpJettonTransferMint',
-                query_id: 0,
-                jetton_amount: 828011525n,
-                to_address: router.address,
-                response_address: deployer.address,
-                custom_payload: beginCell().storeDict(Dictionary.empty()).endCell(),
-                forward_ton_amount: toNano(0.8),
-                either_payload: true,
-                mint: {
-                  kind: 'MintParams',
-                  forward_opcode: PoolWrapper.Opcodes.Mint,
-                  jetton1_wallet: routerJetton1WalletAddress,
-                  tick_lower: -46080,
-                  tick_upper: -23040,
-                  tick_spacing: 60,
-                  fee: 3000,
-                  liquidity_delta: 10000n,
-                },
-              },
-              {
-                value: toNano(1),
-              },
-            );
             await token1WalletContract.sendTransferMint(
               deployer.getSender(),
               {
