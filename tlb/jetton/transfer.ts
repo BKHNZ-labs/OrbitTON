@@ -7,6 +7,7 @@ import { Address } from '@ton/core';
 import { ExternalAddress } from '@ton/core';
 import { Dictionary } from '@ton/core';
 import { DictionaryValue } from '@ton/core';
+import { Maybe } from '@ton/core/dist/utils/maybe';
 export function bitLen(n: number) {
   return n.toString(2).length;
 }
@@ -59,20 +60,32 @@ export interface OpJettonTransferMint {
 /*
 swap#_  forward_opcode: uint32
         jetton1_wallet: MsgAddress
+        recipient: MsgAddress
+        sqrt_price_limit: uint160
+        minium_amount_out: Grams
         fee: uint24
         tick_spacing: int24
-        zero_for_one: int2
-        sqrt_price_limit: uint160 = SwapParams;
+        next: (Maybe ^Cell)
+        = SwapParams;
 */
 
 export interface SwapParams {
   readonly kind: 'SwapParams';
   readonly forward_opcode: number;
   readonly jetton1_wallet: Address | ExternalAddress | null;
+  readonly recipient: Address | ExternalAddress | null;
+  readonly sqrt_price_limit: bigint;
+  readonly minium_amount_out: bigint;
   readonly fee: number;
   readonly tick_spacing: number;
-  readonly zero_for_one: number;
-  readonly sqrt_price_limit: bigint;
+  readonly next: Maybe<Cell>;
+}
+
+// referral#_ address:MsgAddress = ReferralAddress;
+
+export interface ReferralAddress {
+  readonly kind: 'ReferralAddress';
+  readonly address: Address | ExternalAddress | null;
 }
 
 /*
@@ -201,27 +214,34 @@ export function storeOpJettonTransferMint(opJettonTransferMint: OpJettonTransfer
 /*
 swap#_  forward_opcode: uint32
         jetton1_wallet: MsgAddress
+        recipient: MsgAddress
+        sqrt_price_limit: uint160
+        minium_amount_out: Grams
         fee: uint24
         tick_spacing: int24
-        zero_for_one: int2
-        sqrt_price_limit: uint160 = SwapParams;
+        next: (Maybe ^Cell)
+        = SwapParams;
 */
 
 export function loadSwapParams(slice: Slice): SwapParams {
   let forward_opcode: number = slice.loadUint(32);
   let jetton1_wallet: Address | ExternalAddress | null = slice.loadAddressAny();
+  let recipient: Address | ExternalAddress | null = slice.loadAddressAny();
+  let sqrt_price_limit: bigint = slice.loadUintBig(160);
+  let minium_amount_out: bigint = slice.loadCoins();
   let fee: number = slice.loadUint(24);
   let tick_spacing: number = slice.loadInt(24);
-  let zero_for_one: number = slice.loadInt(2);
-  let sqrt_price_limit: bigint = slice.loadUintBig(160);
+  let next: Maybe<Cell> = slice.loadMaybeRef();
   return {
     kind: 'SwapParams',
     forward_opcode: forward_opcode,
     jetton1_wallet: jetton1_wallet,
+    recipient: recipient,
+    sqrt_price_limit: sqrt_price_limit,
+    minium_amount_out: minium_amount_out,
     fee: fee,
     tick_spacing: tick_spacing,
-    zero_for_one: zero_for_one,
-    sqrt_price_limit: sqrt_price_limit,
+    next: next,
   };
 }
 
@@ -229,10 +249,28 @@ export function storeSwapParams(swapParams: SwapParams): (builder: Builder) => v
   return (builder: Builder) => {
     builder.storeUint(swapParams.forward_opcode, 32);
     builder.storeAddress(swapParams.jetton1_wallet);
+    builder.storeAddress(swapParams.recipient);
+    builder.storeUint(swapParams.sqrt_price_limit, 160);
+    builder.storeCoins(swapParams.minium_amount_out);
     builder.storeUint(swapParams.fee, 24);
     builder.storeInt(swapParams.tick_spacing, 24);
-    builder.storeInt(swapParams.zero_for_one, 2);
-    builder.storeUint(swapParams.sqrt_price_limit, 160);
+    builder.storeMaybeRef(swapParams.next);
+  };
+}
+
+// referral#_ address:MsgAddress = ReferralAddress;
+
+export function loadReferralAddress(slice: Slice): ReferralAddress {
+  let address: Address | ExternalAddress | null = slice.loadAddressAny();
+  return {
+    kind: 'ReferralAddress',
+    address: address,
+  };
+}
+
+export function storeReferralAddress(referralAddress: ReferralAddress): (builder: Builder) => void {
+  return (builder: Builder) => {
+    builder.storeAddress(referralAddress.address);
   };
 }
 

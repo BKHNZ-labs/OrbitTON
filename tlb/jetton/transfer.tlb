@@ -18,10 +18,15 @@ op_jetton_transfer_mint#0f8a7ea5
 
 swap#_  forward_opcode: uint32
         jetton1_wallet: MsgAddress
+        recipient: MsgAddress
+        sqrt_price_limit: uint160
+        minium_amount_out: Grams
         fee: uint24
         tick_spacing: int24
-        zero_for_one: int2
-        sqrt_price_limit: uint160 = SwapParams;
+        next: (Maybe ^Cell)
+        = SwapParams;
+
+referral#_ address:MsgAddress = ReferralAddress;
 
 op_jetton_transfer_swap#0f8a7ea5
         query_id: uint64

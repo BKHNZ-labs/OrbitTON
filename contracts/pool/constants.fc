@@ -4,7 +4,7 @@ const int exit::refund = 1;
 
 const int exit::collect = 2;
 
-
+const int exit::insufficient_output_amount = 3;
 
 const GAS::REFUND = 200000000;
 const GAS::CB_ADD_LIQUIDITY = 100000000;
