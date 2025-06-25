@@ -1,7 +1,7 @@
-### What is this repo ?
+# What is this repo ?
 - This repo is simple implementation of vote. It only shows the working flow of simple voting system.
 
-### Continuing thoughts after interview
+# Continuing thoughts after interview
 
 - When drawing vote contract, i just think about how proposal can verify vote of user, and how to detect the user is in a whitelist or not.
 - At that time, my brain is kind of frozen, so i can't figure it out.
