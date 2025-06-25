@@ -25,7 +25,7 @@ async function generateWalletsSimple() {
     }
   }
 
-  await fs.writeFile('wallets.json', JSON.stringify(result, null, 2));
+  await fs.writeFile('10000000-wallets.json', JSON.stringify(result, null, 2));
 }
 
 generateWalletsSimple();

@@ -71,8 +71,6 @@ global cell vote_code;
       return ();
   }
 
-  ~dump(null());
-
   load_data(); ;; here we populate the storage variables
 
   slice sender_address = cs~load_msg_addr();
@@ -121,7 +119,9 @@ global cell vote_code;
     if (current_power >= threshold_power) {
       ;; do other things here
       ;; may be execute code, update state, etc. storage should be modified a little, this is for demo only
+      emit_log_simple(0, begin_cell().store_uint(123123, 256).end_cell(), 0);
     }
+    send_empty_message(0, vote_owner, CARRY_REMAINING_GAS + IGNORE_ERRORS);
     save_data();
     return ();
   }
