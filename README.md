@@ -12,6 +12,12 @@ On the merkle tree, here is use my own merkle tree implementation, but i think i
 
 But to be honest, i haven't used that before, and don't know about the limit of it, there is existed or not. The code is using my merkle tree which is based on cosmos's merkle tree.
 
+There are another things that i have not implemented since it is simple one are:
+
+- the fee for the liveness of vote contract to reduce fee. With 1000000 users, the fee is 0.05 TON, it is not too much. (i believe)
+- execution for proposal when vote is passed, other functions related to business logic.
+- take test about the fee when using exotic cell, find out the beautiful of it.
+
 # Components
 
 <img src="resources/component.png" width="500">
