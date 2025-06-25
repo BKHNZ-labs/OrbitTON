@@ -1,3 +1,6 @@
+### What is this repo ?
+- This repo is simple implementation of vote. It only shows the working flow of simple voting system.
+
 ### Continuing thoughts after interview
 
 - When drawing vote contract, i just think about how proposal can verify vote of user, and how to detect the user is in a whitelist or not.
@@ -34,9 +37,17 @@ There are another things that i have not implemented since it is simple one are:
 
 <img src="resources/create_proposal.png" width="500">
 
+- 1: User init message op::create_proposal to Proposal Factory Contract.
+- 2: Proposal Factory contract will send internal message op::initialize to Proposal with state init to deploy Proposal contract, and set some values to storage.
+- 3: Proposal contract may fall back to Proposal Factory to emit event from Proposal Factory contract for easier indexer.
+
 ## Vote for a proposal
 
 <img src="resources/vote.png" width="500">
+
+- 1: User init message op::vote to deployed Proposal contract with proof.
+- 2: Proposal contract will verify merkle tree by calculating sender address and proof, then compare root hash. If true, send internal message op::init_vote to Vote contract along with state init to deploy it.
+- 3: Vote contract will calculate voting power, then send back to proposal contract for updating current_power.
 
 # How to run the code:
 
