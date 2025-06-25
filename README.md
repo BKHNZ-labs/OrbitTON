@@ -16,6 +16,7 @@ There are another things that i have not implemented since it is simple one are:
 
 - the fee for the liveness of vote contract to reduce fee. With 1000000 users, the fee is 0.05 TON, it is not too much. (i believe)
 - execution for proposal when vote is passed, other functions related to business logic.
+- add more other checks.
 - take test about the fee when using exotic cell, find out the beautiful of it.
 
 # Components
