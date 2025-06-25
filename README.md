@@ -14,10 +14,10 @@ The test is on `tests/core/full-flow.test.ts`.
 
 There are another things that i have not implemented since it is simple one are:
 
-- the fee for the liveness of vote contract to reduce fee. With 1000000 users, the fee is 0.05 TON, it is not too much. (i believe)
+- the fee for the liveness of vote contract to reduce fee. With 1000000 users, the fee for tx is less than 0.05 TON (~around 0.03). 
 - execution for proposal when vote is passed, other functions related to business logic.
 - refund fee for user when finish execution or in error.
-- add more other checks.
+- add more other validation checks.
 - take test about the fee when using exotic cell, find out the beautiful of it.
 
 # Components
