@@ -1,2 +1,0 @@
-const int error::LOW_AMOUNT = 41;
-const int error::SPL = 42;

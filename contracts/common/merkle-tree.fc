@@ -1,0 +1,67 @@
+
+#include "../imports/stdlib.fc";
+
+const prefix::leaf = 0x00;
+const prefix::inner = 0x01;
+
+const prefix::array = 0x0a;
+const prefix::first = 0x08;
+const prefix::second = 0x10;
+
+const prefix::number = 0x08;
+const prefix::pubkey_amino_prefix = 0x05;
+
+int parse_int(slice string_number) impure {
+    int number = 0;
+
+    while (~ string_number.slice_empty?()) {
+        int char = string_number~load_uint(8);
+        number = (number * 10) + (char - 48); ;; we use ASCII table
+    }
+
+    return number;
+}
+
+int bit_length(int n) inline_ref {
+    return (log2(n) + 1) >> 0;
+}
+
+int get_split_point(int n)  {
+    if n < 1 {
+        throw(0xffff);
+    }
+
+    int bitlen = n.bit_length();
+    int k = 1 << (bitlen - 1);
+    if k == n {
+        k >>= 1;
+    }
+    return k;
+}
+
+int inner_hash(int left, int right) inline_ref {
+    return  begin_cell().store_uint(prefix::inner, 8).store_uint(left, 256).store_uint(right, 256).end_cell().begin_parse().string_hash();
+}
+
+int leaf_hash(int leaf) inline_ref {    
+    return begin_cell().store_uint(prefix::leaf, 8).store_uint(leaf, 256).end_cell().begin_parse().string_hash();    
+}
+
+tuple reverse_list(tuple list) {    
+    tuple new_list = empty_tuple();
+
+    repeat (list.tlen()) {
+        new_list~tpush(list~tpop());
+    }
+
+    return new_list;
+}
+
+tuple slice_list(tuple list, int start, int end) {
+    tuple sub_list = empty_tuple();
+    while (start < end) {        
+        sub_list~tpush(list.at(start));      
+        start += 1;                 
+    }
+    return sub_list;
+}

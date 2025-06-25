@@ -633,3 +633,7 @@ int modc(int x, int y) asm "MODC";
 
 int get_storage_fee(int workchain, int seconds, int bits, int cells) asm(cells bits seconds workchain) "GETSTORAGEFEE";
 int my_storage_due() asm "DUEPAYMENT";
+
+int tlen(tuple data) asm "TLEN";
+forall X -> (tuple, X) tpop(tuple t) asm "TPOP";
+int log2(int x) asm "UBITSIZE DEC";

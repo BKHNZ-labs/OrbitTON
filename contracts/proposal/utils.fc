@@ -1,0 +1,38 @@
+cell pack_proposal_code(int proposal_id, slice issuer, cell vote_code) inline {
+  return begin_cell()
+          .store_ref(begin_cell()
+              .store_uint(0, 128)
+              .store_uint(0, 128)
+              .store_uint(0, 256)
+              .store_uint(0, 256)
+              .end_cell())
+          .store_ref(begin_cell()
+              .store_uint(proposal_id, 256)
+              .store_uint(0, 256)
+              .store_slice(issuer)
+              .store_ref(begin_cell().end_cell())
+              .store_ref(vote_code)
+              .end_cell())
+        .end_cell();
+}
+
+cell calculate_proposal_state_init(int proposal_id, slice issuer, cell proposal_code, cell vote_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(proposal_code)
+    .store_dict(pack_proposal_code(proposal_id, issuer, vote_code))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_proposal_address(cell state_init) inline {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_proposal_state_init_and_address(int proposal_id, slice issuer, cell proposal_code, cell vote_code) inline {
+  cell state_init = calculate_proposal_state_init(proposal_id, issuer, proposal_code, vote_code);
+  return (state_init, calculate_proposal_address(state_init));
+}

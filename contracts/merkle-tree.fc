@@ -1,0 +1,61 @@
+#include "common/merkle-tree.fc";
+
+int hash_from_tree_slice(tuple chunks)  {    
+    int length = chunks.tlen();
+    if (length == 0) { 
+        ;; empty is 0 in bigint           
+        return 0;
+    }
+    if(length == 1) {          
+        return begin_cell().store_uint(prefix::leaf, 8)
+            .store_slice(chunks.first())
+            .end_cell()
+            .begin_parse()
+            .string_hash();            
+    }
+   
+    int k = get_split_point(length);      
+    int left = hash_from_tree_slice(chunks.slice_list(0, k));     
+    int right = hash_from_tree_slice(chunks.slice_list(k, length));            
+    
+    return inner_hash(left, right);            
+}
+
+int root_hash_from_ref_slice(slice chunks, int length)  {            
+    if (length == 0) { 
+        ;; empty is 0 in bigint           
+        return 0;
+    }
+    if(length == 1) {                
+        return chunks~load_uint(256).leaf_hash();        
+    }
+   
+    int k = get_split_point(length);      
+    int left = root_hash_from_ref_slice(chunks, k);     
+    ;; next k items
+    repeat(k) {
+        chunks = chunks~load_ref().begin_parse();
+    }
+    int right = root_hash_from_ref_slice(chunks, length - k);            
+    
+    return inner_hash(left, right);            
+}
+
+int hash_from_tree_proof_ref(slice branch, int leaf, slice positions) {
+    int ind = 0;
+    int root_hash = leaf_hash(leaf);
+    while(branch.slice_refs_empty?() == 0){
+        slice next_ref = branch~load_ref().begin_parse();
+        slice branch_slice = branch~load_ref().begin_parse();
+        int item = branch_slice~load_uint(256);     
+        int position = positions~load_uint(1);
+        ;; 0: right, 1: left
+        if(position == 0) {
+            root_hash = inner_hash(root_hash, item);
+        } else {
+            root_hash = inner_hash(item, root_hash);
+        }
+        branch = next_ref;
+    }
+    return root_hash;
+}

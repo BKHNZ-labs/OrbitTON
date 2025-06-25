@@ -1,0 +1,28 @@
+cell pack_vote_code(slice proposal_address, slice vote_owner) inline {
+  return begin_cell()
+      .store_int(0, 2)
+      .store_slice(proposal_address)
+      .store_slice(vote_owner)
+    .end_cell();
+}
+
+cell calculate_vote_state_init(slice proposal_address, slice vote_owner, cell vote_code) inline {
+  return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(vote_code)
+    .store_dict(pack_vote_code(proposal_address, vote_owner))
+    .store_uint(0, 1)
+  .end_cell();
+}
+
+slice calculate_vote_address(cell state_init) inline {
+  return begin_cell().store_uint(4, 3)
+    .store_int(WORKCHAIN, 8)
+    .store_uint(cell_hash(state_init), 256)
+  .end_cell().begin_parse();
+}
+
+(cell, slice) get_vote_state_init_and_address(slice proposal_address, slice vote_owner, cell vote_code) inline {
+  cell state_init = calculate_vote_state_init(proposal_address, vote_owner, vote_code);
+  return (state_init, calculate_vote_address(state_init));
+}

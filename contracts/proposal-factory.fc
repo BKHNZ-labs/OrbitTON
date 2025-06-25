@@ -1,0 +1,72 @@
+#include "imports/stdlib.fc";
+#include "common/messages.fc";
+#include "common/utils.fc";
+#include "proposal/utils.fc";
+#include "op-codes.fc";
+
+global int proposal_counter;
+global cell proposal_code;
+global cell vote_code;
+
+() load_data() impure {
+    var ds = get_data().begin_parse();
+    proposal_counter = ds~load_uint(256);
+    proposal_code = ds~load_ref();
+    vote_code = ds~load_ref();
+    ds.end_parse();
+}
+
+;; save_data stores storage variables as a cell into persistent storage
+() save_data() impure inline_ref {
+    set_data(
+        begin_cell()
+            .store_uint(proposal_counter, 256)
+            .store_ref(proposal_code)
+            .store_ref(vote_code)
+            .end_cell()
+    );
+}
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+  if (in_msg_body.slice_empty?()) { ;; ignore all empty messages        
+    return ();
+  }
+
+  slice cs = in_msg_full.begin_parse();
+  
+  int flags = cs~load_uint(4);
+
+  if (flags & 1) { ;; ignore all bounced messages
+      return ();
+  }
+
+  load_data(); ;; here we populate the storage variables
+
+  slice sender_address = cs~load_msg_addr();
+  int op = in_msg_body~load_uint(32); ;; by convention, the first 32 bits of incoming message is the op
+  int query_id = in_msg_body~load_uint(64); ;; also by convention, the next 64 bits contain the "query id", although this is not always the case
+
+  if (op == op::create_proposal) {
+    int proposal_id = proposal_counter;
+    cell cs = in_msg_body~load_ref();
+    cell msg = begin_cell()
+        .store_uint(op::initialize, 32)
+        .store_uint(query_id, 64)
+        .store_uint(proposal_id, 256)
+        .store_ref(
+          cs
+        )
+        .end_cell();
+    (cell state_init, slice address) = get_proposal_state_init_and_address(proposal_id, sender_address, proposal_code, vote_code);
+    send_message_with_stateinit(0, address, state_init, msg, CARRY_REMAINING_GAS);
+    proposal_counter = proposal_counter + 1;
+    save_data();
+    return ();
+  }
+}
+
+(slice) get_proposal_address(slice issuer, int proposal_id) method_id {
+  load_data();
+  (cell state_init, slice address) = get_proposal_state_init_and_address(proposal_id, issuer, proposal_code, vote_code);
+  return address;
+}

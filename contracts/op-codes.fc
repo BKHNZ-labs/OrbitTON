@@ -1,0 +1,8 @@
+
+
+const op::create_proposal = "op::create_proposal"c;
+const op::initialize = "op::initialize"c;
+const op::cb_initialize = "op::cb_initialize"c;
+const op::vote = "op::vote"c;
+const op::init_vote = "op::init_vote"c;
+const op::cb_vote = "op::cb_vote"c;
