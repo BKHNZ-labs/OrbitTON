@@ -8,9 +8,7 @@
 
 => That's the think, but we can't make sure how much user can reach. So this project is a poc for that. With merkle tree, we can work with large size of whitelist users. like 1 million.
 
-On the merkle tree, here is use my own merkle tree implementation, but i think it's not the best way to do it since ton offer exotic cell for it.
-
-But to be honest, i haven't used that before, and don't know about the limit of it, there is existed or not. The code is using my merkle tree which is based on cosmos's merkle tree.
+On the merkle tree, i use my own merkle tree implementation version, but i think there is another better way is using exotic cell. But to be honest, i haven't used that before, and don't know about the limit of it, so on this simple version, we use my self-implemented merkle tree.
 
 The test is on `tests/core/full-flow.test.ts`.
 
